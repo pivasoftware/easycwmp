@@ -1,0 +1,142 @@
+#!/bin/sh
+# Copyright (C) 2012 Luka Perkov <freecwmp@lukaperkov.net>
+
+# TODO: When getting Device. as parameter name we should return all parameter path belong to this script
+get_device_users() {
+local parameter="$1"
+case "$parameter" in
+	Device.Users.UserNumberOfEntries)
+	local val=`wc -l /etc/passwd | awk '{ print $1 }'`
+	easycwmp_value_output "$parameter" "$val"
+	return
+	;;
+esac
+
+local rc
+local num
+
+# TODO: Device.Users.User.{i}.Alias (alias support does not exist)
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Users.User.{i}.Enable" "rc" "num"
+if [ $rc -eq 0 ]; then
+	# TODO: this is very system dependent, for now just look at users shell
+	local sed_cmd=`echo -n \'$num; echo p\'`
+	local val=`eval sed -n $sed_cmd /etc/passwd | grep -v '/bin/false' | wc -l`
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Users.User.{i}.RemoteAccessCapable" "rc" "num"
+if [ $rc -eq 0 ]; then
+	# TODO: this is very system dependent, for now just look at users shell
+	local sed_cmd=`echo -n \'$num; echo p\'`
+	local val=`eval sed -n $sed_cmd /etc/passwd | grep -v '/bin/false' | wc -l`
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Users.User.{i}.Username" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local sed_cmd=`echo -n \'$num; echo p\'`
+	local val=`eval sed -n $sed_cmd /etc/passwd | awk -F ':' '{ print $1 }'`
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Users.User.{i}.Password" "rc" "num"
+if [ $rc -eq 0 ]; then
+	# if we *really* wanted to get the password we could do it like this
+	#   local sed_cmd=`echo -n \'$num; echo p\'`
+	#   local val=`eval sed -n $sed_cmd /etc/shadow | awk -F ':' '{ print $2 }'`
+	#   easycwmp_value_output "$parameter" "$val"
+	easycwmp_value_output "$parameter" ""
+	return
+fi
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Users.User.{i}.Language" "rc" "num"
+if [ $rc -eq 0 ]; then
+	easycwmp_value_output "$parameter" ""
+	return
+fi
+return $E_INVALID_PARAMETER_NAME
+}
+
+set_device_users() {
+local parameter="$1"
+local value="$2"
+
+local rc
+local num
+
+# TODO: Device.Users.User.{i}.Alias (alias support does not exist)
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Users.User.{i}.Enable" "rc" "num"
+if [ $rc -eq 0 ]; then
+	# TODO: this is very system dependent, for now just look at users shell
+	local val
+	if [ "$value" = "1" ]; then
+		val="/bin/ash"
+	else
+		val="/bin/false"
+	fi
+	local sed_cmd
+	sed_cmd=`echo -n \'$num; echo p\'`
+	local orig=`eval sed -n $sed_cmd /etc/passwd | awk -F ':' '{ print $7 }'`
+	sed_cmd=`echo -n \'$num; echo s%:$orig%:$val%\'`
+	eval sed -i $sed_cmd /etc/passwd
+	return
+fi
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Users.User.{i}.RemoteAccessCapable" "rc" "num"
+if [ $rc -eq 0 ]; then
+	# TODO: this is very system dependent, for now just look at users shell
+	local val
+	if [ "$value" = "1" ]; then
+		val="/bin/ash"
+	else
+		val="/bin/false"
+	fi
+	local sed_cmd
+	sed_cmd=`echo -n \'$num; echo p\'`
+	local orig=`eval sed -n $sed_cmd /etc/passwd | awk -F ':' '{ print $7 }'`
+	sed_cmd=`echo -n \'$num; echo s%:$orig%:$val%\'`
+	eval sed -i $sed_cmd /etc/passwd
+	return
+fi
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Users.User.{i}.Username" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local sed_cmd
+	sed_cmd=`echo -n \'$num; echo p\'`
+	local orig=`eval sed -n $sed_cmd /etc/passwd | awk -F ':' '{ print $1 }'`
+	sed_cmd=`echo -n \'$num; echo s%$orig:%$value:%\'`
+	eval sed -i $sed_cmd /etc/passwd
+	return
+fi
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Users.User.{i}.Password" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local sed_cmd
+	sed_cmd=`echo -n \'$num; echo p\'`
+	local orig=`eval sed -n $sed_cmd /etc/shadow | awk -F ':' '{ print $2 }'`
+	sed_cmd=`echo -n \'$num; echo s%:$orig:%:$value:%\'`
+	eval sed -i $sed_cmd /etc/shadow
+	return
+fi
+
+# TODO: Device.Users.User.{i}.Language (why? look at the get value function for this parameter)
+}
+
+get_device_users_name() { return $E_INVALID_PARAMETER_NAME; }
+
+get_device_users_notification() { return $E_INVALID_PARAMETER_NAME; }
+
+set_device_users() { return $E_INVALID_PARAMETER_NAME; }
+
+set_device_users_notification() { return $E_INVALID_PARAMETER_NAME; }
+
+build_instances_device_users() { return 0; }
+
+add_object_device_users() { return $E_INVALID_PARAMETER_NAME; }
+
+delete_object_device_users() { return $E_INVALID_PARAMETER_NAME; }

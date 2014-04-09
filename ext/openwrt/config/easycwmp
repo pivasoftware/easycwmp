@@ -1,0 +1,43 @@
+# easycwmp uci configuration
+
+config local
+	option interface eth0
+	option port 7547
+	option ubus_socket /var/run/ubus.sock
+	option date_format %FT%T%z
+	option username easycwmp
+	option password easycwmp
+
+config acs
+	option scheme http
+	option username easycwmp
+	option password easycwmp
+	option hostname  192.168.1.110 
+	option port  8080 
+	option path  /openacs/acs 
+	option parameter_key ''
+	option periodic_enable '1'
+	option periodic_interval '100'
+
+config device
+	option manufacturer easycwmp
+	option oui FFFFFF
+	option product_class easycwmp
+	option serial_number FFFFFF123456
+	option hardware_version example_hw_version
+	option software_version example_sw_version
+
+config scripts
+	# load OpenWrt generic network functions
+	list location /lib/functions/network.sh
+	# load easycwmp common functions
+	list location /usr/share/easycwmp/functions/common
+	# easycwmp specific functions
+	list location /usr/share/easycwmp/functions/device_info
+	list function device_info
+	list location /usr/share/easycwmp/functions/lan_device
+	list function lan_device
+	list location /usr/share/easycwmp/functions/management_server
+	list function management_server
+	list location /usr/share/easycwmp/functions/wan_device
+	list function wan_device

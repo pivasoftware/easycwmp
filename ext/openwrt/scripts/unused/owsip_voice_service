@@ -1,0 +1,262 @@
+#!/bin/sh
+# Copyright (C) 2012 Luka Perkov <freecwmp@lukaperkov.net>
+
+# OPTIONAL: InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.ProxyServer
+# OPTIONAL: InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.ProxyServerPort
+# OPTIONAL: InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.ProxyServerTransport
+# OPTIONAL: InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.RegistrarServer
+# OPTIONAL: InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.RegistrarServerPort
+# OPTIONAL: InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.RegistrarServerTransport
+# OPTIONAL: InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.UserAgentDomain
+# OPTIONAL: InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.UserAgentTransport
+# OPTIONAL: InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.OutbandProxy
+# OPTIONAL: InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.OutbandProxyPort
+
+get_line_enable() {
+local num="$1"
+local val=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get telephony.@account[$num].disabled 2> /dev/null`
+let num=$num+1
+if [ -n "$val" -a "$val" != "0" -o "$val" = "1" ]; then
+	val="Disabled"
+else
+	val="Enabled"
+fi
+easycwmp_output "InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.$num.Enable" "$val"
+}
+
+set_line_enable() {
+local num="$1"
+local val="$2"
+if [ "$val" = "Enabled" ]; then
+	val="0"
+else
+	val="1"
+fi
+delay_service_restart_in_apply_service "telephony" "45"
+/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} set telephony.@account[$num].disabled="$val"
+}
+
+get_line_sip_username() {
+local num="$1"
+local val=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get telephony.@account[$num].username 2> /dev/null`
+let num=$num+1
+easycwmp_output "InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.$num.SIP.AuthUserName" "$val"
+}
+
+set_line_sip_username() {
+local num="$1"
+local val="$2"
+/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} set telephony.@account[$num].username="$val"
+}
+
+get_line_sip_password() {
+local num="$1"
+local val=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get telephony.@account[$num].password 2> /dev/null`
+let num=$num+1
+easycwmp_output "InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.$num.SIP.AuthPassword" "$val"
+}
+
+set_line_sip_password() {
+local num="$1"
+local val="$2"
+/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} set telephony.@account[$num].password="$val"
+}
+
+get_line_sip_uri() {
+local num="$1"
+local val=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get telephony.@account[$num].realm 2> /dev/null`
+let num=$num+1
+easycwmp_output "InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.$num.SIP.URI" "$val"
+}
+
+set_line_sip_uri() {
+local num="$1"
+local val="$2"
+/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} set telephony.@account[$num].realm="$val"
+}
+
+get_voice_service() {
+case "$1" in
+	InternetGatewayDevice.)
+	get_line_enable 0
+	get_line_enable 1
+	get_line_sip_username 0
+	get_line_sip_username 1
+	get_line_sip_password 0
+	get_line_sip_password 1
+	get_line_sip_uri 0
+	get_line_sip_uri 1
+	;;
+	InternetGatewayDevice.Services.)
+	get_line_enable 0
+	get_line_enable 1
+	get_line_sip_username 0
+	get_line_sip_username 1
+	get_line_sip_password 0
+	get_line_sip_password 1
+	get_line_sip_uri 0
+	get_line_sip_uri 1
+	;;
+	InternetGatewayDevice.Services.VoiceService.)
+	get_line_enable 0
+	get_line_enable 1
+	get_line_sip_username 0
+	get_line_sip_username 1
+	get_line_sip_password 0
+	get_line_sip_password 1
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.)
+	get_line_enable 0
+	get_line_enable 1
+	get_line_sip_username 0
+	get_line_sip_username 1
+	get_line_sip_password 0
+	get_line_sip_password 1
+	get_line_sip_uri 0
+	get_line_sip_uri 1
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.)
+	get_line_enable 0
+	get_line_enable 1
+	get_line_sip_username 0
+	get_line_sip_username 1
+	get_line_sip_password 0
+	get_line_sip_password 1
+	get_line_sip_uri 0
+	get_line_sip_uri 1
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.)
+	get_line_enable 0
+	get_line_enable 1
+	get_line_sip_username 0
+	get_line_sip_username 1
+	get_line_sip_password 0
+	get_line_sip_password 1
+	get_line_sip_uri 0
+	get_line_sip_uri 1
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.)
+	get_line_enable 0
+	get_line_enable 1
+	get_line_sip_username 0
+	get_line_sip_username 1
+	get_line_sip_password 0
+	get_line_sip_password 1
+	get_line_sip_uri 0
+	get_line_sip_uri 1
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.ProxyServer)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.ProxyServerTransport)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.RegistrarServer)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.RegistrarServerPort)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.RegistrarServerTransport)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.UserAgentDomain)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.UserAgentTransport)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.OutbandProxy)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.OutbandProxyPort)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.)
+	get_line_enable 0
+	get_line_enable 1
+	get_line_sip_username 0
+	get_line_sip_username 1
+	get_line_sip_password 0
+	get_line_sip_password 1
+	get_line_sip_uri 0
+	get_line_sip_uri 1
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.1.)
+	get_line_enable 0
+	get_line_sip_username 0
+	get_line_sip_password 0
+	get_line_sip_uri 0
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.1.Enable)
+	get_line_enable 0
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.1.SIP.AuthUserName)
+	get_line_sip_username 0
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.1.SIP.AuthPassword)
+	get_line_sip_password 0
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.1.SIP.URI)
+	get_line_sip_uri 0
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.2.)
+	get_line_sip_username 1
+	get_line_sip_password 1
+	get_line_sip_uri 1
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.2.Enable)
+	get_line_enable 1
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.2.SIP.AuthUserName)
+	get_line_sip_username 1
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.2.SIP.AuthPassword)
+	get_line_sip_password 1
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.2.SIP.URI)
+	get_line_sip_uri 1
+	;;
+esac
+}
+
+set_voice_service() {
+case "$1" in
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.ProxyServer)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.ProxyServerPort)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.ProxyServerTransport)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.RegistrarServer)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.RegistrarServerPort)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.RegistrarServerTransport)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.UserAgentDomain)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.UserAgentTransport)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.OutbandProxy)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.SIP.OutbandProxyPort)
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.1.Enable)
+	set_line_enable 0 "$2"
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.1.SIP.AuthUserName)
+	set_line_sip_username 0 "$2"
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.1.SIP.AuthPassword)
+	set_line_sip_password 0 "$2"
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.1.SIP.URI)
+	set_line_sip_uri 0 "$2"
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.2.Enable)
+	set_line_enable 1 "$2"
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.2.SIP.AuthUserName)
+	set_line_sip_username 1 "$2"
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.2.SIP.AuthPassword)
+	set_line_sip_password 1 "$2"
+	;;
+	InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.1.Line.2.SIP.URI)
+	set_line_sip_uri 1 "$2"
+	;;
+esac
+/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} commit
+}

@@ -1,0 +1,42 @@
+#!/bin/sh
+# Copyright (C) 2012 Luka Perkov <freecwmp@lukaperkov.net>
+
+get_misc_cpu_usage() {
+local val=`uptime | awk -F'average: ' '{ print $2 }' | awk -F',' '{ print $1 }' | awk -F'.' '{ print $2 }'`
+easycwmp_output "Device.DeviceInfo.ProcessStatus.CPUUsage" "$val"
+}
+
+get_misc_process_number() {
+local val=`ps | grep -v COMMAND | wc -l`
+local type="xsd:unsignedInt"
+easycwmp_output "Device.DeviceInfo.ProcessStatus.ProcessNumberOfEntries" "$val" "" "$type"
+}
+
+# TODO: When getting Device. as parameter name we should return all parameter path belong to this script
+get_misc() {
+case "$1" in
+	Device.DeviceInfo.ProcessStatus.CPUUsage)
+	get_misc_cpu_usage
+	return 0
+	;;
+	Device.DeviceInfo.ProcessStatus.ProcessNumberOfEntries)
+	get_misc_process_number
+	return 0
+	;;
+esac
+return $E_INVALID_PARAMETER_NAME
+}
+
+get_misc_name () { return $E_INVALID_PARAMETER_NAME; }
+
+get_misc_notification () { return $E_INVALID_PARAMETER_NAME; }
+
+set_misc() { return $E_INVALID_PARAMETER_NAME; }
+
+set_misc_notification () { return $E_INVALID_PARAMETER_NAME; }
+
+build_instances_misc() { return 0; }
+
+add_object_misc() { return $E_INVALID_PARAMETER_NAME; }
+
+delete_object_misc() { return $E_INVALID_PARAMETER_NAME; }

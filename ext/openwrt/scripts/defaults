@@ -1,0 +1,10 @@
+#!/bin/sh
+# Copyright (C) 2011-2012 Luka Perkov <freecwmp@lukaperkov.net>
+
+# set these to appropriate values and remove comment if you want to use them
+
+#default_management_server_acs_hostname=""
+#default_management_server_connection_request_url=""
+#default_wan_device_mng_interface_ip=""
+#default_wan_device_mng_interface_mac=""
+#default_device_hosts_dnsmasq_leases_file=""

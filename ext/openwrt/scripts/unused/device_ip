@@ -1,0 +1,139 @@
+#!/bin/sh
+# Copyright (C) 2012 Luka Perkov <freecwmp@lukaperkov.net>
+
+# TODO: When getting Device. as parameter name we should return all parameter path belong to this script
+get_device_ip() {
+local parameter="$1"
+
+case "$parameter" in
+	Device.IP.IPv4Capable)
+	easycwmp_output "$parameter" "1"
+	return
+	;;
+	Device.IP.IPv4Status)
+	easycwmp_output "$parameter" "Enabled"
+	return
+	;;
+	Device.IP.IPv6Capable)
+	easycwmp_output "$parameter" "0"
+	return
+	;;
+	Device.IP.IPv6Status)
+	easycwmp_output "$parameter" "Disabled"
+	return
+	;;
+	Device.IP.InterfaceNumberOfEntries)
+	local val=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} show network 2> /dev/null | grep '=interface$' | wc -l`
+	easycwmp_output "$parameter" "$val"
+	return
+	;;
+	Device.IP.ActivePortNumberOfEntries)
+	easycwmp_output "$parameter" "0"
+	return
+	;;
+esac
+
+local _static=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} show network 2> /dev/null | grep '=route$' | wc -l`
+
+local rc
+local num
+
+easycwmp_parse_formated_parameter "$parameter" "Device.IP.Interface.{i}.Enable" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	let local uci_num=$num-1
+	val=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get network.@interface[$uci_num].proto 2> /dev/null`
+	if [ "x$val" == "xnone" ]; then
+		val=0
+	else
+		val=1
+	fi
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+# TODO: Device.IP.Interface.{i}.IPv4Enable
+# TODO: Device.IP.Interface.{i}.IPv6Enable
+# TODO: Device.IP.Interface.{i}.ULAEnable
+
+easycwmp_parse_formated_parameter "$parameter" "Device.IP.Interface.{i}.Status" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	local _interface
+	local _status
+	let local uci_num=$num-1
+	_interface=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} show network.@interface[$uci_num] 2> /dev/null | awk -F"[.,=]" '/=interface$/ {print $2}'`
+	_status=`ubus -S call network.interface.$_interface status 2> /dev/null`
+	json_load "$_status" 2> /dev/null
+	json_get_var val up || return
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+# TODO: Device.IP.Interface.{i}.Alias (alias support does not exist)
+
+easycwmp_parse_formated_parameter "$parameter" "Device.IP.Interface.{i}.Name" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	local _interface
+	local _status
+	let local uci_num=$num-1
+	_interface=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} show network.@interface[$uci_num] 2> /dev/null | awk -F"[.,=]" '/=interface$/ {print $2}'`
+	_status=`ubus -S call network.interface.$_interface status 2> /dev/null`
+	json_load "$_status"
+	json_get_var val device || return
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+easycwmp_parse_formated_parameter "$parameter" "Device.IP.Interface.{i}.LastChange" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	local _interface
+	local _status
+	let local uci_num=$num-1
+	_interface=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} show network.@interface[$uci_num] 2> /dev/null | awk -F"[.,=]" '/=interface$/ {print $2}'`
+	_status=`ubus -S call network.interface.$_interface status 2> /dev/null`
+	json_load "$_status"
+	json_get_var val uptime || return
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+# TODO: Device.IP.Interface.{i}.LowerLayers
+# TODO: Device.IP.Interface.{i}.Router
+# TODO: Device.IP.Interface.{i}.Reset
+# TODO: Device.IP.Interface.{i}.MaxMTUSize
+# TODO: Device.IP.Interface.{i}.Type
+# TODO: Device.IP.Interface.{i}.Loopback
+# TODO: Device.IP.Interface.{i}.IPv4AddressNumberOfEntries
+# TODO: Device.IP.Interface.{i}.IPv6AddressNumberOfEntries
+# TODO: Device.IP.Interface.{i}.IPv6PrefixNumberOfEntries
+# TODO: Device.IP.Interface.{i}.AutoIPEnable
+# TODO: Device.IP.Interface.{i}.IPv4Address.{i}.Enable
+# TODO: Device.IP.Interface.{i}.IPv4Address.{i}.Status
+# TODO: Device.IP.Interface.{i}.IPv4Address.{i}.Alias
+# TODO: Device.IP.Interface.{i}.IPv4Address.{i}.IPAddress
+# TODO: Device.IP.Interface.{i}.IPv4Address.{i}.SubnetMask
+# TODO: Device.IP.Interface.{i}.IPv4Address.{i}.AddressingType
+# TODO: Device.IP.Interface.{i}.IPv6Address.{i}.Status
+# TODO: Device.IP.Interface.{i}.IPv6Address.{i}.Status
+# TODO: Device.IP.Interface.{i}.IPv6Prefix.{i}.Status
+# TODO: Device.IP.Interface.{i}.Stats.
+return $E_INVALID_PARAMETER_NAME;
+}
+
+get_device_ip_name() { return $E_INVALID_PARAMETER_NAME; }
+
+get_device_ip_notification() { return $E_INVALID_PARAMETER_NAME; }
+
+set_device_ip() { return $E_INVALID_PARAMETER_NAME; }
+
+set_device_ip_notification() { return $E_INVALID_PARAMETER_NAME; }
+
+build_instances_device_ip() { return 0; }
+
+add_object_device_ip() { return $E_INVALID_PARAMETER_NAME; }
+
+delete_object_device_ip() { return $E_INVALID_PARAMETER_NAME; }
+

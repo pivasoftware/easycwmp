@@ -1,0 +1,205 @@
+#!/bin/sh
+# Copyright (C) 2012 Luka Perkov <freecwmp@lukaperkov.net>
+
+get_device_hosts_number_of_leases() {
+	local _static=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} show dhcp 2> /dev/null | fgrep 'dhcp.' | fgrep '.mac=' | wc -l`
+	local _dynamic=`wc -l /var/dhcp.leases  | awk '{ print $1 }'`
+	eval "export -- \"$2=\"\"$_static\"\"\""
+	eval "export -- \"$3=\"\"$_dynamic\"\"\""
+}
+
+get_device_hosts_ip_address() {
+	local _leases_file=$1
+	local _num=$2
+	local _num_static_leases=$3
+	local _num_dynamic_leases=$4
+	local _ip
+	if [ $_num -le $_num_static_leases ]; then
+		let local _uci_num=$_num-1
+		_ip=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get dhcp.@host[$_uci_num].ip 2> /dev/null`
+	fi
+	let _num=$_num-$_num_static_leases
+	if [ $_num -gt 0 -a $_num -le $_num_dynamic_leases ]; then
+		local _sed_cmd=`echo -n \'$_num; echo p\'`
+		_ip=`eval sed -n $_sed_cmd $_leases_file | awk '{ print $3 }'`
+	fi
+	eval "export -- \"$5=\"\"$_ip\"\"\""
+}
+# TODO: When getting Device. as parameter name we should return all parameter path belong to this script
+get_device_hosts() {
+local leases_file
+if [ -z "$default_dnsmasq_leases_file" ]; then
+        leases_file="/var/dhcp.leases"
+else
+        leases_file=$default_dnsmasq_leases_file
+fi
+
+local num_static_leases
+local num_dynamic_leases
+get_device_hosts_number_of_leases "$leases_file" "num_static_leases" "num_dynamic_leases"
+
+# internal TR-069 to TR-181 parameter transformation
+local parameter=`echo -n $1 | sed "s/InternetGatewayDevice\.LANDevice\.1\./Device\./g"`
+
+case "$parameter" in
+	Device.Hosts.HostNumberOfEntries)
+	let local val=$num_static_leases+$num_dynamic_leases
+	easycwmp_output "$parameter" "$val"
+	return
+	;;
+esac
+
+local rc
+local num
+
+# TODO: Device.Hosts.Host.{i}.Alias (alias support does not exist)
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Hosts.Host.{i}.PhysAddress" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	if [ $num -le $num_static_leases ]; then
+		let local uci_num=$num-1
+		val=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get dhcp.@host[$uci_num].mac 2> /dev/null`
+	fi
+	let num=$num-$num_static_leases
+	if [ $num -gt 0 -a $num -le $num_dynamic_leases ]; then
+		local sed_cmd=`echo -n \'$num; echo p\'`
+		val=`eval sed -n $sed_cmd $leases_file | awk '{ print $2 }'`
+	fi
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Hosts.Host.{i}.IPAddress" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	get_device_hosts_ip_address "$leases_file" "$num" "$num_static_leases" "$num_dynamic_leases" "val"
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Hosts.Host.{i}.AddressSource" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	if [ $num -le $num_static_leases ]; then
+		val="Static"
+	fi
+	let num=$num-$num_static_leases
+	if [ $num -gt 0 -a $num -le $num_dynamic_leases ]; then
+		val="DHCP"
+	fi
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+# TODO: Device.Hosts.Host.{i}.DHCPClient (easycwmp needs to support other parameters first)
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Hosts.Host.{i}.LeaseTimeRemaining" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	if [ $num -le $num_static_leases ]; then
+		val="-1"
+	fi
+	let num=$num-$num_static_leases
+	if [ $num -gt 0 -a $num -le $num_dynamic_leases ]; then
+		local sed_cmd=`echo -n \'$num; echo p\'`
+		local t1=`eval sed -n $sed_cmd $leases_file | awk '{ print $1 }'`
+		local t2=`date +%s`
+		let val=$t1-$t2
+	fi
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+# TODO: Device.Hosts.Host.{i}.AssociatedDevice (easycwmp needs to support other parameters first)
+# TODO: Device.Hosts.Host.{i}.Layer1Interface (easycwmp needs to support other parameters first)
+# TODO: Device.Hosts.Host.{i}.Layer3Interface (easycwmp needs to support other parameters first)
+# TODO: Device.Hosts.Host.{i}.VendorClassID (DHCP option 60 not supported with dnsmasq)
+# TODO: Device.Hosts.Host.{i}.ClientID (DHCP option 61 not supported with dnsmasq)
+# TODO: Device.Hosts.Host.{i}.UserClassID (DHCP option 77 not supported with dnsmasq)
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Hosts.Host.{i}.HostName" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	if [ $num -le $num_static_leases ]; then
+		let local uci_num=$num-1
+		val=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get dhcp.@host[$uci_num].name 2> /dev/null`
+	fi
+	let num=$num-$num_static_leases
+	if [ $num -gt 0 -a $num -le $num_dynamic_leases ]; then
+		local sed_cmd=`echo -n \'$num; echo p\'`
+		val=`eval sed -n $sed_cmd $leases_file | awk '{ print $4 }'`
+		if [ "x$val" == "x*" ]; then val=""; fi
+	fi
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+# TODO: Device.Hosts.Host.{i}.ClientID (DHCP option 61 not supported with dnsmasq)
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Hosts.Host.{i}.Active" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	local ip
+	get_device_hosts_ip_address "$leases_file" "$num" "$num_static_leases" "$num_dynamic_leases" "ip"
+	val=`ping -c 1 $ip 2>&1 > /dev/null ; echo $?`
+	let val=!$val
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+# TODO: we support only one IPv4 address per host
+easycwmp_parse_formated_parameter "$parameter" "Device.Hosts.Host.{i}.IPv4AddressNumberOfEntries" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	let local n=$num_static_leases+$num_dynamic_leases
+	if [ $num -le $n ]; then
+		val=1
+	fi
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+# TODO: we do not support IPv6 address
+easycwmp_parse_formated_parameter "$parameter" "Device.Hosts.Host.{i}.IPv6AddressNumberOfEntries" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	let local n=$num_static_leases+$num_dynamic_leases
+	if [ $num -le $n ]; then
+		val=0
+	fi
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+# TODO: we support only one IPv4 address per host
+easycwmp_parse_formated_parameter "$parameter" "Device.Hosts.Host.{i}.IPv4Address.{i}.IPAddress" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	local num1=`echo $num | awk '{ print $1 }'`
+	local num2=`echo $num | awk '{ print $2 }'`
+	let local n=$num_static_leases+$num_dynamic_leases
+	if [ $num2 -eq 1 ]; then
+		get_device_hosts_ip_address "$leases_file" "$num1" "$num_static_leases" "$num_dynamic_leases" "val"
+	fi
+	easycwmp_value_output "$parameter" "$val"
+	return
+fi
+
+# TODO: Device.Hosts.Host.{i}.IPv6Address.{i}.IPAddress (no IPv6 support yet)
+return $E_INVALID_PARAMETER_NAME
+}
+
+get_device_hosts_name() { return $E_INVALID_PARAMETER_NAME; }
+
+get_device_hosts_notification() { return $E_INVALID_PARAMETER_NAME; }
+
+set_device_hosts() { return $E_INVALID_PARAMETER_NAME; }
+
+set_device_hosts_notification() { return $E_INVALID_PARAMETER_NAME; }
+
+build_instances_device_hosts() { return 0; }
+
+add_object_device_hosts() { return $E_INVALID_PARAMETER_NAME; }
+
+delete_object_device_hosts() { return $E_INVALID_PARAMETER_NAME; }

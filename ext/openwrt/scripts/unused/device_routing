@@ -1,0 +1,368 @@
+#!/bin/sh
+# Copyright (C) 2012 Luka Perkov <freecwmp@lukaperkov.net>
+
+# TODO: LIMITATIONS: we only handle one device router at the moment
+
+# ordering of routes:
+#  1) inactive routes found in uci network config file
+#  2) active routes found in uci network config file
+#  3) active routes but not found in uci network config file
+
+EASYCWMP_DEVICE_ROUTES="/tmp/easycwmp_routes"
+EASYCWMP_DEVICE_ROUTES_STATIC="/tmp/easycwmp_routes_static"
+EASYCWMP_DEVICE_ROUTES_DYNAMIC="/tmp/easycwmp_routes_dynamic"
+
+get_device_routing_ipv4_check_route() {
+	local __uci_target=$1
+	local __uci_gateway=$2
+	local __uci_netmask=$3
+
+	local __active=0
+
+	# TODO: remove this file
+	echo -n > $EASYCWMP_DEVICE_ROUTES_DYNAMIC
+
+	local __route_target
+	local __route_gateway
+	local __route_netmask
+	local line
+	while read line
+	do
+		__route_target=`echo -n $line | awk '{ print $1 }'`
+		__route_gateway=`echo -n $line | awk '{ print $2 }'`
+		__route_netmask=`echo -n $line | awk '{ print $3 }'`
+		if [ "x$__uci_target" != "x$__route_target" ]; then
+			echo $line >> $EASYCWMP_DEVICE_ROUTES_DYNAMIC
+			continue
+		fi
+		if [ "x$__uci_gateway" != "x$__route_gateway" ]; then
+			echo $line >> $EASYCWMP_DEVICE_ROUTES_DYNAMIC
+			continue
+		fi
+		if [ "x$__uci_netmask" != "x$__route_netmask" ]; then
+			echo $line >> $EASYCWMP_DEVICE_ROUTES_DYNAMIC
+			continue
+		fi
+		echo $line >> $EASYCWMP_DEVICE_ROUTES_STATIC
+		__active=1
+	done < $EASYCWMP_DEVICE_ROUTES
+
+	eval "export -- \"$4=\"\"$__active\"\"\""
+}
+
+get_device_routing_ipv4_ordering_information() {
+	local _static=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} show network 2> /dev/null | grep '=route$' | wc -l`
+	local _active=`cat $EASYCWMP_DEVICE_ROUTES | wc -l`
+	local _inactive=0
+
+	local _uci_target
+	local _uci_gateway
+	local _uci_netmask
+	local _route_active
+
+	local i
+	let local _count=$_static-1
+	for i in `seq 0 $_count`
+	do
+		_uci_target=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get network.@route[$i].target 2> /dev/null`
+		_uci_gateway=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get network.@route[$i].gateway 2> /dev/null`
+		_uci_netmask=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get network.@route[$i].netmask 2> /dev/null`
+		get_device_routing_ipv4_check_route "$_uci_target" "$_uci_gateway" "$_uci_netmask" "_route_active"
+		if [ $_route_active -ne 1 ]; then
+			let _inactive=$_inactive+1
+		fi
+	done
+
+	let local _total=$_active+$_inactive
+	eval "export -- \"$1=\"\"$_total\"\"\""
+	eval "export -- \"$2=\"\"$_active\"\"\""
+	eval "export -- \"$3=\"\"$_inactive\"\"\""
+	eval "export -- \"$4=\"\"$_static\"\"\""
+}
+
+# TODO: When getting Device. as parameter name we should return all parameter path belong to this script
+get_device_routing() {
+local parameter=$1
+
+case "$parameter" in
+	Device.Routing.RouterNumberOfEntries)
+	easycwmp_output "$parameter" "1"
+	return
+	;;
+esac
+
+local rc
+local num
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Routing.Router.{i}.Enable" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	if [ $num -eq 1 ]; then
+		val="1"
+	else
+		val="0"
+	fi
+	easycwmp_output "$parameter" "$val"
+	return
+fi
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Routing.Router.{i}.Status" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	if [ $num -eq 1 ]; then
+		val="Enabled"
+	else
+		val="Disabled"
+	fi
+	easycwmp_output "$parameter" "$val"
+	return
+fi
+
+# TODO: Device.Routing.Router.{i}.Alias (alias support does not exist)
+
+# TODO: remove this file
+route -n | grep -v '^Kernel ' | grep -v '^Destination ' > $EASYCWMP_DEVICE_ROUTES
+
+local total
+local active
+local inactive
+local static
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Routing.Router.{i}.IPv4ForwardingNumberOfEntries" "rc" "num"
+if [ $rc -eq 0 ]; then
+	if [ "x$num" == "x1" ]; then
+		get_device_routing_ipv4_ordering_information "total" "active" "inactive" "static"
+	else
+		return
+	fi
+	easycwmp_output "$parameter" "$total"
+	return
+fi
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Routing.Router.{i}.IPv6ForwardingNumberOfEntries" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	if [ $num -eq 1 ]; then
+		val=0
+	else
+		return
+	fi
+	easycwmp_output "$parameter" "$val"
+	return
+fi
+
+# TODO: Device.Routing.Router.{i}.IPv4Forwarding.{i}.Enable
+
+# TODO: routes can not be disabled, they should be disabled by default
+easycwmp_parse_formated_parameter "$parameter" "Device.Routing.Router.{i}.IPv4Forwarding.{i}.Status" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local num1=`echo $num | awk '{ print $1 }'`
+	local num2=`echo $num | awk '{ print $2 }'`
+	if [ $num1 -eq 1 ]; then
+		get_device_routing_ipv4_ordering_information "total" "active" "inactive" "static"
+		if [ $num2 -le 0 ]; then
+			return
+		fi
+		if [ $num2 -gt $total ]; then
+			return
+		fi
+		if [ $num2 -gt $static ]; then
+			easycwmp_output "$parameter" "Enabled"
+			return
+		fi
+		if [ $num2 -le $inactive ]; then
+			easycwmp_output "$parameter" "Error: not active but enabled"
+			return
+		fi
+		if [ $num2 -le $static ]; then
+			easycwmp_output "$parameter" "Enabled"
+			return
+		fi
+	else
+		return
+	fi
+fi
+
+# TODO: Device.Routing.Router.{i}.IPv4Forwarding.{i}.Alias (alias support does not exist)
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Routing.Router.{i}.IPv4Forwarding.{i}.StaticRoute" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local num1=`echo $num | awk '{ print $1 }'`
+	local num2=`echo $num | awk '{ print $2 }'`
+	if [ $num1 -eq 1 ]; then
+		get_device_routing_ipv4_ordering_information "total" "active" "inactive" "static"
+		if [ $num2 -le 0 ]; then
+			return
+		fi
+		if [ $num2 -gt $total ]; then
+			return
+		fi
+		if [ $num2 -gt $static ]; then
+			easycwmp_output "$parameter" "0"
+			return
+		fi
+		if [ $num2 -le $static ]; then
+			easycwmp_output "$parameter" "1"
+			return
+		fi
+	else
+		return
+	fi
+fi
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Routing.Router.{i}.IPv4Forwarding.{i}.DestIPAddress" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local target
+	local num1=`echo $num | awk '{ print $1 }'`
+	local num2=`echo $num | awk '{ print $2 }'`
+	if [ $num1 -eq 1 ]; then
+		get_device_routing_ipv4_ordering_information "total" "active" "inactive" "static"
+		if [ $num2 -le 0 ]; then
+			return
+		fi
+		if [ $num2 -gt $total ]; then
+			return
+		fi
+		if [ $num2 -gt $static ]; then
+			let local _num=$num2-$static
+			local _sed_cmd=`echo -n \'$_num; echo p\'`
+			target=`eval sed -n $_sed_cmd $EASYCWMP_DEVICE_ROUTES_DYNAMIC | awk '{ print $1 }'`
+		elif [ $num2 -le $static ]; then
+			let local i=$static-$num2
+			target=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get network.@route[$i].target 2> /dev/null`
+		fi
+		easycwmp_output "$parameter" "$target"
+		return
+	else
+		return
+	fi
+fi
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Routing.Router.{i}.IPv4Forwarding.{i}.DestSubnetMask" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local netmask
+	local num1=`echo $num | awk '{ print $1 }'`
+	local num2=`echo $num | awk '{ print $2 }'`
+	if [ $num1 -eq 1 ]; then
+		get_device_routing_ipv4_ordering_information "total" "active" "inactive" "static"
+		if [ $num2 -le 0 ]; then
+			return
+		fi
+		if [ $num2 -gt $total ]; then
+			return
+		fi
+		if [ $num2 -gt $static ]; then
+			let local _num=$num2-$static
+			local _sed_cmd=`echo -n \'$_num; echo p\'`
+			netmask=`eval sed -n $_sed_cmd $EASYCWMP_DEVICE_ROUTES_DYNAMIC | awk '{ print $3 }'`
+		elif [ $num2 -le $static ]; then
+			let local i=$static-$num2
+			netmask=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get network.@route[$i].netmask 2> /dev/null`
+		fi
+		easycwmp_output "$parameter" "$netmask"
+		return
+	else
+		return
+	fi
+fi
+
+# TODO: Device.Routing.Router.{i}.IPv4Forwarding.{i}.ForwardingPolicy
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Routing.Router.{i}.IPv4Forwarding.{i}.GatewayIPAddress" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local gateway
+	local num1=`echo $num | awk '{ print $1 }'`
+	local num2=`echo $num | awk '{ print $2 }'`
+	if [ $num1 -eq 1 ]; then
+		get_device_routing_ipv4_ordering_information "total" "active" "inactive" "static"
+		if [ $num2 -le 0 ]; then
+			return
+		fi
+		if [ $num2 -gt $total ]; then
+			return
+		fi
+		if [ $num2 -gt $static ]; then
+			let local _num=$num2-$static
+			local _sed_cmd=`echo -n \'$_num; echo p\'`
+			gateway=`eval sed -n $_sed_cmd $EASYCWMP_DEVICE_ROUTES_DYNAMIC | awk '{ print $2 }'`
+		elif [ $num2 -le $static ]; then
+			let local i=$static-$num2
+			gateway=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get network.@route[$i].gateway 2> /dev/null`
+		fi
+		easycwmp_output "$parameter" "$gateway"
+		return
+	else
+		return
+	fi
+fi
+
+# TODO: Device.Routing.Router.{i}.IPv4Forwarding.{i}.Interface
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Routing.Router.{i}.IPv4Forwarding.{i}.Origin" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local val
+	local num1=`echo $num | awk '{ print $1 }'`
+	local num2=`echo $num | awk '{ print $2 }'`
+	if [ $num1 -eq 1 ]; then
+		get_device_routing_ipv4_ordering_information "total" "active" "inactive" "static"
+		if [ $num2 -le 0 ]; then
+			return
+		fi
+		if [ $num2 -gt $total ]; then
+			return
+		fi
+		if [ $num2 -gt $static ]; then
+			val="Unknown"
+		elif [ $num2 -le $static ]; then
+			val="Static"
+		fi
+		easycwmp_output "$parameter" "$val"
+		return
+	else
+		return
+	fi
+fi
+
+easycwmp_parse_formated_parameter "$parameter" "Device.Routing.Router.{i}.IPv4Forwarding.{i}.ForwardingMetric" "rc" "num"
+if [ $rc -eq 0 ]; then
+	local metric
+	local num1=`echo $num | awk '{ print $1 }'`
+	local num2=`echo $num | awk '{ print $2 }'`
+	if [ $num1 -eq 1 ]; then
+		get_device_routing_ipv4_ordering_information "total" "active" "inactive" "static"
+		if [ $num2 -le 0 ]; then
+			return
+		fi
+		if [ $num2 -gt $total ]; then
+			return
+		fi
+		if [ $num2 -gt $static ]; then
+			let local _num=$num2-$static
+			local _sed_cmd=`echo -n \'$_num; echo p\'`
+			metric=`eval sed -n $_sed_cmd $EASYCWMP_DEVICE_ROUTES_DYNAMIC | awk '{ print $5 }'`
+		elif [ $num2 -le $static ]; then
+			let local i=$static-$num2
+			metric=`/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get network.@route[$i].metric 2> /dev/null`
+		fi
+		easycwmp_output "$parameter" "$metric"
+		return
+	else
+		return
+	fi
+fi
+return $E_INVALID_PARAMETER_NAME
+}
+
+get_device_routing_name() { return $E_INVALID_PARAMETER_NAME; }
+
+get_device_routing_notification() { return $E_INVALID_PARAMETER_NAME; }
+
+set_device_routing() { return $E_INVALID_PARAMETER_NAME; }
+
+set_device_routing_notification() { return $E_INVALID_PARAMETER_NAME; }
+
+build_instances_device_routing() { return 0; }
+
+add_object_device_routing() { return $E_INVALID_PARAMETER_NAME; }
+
+delete_object_device_routing() { return $E_INVALID_PARAMETER_NAME; }
