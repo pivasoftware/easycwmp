@@ -189,21 +189,13 @@ static int xml_recreate_namespace(mxml_node_t *tree)
 		}
 
 		c = (char *) mxmlElementGetAttrName(b, xsd_url);
-		if (!c)
-			continue;
-		if (*(c + 5) == ':') {
+		if (c && (*(c + 5) == ':')) {
 			ns.xsd = strdup((c + 6));
-		} else {
-			continue;
 		}
 
 		c = (char *) mxmlElementGetAttrName(b, xsi_url);
-		if (!c)
-			continue;
-		if (*(c + 5) == ':') {
+		if (c && (*(c + 5) == ':')) {
 			ns.xsi = strdup((c + 6));
-		} else {
-			continue;
 		}
 
 		for (i = 0; cwmp_urls[i] != NULL; i++) {
