@@ -1,0 +1,12 @@
+EasyCwmp change log:
+====================
+
+* EasyCwmp-1.0.2 (date of 9th of september 2014)
+  - #00008 : avoid the launch of easycwmp twice 
+  - #00007 : Connection request causes problem
+
+* EasyCwmp-1.0.1 (date of 30th of May 2014)
+  - #00003 : remove checking of xsd and xsi namespaces. This check is not mandatory for all ACS messages according to the cwmp standard. This check causes a problem with Perl-CWMP ACS.
+
+* EasyCwmp-1.0 (date of 31th of March 2014)
+  - Initial release

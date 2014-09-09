@@ -5,15 +5,7 @@ EasyCwmp is a GPLv2 open source implementation of the TR069 cwmp standard. EasyC
 2.  EasyCwmp sources
 ====================
 
-EasyCwmp project:
-
- Lastest stable version: http://easycwmp.org/download/easycwmp-1.0.tar.gz
-
-EasyCwmp OpenWRT package:
-
- http://easycwmp.org/download/easycwmp-openwrt.tar.gz
-
- 
+ http://www.easycwmp.org/index.php/downloads
 
 3.  EasyCwmp dependencies
 =========================
@@ -250,9 +242,9 @@ Once the dependencies have been installed we can start compiling easycwmp.
 Get the sources:
 
 cd /opt/dev/
-wget http://easycwmp.org/download/easycwmp-1.0.tar.gz
-tar -xzvf easycwmp-1.0.tar.gz
-mv easycwmp-1.0 easycwmp
+wget http://easycwmp.org/download/easycwmp-{x}.{y}.{z}.tar.gz
+tar -xzvf easycwmp-{x}.{y}.{z}.tar.gz
+mv easycwmp-{x}.{y}.{z} easycwmp
 cd /opt/dev/easycwmp/
 
 Generate configuration files:

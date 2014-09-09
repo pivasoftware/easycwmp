@@ -21,8 +21,9 @@
 #include <arpa/inet.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
-
 #include <libubox/uloop.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "easycwmp.h"
 #include "config.h"
@@ -238,6 +239,11 @@ int main (int argc, char **argv)
 				exit(EXIT_FAILURE);
 		}
 	}
+	int fd = open("/var/run/easycwmp.pid", O_RDWR | O_CREAT);
+	if(fd == -1)
+		exit(EXIT_FAILURE);
+	if (flock(fd, LOCK_EX | LOCK_NB) == -1)
+		exit(EXIT_SUCCESS);
 
 	log_message(NAME, L_NOTICE, "daemon started\n");
 
@@ -301,6 +307,10 @@ int main (int argc, char **argv)
 			exit(EXIT_FAILURE);
 		}
 	}
+	char *buf = NULL;
+	asprintf(&buf, "%d", getpid());
+	write(fd, buf, strlen(buf));
+	free(buf);
 
 	log_message(NAME, L_NOTICE, "entering main loop\n");
 	uloop_run();
