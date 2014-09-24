@@ -124,6 +124,7 @@ static void xml_do_inform(struct uloop_timeout *timeout);
 const char *xml_format_cb(mxml_node_t *node, int pos);
 char *xml_get_value_with_whitespace(mxml_node_t *b);
 mxml_node_t *xml_create_generic_fault_message(mxml_node_t *body, int code);
+int xml_add_cwmpid(mxml_node_t *tree);
 
 #endif
 

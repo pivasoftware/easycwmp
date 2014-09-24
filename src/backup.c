@@ -210,6 +210,8 @@ int backup_extract_transfer_complete( mxml_node_t *node, char **msg_out, int *me
 	tree_m = mxmlLoadString(NULL, CWMP_TRANSFER_COMPLETE_MESSAGE, MXML_NO_CALLBACK);
 	if (!tree_m) goto error;
 
+	if(xml_add_cwmpid(tree_m)) goto error;
+
 	b = mxmlFindElement(node, node, "command_key", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 	n = mxmlFindElement(tree_m, tree_m, "CommandKey", NULL, NULL, MXML_DESCEND);

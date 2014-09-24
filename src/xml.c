@@ -463,8 +463,9 @@ int xml_prepare_inform_message(char **msg_out)
 	int counter = 0;
 
 	tree = mxmlLoadString(NULL, CWMP_INFORM_MESSAGE, MXML_NO_CALLBACK);
-
 	if (!tree) goto error;
+
+	if(xml_add_cwmpid(tree)) goto error;
 
 	b = mxmlFindElement(tree, tree, "RetryCount", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
@@ -608,8 +609,10 @@ int xml_prepare_get_rpc_methods_message(char **msg_out)
 	mxml_node_t *tree;
 
 	tree = mxmlLoadString(NULL, CWMP_GET_RPC_METHOD_MESSAGE, MXML_NO_CALLBACK);
-
 	if (!tree) return -1;
+
+	if(xml_add_cwmpid(tree)) return -1;
+
 	*msg_out = mxmlSaveAllocString(tree, xml_format_cb);
 
 	mxmlDelete(tree);
@@ -1767,3 +1770,15 @@ int xml_create_set_parameter_value_fault_message(mxml_node_t *body, int code)
 	return 0;
 }
 
+int xml_add_cwmpid(mxml_node_t *tree)
+{
+	mxml_node_t *b;
+	static unsigned int id = 0;
+	char buf[16];
+	b = mxmlFindElement(tree, tree, "cwmp:ID", NULL, NULL, MXML_DESCEND);
+	if (!b) return -1;
+	sprintf(buf, "%u", ++id);
+	b = mxmlNewText(b, 0, buf);
+	if (!b) return -1;
+	return 0;
+}
