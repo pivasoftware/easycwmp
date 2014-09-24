@@ -529,7 +529,7 @@ int xml_prepare_inform_message(char **msg_out)
 		if (!b) goto error;
 
 #ifdef ACS_MULTI
-		mxmlElementSetAttr(n, "xsi:type", external_parameter->type);
+		mxmlElementSetAttr(b, "xsi:type", external_parameter->type);
 #endif
 		b = mxmlNewText(b, 0, external_parameter->data ? external_parameter->data : "");
 		if (!b) goto error;
