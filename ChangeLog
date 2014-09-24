@@ -1,6 +1,10 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.0.3 (date of 24th of september 2014)
+  - #00011 :  Add cwmp id to the RPC ACS (Inform, GetRPCMethod, TransferComplete...)
+  - #00010 : XML parsing problem (fixed)
+
 * EasyCwmp-1.0.2 (date of 9th of september 2014)
   - #00008 : avoid the launch of easycwmp twice 
   - #00007 : Connection request causes problem
