@@ -208,6 +208,40 @@ case "$action" in
 esac
 }
 
+get_management_server_periodic_time() {
+local nl="$1"
+local val=""
+local type="xs:date"
+local parm="InternetGatewayDevice.ManagementServer.PeriodicInformTime"
+local permissions="1"
+case "$action" in
+	get_value)
+	val=`$UCI_GET easycwmp.@acs[0].periodic_time`
+	;;
+	get_name)
+	[ "$nl" = "1" ] && return $E_INVALID_ARGUMENTS
+	;;
+	get_notification)
+	easycwmp_get_parameter_notification "val" "$parm"
+	;;
+esac
+easycwmp_output "$parm" "$val" "$permissions" "$type"
+return 0
+}
+
+set_management_server_periodic_time() {
+local val=$1
+local parm="InternetGatewayDevice.ManagementServer.PeriodicInformTime"
+case "$action" in
+	set_value)
+	$UCI_SET easycwmp.@acs[0].periodic_time="$val"
+	easycwmp_config_load
+	;;
+	set_notification)
+	easycwmp_set_parameter_notification "$parm" "$val"
+	;;
+esac
+}
 get_management_server_connection_request_url() {
 local nl="$1"
 local val
@@ -535,6 +569,7 @@ case "$1" in
 	get_management_server_password "$2"
 	get_management_server_periodic_inform_enable "$2"
 	get_management_server_periodic_inform_interval "$2"
+	get_management_server_periodic_time "$2"
 	get_management_server_connection_request_url "$2"
 	get_management_server_connection_request_username "$2"
 	get_management_server_connection_request_password "$2"
@@ -553,6 +588,7 @@ case "$1" in
 	get_management_server_password 0
 	get_management_server_periodic_inform_enable 0
 	get_management_server_periodic_inform_interval 0
+	get_management_server_periodic_time 0
 	get_management_server_connection_request_url 0
 	get_management_server_connection_request_username 0
 	get_management_server_connection_request_password 0
@@ -582,6 +618,10 @@ case "$1" in
 	;;
 	InternetGatewayDevice.ManagementServer.PeriodicInformInterval)
 	get_management_server_periodic_inform_interval "$2"
+	return $?
+	;;
+	InternetGatewayDevice.ManagementServer.PeriodicInformTime)
+	get_management_server_periodic_time "$2"
 	return $?
 	;;
 	InternetGatewayDevice.ManagementServer.ConnectionRequestURL)
@@ -648,6 +688,10 @@ case "$1" in
 	;;
 	InternetGatewayDevice.ManagementServer.PeriodicInformInterval)
 	set_management_server_periodic_inform_interval "$2"
+	return 0
+	;;
+	InternetGatewayDevice.ManagementServer.PeriodicInformTime)
+	set_management_server_periodic_time "$2"
 	return 0
 	;;
 	InternetGatewayDevice.ManagementServer.ConnectionRequestURL)

@@ -31,6 +31,7 @@ struct acs {
 	char *path;
 	bool periodic_enable;
 	int  periodic_interval;
+	time_t periodic_time;
 	char *ssl_cert;
 	char *ssl_cacert;
 	bool ssl_verify;

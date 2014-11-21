@@ -151,6 +151,6 @@ int cwmp_set_parameter_write_handler(char *name, char *value);
 int cwmp_get_int_event_code(char *code);
 
 struct event *cwmp_add_event(int code, char *key, int method_id, int backup);
-
+long int cwmp_periodic_inform_time(void);
 #endif
 

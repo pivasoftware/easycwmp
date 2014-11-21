@@ -18,6 +18,7 @@ config acs
 	option parameter_key ''
 	option periodic_enable '1'
 	option periodic_interval '100'
+	option periodic_time '0001-01-01T00:00:00Z'
 
 config device
 	option manufacturer easycwmp

@@ -122,11 +122,13 @@ static int config_init_acs(void)
 {
 	struct uci_section *s;
 	struct uci_element *e;
+	struct tm tm;
 
 	uci_foreach_element(&uci_easycwmp->sections, e) {
 		s = uci_to_section(e);
 		if (strcmp(s->type, "acs") == 0) {
 			config_free_acs();
+			config->acs->periodic_time = -1;
 
 			uci_foreach_element(&s->options, e) {
 				if (!strcmp((uci_to_option(e))->e.name, "scheme")) {
@@ -193,7 +195,12 @@ static int config_init_acs(void)
 					DD("easycwmp.@acs[0].periodic_interval=%d\n", config->acs->periodic_interval);
 					continue;
 				}
-
+				if (!strcmp((uci_to_option(e))->e.name, "periodic_time")) {
+					strptime(uci_to_option(e)->v.string,"%FT%T", &tm);
+					config->acs->periodic_time = mktime(&tm);
+					DD("easycwmp.@acs[0].periodic_time=%s\n", uci_to_option(e)->v.string);
+					continue;
+				}
 				if (!strcmp((uci_to_option(e))->e.name, "ssl_cert")) {
 					config->acs->ssl_cert = strdup(uci_to_option(e)->v.string);
 					DD("easycwmp.@acs[0].ssl_cert=%s\n", config->acs->ssl_cert);

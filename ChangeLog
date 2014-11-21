@@ -1,6 +1,9 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.0.4 (date of 21st of november 2014)
+  - #000023: Add InternetGatewayDevice.ManagementServer.PeriodicInformTime parameter 
+  
 * EasyCwmp-1.0.3 (date of 24th of september 2014)
   - #00011 :  Add cwmp id to the RPC ACS (Inform, GetRPCMethod, TransferComplete...)
   - #00010 : XML parsing problem (fixed)

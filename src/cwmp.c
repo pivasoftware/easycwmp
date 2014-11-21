@@ -57,9 +57,8 @@ inline void cwmp_add_inform_timer()
 static void cwmp_periodic_inform(struct uloop_timeout *timeout)
 {
 	if (config->acs->periodic_enable && config->acs->periodic_interval) {
-		uloop_timeout_set(&periodic_inform_timer, config->acs->periodic_interval * 1000);
+		uloop_timeout_set(&periodic_inform_timer, config->acs->periodic_interval * SECDTOMSEC);
 	}
-
 	if (config->acs->periodic_enable) {
 		cwmp_add_event(EVENT_PERIODIC, NULL, 0, EVENT_BACKUP);
 		cwmp_add_inform_timer();
@@ -70,8 +69,14 @@ void cwmp_periodic_inform_init(void)
 {
 	uloop_timeout_cancel(&periodic_inform_timer);
 	if (config->acs->periodic_enable && config->acs->periodic_interval) {
-		log_message(NAME, L_NOTICE, "init periodic event: interval = %d\n", config->acs->periodic_interval);
-		uloop_timeout_set(&periodic_inform_timer, config->acs->periodic_interval * 1000);
+		if (config->acs->periodic_time != -1){
+			log_message(NAME, L_NOTICE, "init periodic inform: reference time = %ld, interval = %d\n", config->acs->periodic_time, config->acs->periodic_interval);
+			uloop_timeout_set(&periodic_inform_timer, cwmp_periodic_inform_time() * SECDTOMSEC);
+		}
+		else {
+			log_message(NAME, L_NOTICE, "init periodic inform: reference time = n/a, interval = %d\n", config->acs->periodic_interval);
+			uloop_timeout_set(&periodic_inform_timer, config->acs->periodic_interval * SECDTOMSEC);
+		}
 	}
 }
 
@@ -727,4 +732,19 @@ int cwmp_get_int_event_code(char *code)
 		return EVENT_CONNECTION_REQUEST;
 
 	return EVENT_BOOTSTRAP;
+}
+
+long int cwmp_periodic_inform_time(void)
+{
+	struct tm tm;
+	long int delta_time;
+	long int periodic_time;
+
+	delta_time = time(NULL) - config->acs->periodic_time;
+	if(delta_time > 0)
+		periodic_time = config->acs->periodic_interval - (delta_time % config->acs->periodic_interval);
+	else
+		periodic_time = (-delta_time) % config->acs->periodic_interval;
+
+	return  periodic_time;
 }
