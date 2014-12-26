@@ -95,7 +95,10 @@ http_client_exit(void)
 {
 	FREE(http_c.url);
 
+	if(curl) {
 	curl_easy_cleanup(curl);
+		curl = NULL;
+	}
 	curl_global_cleanup();
 	if (http_c.header_list) {
 		curl_slist_free_all(http_c.header_list);
