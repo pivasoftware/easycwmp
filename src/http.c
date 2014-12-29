@@ -58,7 +58,9 @@ http_client_init(void)
 	http_c.header_list = NULL;
 	http_c.header_list = curl_slist_append(http_c.header_list, "User-Agent: easycwmp");
 	if (!http_c.header_list) return -1;
-	http_c.header_list = curl_slist_append(http_c.header_list, "Content-Type: text/xml");
+	http_c.header_list = curl_slist_append(http_c.header_list, "Accept:");
+	if (!http_c.header_list) return -1;
+	http_c.header_list = curl_slist_append(http_c.header_list, "Content-Type: text/html; charset=utf-8");
 	if (!http_c.header_list) return -1;
 # ifdef ACS_FUSION
 	char *expect_header = "Expect:";

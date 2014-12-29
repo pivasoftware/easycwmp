@@ -1,6 +1,10 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.0.5 (date of 29th of december 2014)
+  - #0000025: easycwmp excutable carshes upon CTRL + C
+  - #0000024: remove Accept and change content type of the HTTP header
+
 * EasyCwmp-1.0.4 (date of 21st of november 2014)
   - #000023: Add InternetGatewayDevice.ManagementServer.PeriodicInformTime parameter 
   
