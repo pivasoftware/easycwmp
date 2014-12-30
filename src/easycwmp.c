@@ -33,9 +33,11 @@
 
 static void easycwmp_do_reload(struct uloop_timeout *timeout);
 static void netlink_new_msg(struct uloop_fd *ufd, unsigned events);
+static void api_run(struct uloop_timeout *timeout);
 
 static struct uloop_fd netlink_event = { .cb = netlink_new_msg };
 static struct uloop_timeout reload_timer = { .cb = easycwmp_do_reload };
+static struct uloop_timeout api_timer = { .cb = api_run };
 
 struct option long_opts[] = {
 	{"foreground", no_argument, NULL, 'f'},
@@ -71,6 +73,17 @@ void easycwmp_reload(void)
 	uloop_timeout_set(&reload_timer, 100);
 }
 
+static void  add_api_timer(void) {
+	uloop_timeout_set(&api_timer, 500);
+}
+
+static void api_run(struct uloop_timeout *timeout)
+{
+	if (cwmp->api_func) {
+		cwmp->api_func(cwmp->api_arg);
+		add_api_timer();
+	}
+}
 
 static void easycwmp_netlink_interface(struct nlmsghdr *nlh)
 {
@@ -263,6 +276,7 @@ int main (int argc, char **argv)
 	INIT_LIST_HEAD(&cwmp->notifications);
 	INIT_LIST_HEAD(&cwmp->downloads);
 	INIT_LIST_HEAD(&cwmp->scheduled_informs);
+	
 	uloop_init();
 	backup_init();
 	config_load();
@@ -275,6 +289,10 @@ int main (int argc, char **argv)
 		cwmp->get_rpc_methods = true;
 		cwmp_add_event(EVENT_PERIODIC, NULL, 0, EVENT_BACKUP);
 		cwmp_add_inform_timer();
+	}
+
+	if (cwmp->api_func) {
+		add_api_timer();
 	}
 
 	if (netlink_init()) {

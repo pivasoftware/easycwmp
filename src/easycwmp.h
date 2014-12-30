@@ -23,6 +23,12 @@
 
 #define FREE(x) do { free(x); x = NULL; } while (0);
 
+#define API_RUN() \
+	do { \
+		if (cwmp->api_func) \
+			cwmp->api_func(cwmp->api_arg); \
+	} while(0)
+
 #ifdef DEBUG
 #define D(format, ...) fprintf(stderr, "%s(%d): " format, __func__, __LINE__, ## __VA_ARGS__)
 #else

@@ -115,6 +115,8 @@ struct cwmp_internal {
 	struct list_head downloads;
 	struct list_head scheduled_informs;
 	struct deviceid deviceid;
+	void (*api_func)(void *v);
+	void *api_arg;
 	int retry_count;
 	int download_count;
 	int end_session;

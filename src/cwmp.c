@@ -280,6 +280,8 @@ int cwmp_inform(void)
 		goto error;
 	}
 
+	API_RUN();
+
 	if(rpc_inform()) {
 		log_message(NAME, L_NOTICE, "sending Inform failed\n");
 		goto error;
@@ -291,6 +293,7 @@ int cwmp_inform(void)
 
 	do {
 		while((node = backup_check_transfer_complete()) && !cwmp->hold_requests) {
+			API_RUN();
 			if(rpc_transfer_complete(node, &method_id)) {
 				log_message(NAME, L_NOTICE, "sending TransferComplete failed\n");
 				goto error;
@@ -303,6 +306,7 @@ int cwmp_inform(void)
 				cwmp_remove_event(EVENT_REMOVE_AFTER_TRANSFER_COMPLETE, 0);
 		}
 		if(cwmp->get_rpc_methods && !cwmp->hold_requests) {
+			API_RUN();
 			if(rpc_get_rpc_methods()) {
 				log_message(NAME, L_NOTICE, "sending GetRPCMethods failed\n");
 				goto error;
@@ -346,6 +350,8 @@ int cwmp_handle_messages(void)
 	log_message(NAME, L_NOTICE, "send empty message to the ACS\n");
 
 	while (1) {
+		API_RUN();
+
 		FREE(msg_in);
 
 		if (http_send_message(msg_out, &msg_in)) {
@@ -357,6 +363,8 @@ int cwmp_handle_messages(void)
 			log_message(NAME, L_NOTICE, "receive empty message from the ACS\n");
 			break;
 		}
+
+		API_RUN();
 
 		FREE(msg_out);
 
