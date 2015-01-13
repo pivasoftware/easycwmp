@@ -32,11 +32,8 @@ get_wan_device_mng_interface_ip() {
     local permissions="0"
     case "$action" in
         get_value)
-        if [ -z "$default_wan_device_mng_interface_ip" ]; then
-            network_get_ipaddr val mng
-        else
-            val=$default_wan_device_mng_interface_ip
-        fi
+            #see http://wiki.openwrt.org/doc/uci
+            network_get_ipaddr val wan
         ;;
         get_name)
         [ "$nl" = "1" ] &&  return $E_INVALID_ARGUMENTS 
@@ -56,11 +53,11 @@ get_wan_device_mng_interface_mac() {
     local permissions="0"
     case "$action" in
         get_value)
-        if [ -z "$default_wan_device_mng_interface_mac" ]; then
-            val=`$UCI_GET network.mng.macaddr`
-        else
-            val=$default_wan_device_mng_interface_mac
-        fi
+            #see http://wiki.openwrt.org/doc/uci
+            local if_lan=$(network_get_device ifname wan; echo $ifname)
+            local cmd="ifconfig "$if_lan" | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'"
+            local tmp=$(eval $cmd)
+            val=${tmp//:/}
         ;;
         get_name)
         [ "$nl" = "1" ] &&  return $E_INVALID_ARGUMENTS 
