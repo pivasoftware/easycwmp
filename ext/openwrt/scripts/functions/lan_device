@@ -137,7 +137,6 @@ get_wlan_ssid() {
         easycwmp_get_parameter_notification "val" "$param"
         ;;
     esac
-    val=$(uci get wireless.@wifi-iface[0].ssid)
     easycwmp_output "$param" "$val" "$permissions"
     return 0
 }
