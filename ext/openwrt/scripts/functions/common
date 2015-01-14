@@ -7,7 +7,17 @@
 
 machine=$(grep "machine" /proc/cpuinfo | awk -F: '{print $2}' | sed -e 's/\(^ *\)//' -e 's/\( *$\)//')
 oui=$(echo $machine | tr A-Z a-z | awk '{print $1}')
-openwrt_version=$(cat /etc/openwrt_version)
+openwrt_version=$(cat /etc/openwrt_version | head -1)
+
+#on the router hull, there is a device mac address, it's lan mac not wan mac.
+network_get_mac() {
+    local iface="$1"
+    network_get_device ifname $iface
+    local cmd="ifconfig "$ifname" | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'"
+    local tmp=$(eval $cmd)
+    echo ${tmp//:/}
+    return $?
+}
 
 # TODO: merge this one somewhere in OpenWrt
 uci_remove_list_element() {
@@ -371,10 +381,17 @@ easycwmp_get_inform_deviceid()
     local msg
     json_init
     
-    json_add_string "manufacturer" "`$UCI_GET easycwmp.@device[0].manufacturer 2> /dev/null`"
-    json_add_string "oui" "`$UCI_GET easycwmp.@device[0].oui 2> /dev/null`"
-    json_add_string "product_class" "`$UCI_GET easycwmp.@device[0].product_class 2> /dev/null`"
-    json_add_string "serial_number" "`$UCI_GET easycwmp.@device[0].serial_number 2> /dev/null`"
+    local val=$(_get_device_info_manufacturer)
+    json_add_string "manufacturer" "$val"
+
+    val=$(_get_device_info_oui)
+    json_add_string "oui" "$val"
+
+    val=$(_get_device_info_product_class)
+    json_add_string "product_class" "$val"
+
+    val=$(_get_device_info_serial_number)
+    json_add_string "serial_number" "$val"
     
     json_close_object
     local msg=`json_dump`

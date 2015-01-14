@@ -4,15 +4,6 @@
 #     Author: AHMED Zribi <ahmed.zribi@pivasoftware.com>
 # Copyright (C) 2011-2012 Luka Perkov <freecwmp@lukaperkov.net>
 
-#on the router hull, there is a device mac address, it's lan mac not wan mac.
-network_get_mac() {
-    local iface="$1"
-    network_get_device ifname $iface
-    local cmd="ifconfig "$ifname" | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'"
-    local tmp=$(eval $cmd)
-    echo ${tmp//:/}
-    return $?
-}
 get_device_info_mac() {
     local nl="$1"
     local val=""
@@ -89,6 +80,15 @@ set_device_info_provisioningcode() {
     return $?
 }
 
+_get_device_info_manufacturer() {
+    local val=`$UCI_GET easycwmp.@device[0].manufacturer 2> /dev/null`
+    if [ -z "$val" ] || [ "$val" = "easycwmp" ]; then
+        val=$oui
+    fi
+    echo "$val"
+    return 0
+}
+
 get_device_info_manufacturer() {
     local nl="$1"
     local val=""
@@ -96,10 +96,7 @@ get_device_info_manufacturer() {
     local permissions="0"
     case "$action" in
         get_value)
-        val=`$UCI_GET easycwmp.@device[0].manufacturer 2> /dev/null`
-        if [ -z "$val" ] || [ "$val" = "easycwmp" ]; then
-            val=$oui
-        fi
+            val=$(_get_device_info_manufacturer)
         ;;
         get_name)
         [ "$nl" = "1" ] && return $E_INVALID_ARGUMENTS
@@ -109,6 +106,15 @@ get_device_info_manufacturer() {
         ;;
     esac
     easycwmp_output "$param" "$val" "$permissions"
+    return 0
+}
+
+_get_device_info_oui() {
+    local val=`$UCI_GET easycwmp.@device[0].oui 2> /dev/null`
+    if [ -z "$val" ] || [ "$val" = "FFFFFF" ]; then
+        val=$oui
+    fi
+    echo "$val"
     return 0
 }
 
@@ -119,10 +125,7 @@ get_device_info_oui() {
     local permissions="0"
     case "$action" in
         get_value)
-        val=`$UCI_GET easycwmp.@device[0].oui 2> /dev/null`
-        if [ -z "$val" ] || [ "$val" = "FFFFFF" ]; then
-            val=$oui
-        fi
+            val=$(_get_device_info_oui)
         ;;
         get_name)
         [ "$nl" = "1" ] && return $E_INVALID_ARGUMENTS
@@ -132,6 +135,16 @@ get_device_info_oui() {
         ;;
     esac
     easycwmp_output "$param" "$val" "$permissions"
+    return 0
+}
+
+_get_device_info_product_class() {
+    local val=`$UCI_GET easycwmp.@device[0].product_class 2> /dev/null`
+    if [ -z "$val" ] || [ "$val" = "easycwmp" ]; then
+        tmp=${machine// /_}
+        val=$(echo $tmp | tr A-Z a-z)
+    fi
+    echo "$val"
     return 0
 }
 
@@ -142,11 +155,7 @@ get_device_info_product_class() {
     local permissions="0"
     case "$action" in
         get_value)
-        val=`$UCI_GET easycwmp.@device[0].product_class 2> /dev/null`
-        if [ -z "$val" ] || [ "$val" = "easycwmp" ]; then
-            tmp=${machine// /-}
-            val=$(echo $tmp | tr A-Z a-z)
-        fi
+            val=$(_get_device_info_product_class)
         ;;
         get_name)
         [ "$nl" = "1" ] && return $E_INVALID_ARGUMENTS
@@ -159,6 +168,15 @@ get_device_info_product_class() {
     return 0
 }
 
+_get_device_info_serial_number() {
+    local val=`$UCI_GET easycwmp.@device[0].serial_number 2> /dev/null`
+    if [ -z "$val" ] || [ "$val" = "FFFFFF123456" ]; then
+        val=$(network_get_mac "lan")
+    fi
+    echo "$val"
+    return 0
+}
+
 get_device_info_serial_number() {
     local nl="$1"
     local val=""
@@ -166,10 +184,7 @@ get_device_info_serial_number() {
     local permissions="0"
     case "$action" in
         get_value)
-        local val=`$UCI_GET easycwmp.@device[0].serial_number 2> /dev/null`
-        if [ -z "$val" ] || [ "$val" = "FFFFFF123456" ]; then
-            val=$(network_get_mac "lan")
-        fi
+            val=$(_get_device_info_serial_number)
         ;;
         get_name)
         [ "$nl" = "1" ] && return $E_INVALID_ARGUMENTS
