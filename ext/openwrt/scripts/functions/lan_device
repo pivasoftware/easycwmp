@@ -52,6 +52,7 @@ if [ "$oui" = "hiwifi" ] ; then
 
     if [ $is_special -eq 1 ];then
         wireless_ifaces=`$UCI_SHOW wireless | grep "wireless.[a-z]\+=wifi-iface" | awk -F= '{print $1}' | awk -F. '{print $2}'`
+        wireless_ifaces_cnt=$(echo $wireless_ifaces | wc -l)
     fi
 fi
 
@@ -59,6 +60,7 @@ fi
 if [ $is_special -eq 0 ];then
     wireless_ifaces=`$UCI_SHOW wireless| grep "wireless\.@wifi-iface\[[0-9]\+\]\.instance" | cut -d'.' -f2`
 fi
+wireless_ifaces_cnt=$(echo "$wireless_ifaces" | wc -l)
 
 #some routers' config don't have "option instance"
 tmp=$(cat /etc/config/wireless | grep "option instance")
@@ -117,7 +119,6 @@ set_wlan_enable() {
         easycwmp_set_parameter_notification "$param" "$val"
         ;;
     esac
-    return $?
 }
 
 get_wlan_ssid() {
@@ -148,7 +149,6 @@ get_wlan_ssid_all() {
         local num=`$UCI_GET wireless.$iface.instance`
         get_wlan_ssid "$num" "$iface" "$nl"
     done
-    return $?
 }
 
 set_wlan_ssid() {
@@ -164,7 +164,6 @@ set_wlan_ssid() {
         easycwmp_set_parameter_notification "$param" "$val"
         ;;
     esac
-    return $?
 }
 
 add_wlan_iface() {
@@ -178,14 +177,12 @@ add_wlan_iface() {
     $UCI_COMMIT
     execute_command_in_apply_service "wifi"
     echo $instance
-    return $?
 }
 
 delete_wlan_iface() {
     $UCI_DELETE wireless.$1
     $UCI_COMMIT
     execute_command_in_apply_service "wifi"
-    return $?
 }
 
 get_wlan_configuration_instances() {
@@ -196,7 +193,6 @@ get_wlan_configuration_instances() {
     for num in $instances; do
         easycwmp_output "InternetGatewayDevice.LANDevice.1.WLANConfiguration.$num." "" "1"
     done
-    return $?
 } 
 
 get_wlan_num_and_uci_iface() {
@@ -207,13 +203,10 @@ get_wlan_num_and_uci_iface() {
     local __uci_iface=`$UCI_SHOW wireless | grep "wireless\.@wifi-iface\[[0-9]\+\].instance=$__num" | head -1 | cut -d'.' -f2`
     eval "export -- \"$3=\"\"$__num\"\"\""
     eval "export -- \"$4=\"\"$__uci_iface\"\"\""
-    return $?
 }
 
 get_max_instance() {
-    local max=`$UCI_SHOW wireless | grep "wireless\.@wifi-iface\[[0-9]\+\].instance=" | cut -d'=' -f2 | sort -ru | head -1`
-    echo ${max:-0}
-    return $?
+    echo ${wireless_ifaces_cnt:-0}
 }
 
 get_lan_device_object() {
@@ -223,7 +216,6 @@ get_lan_device_object() {
         [ "$nl" = "0" ] && easycwmp_output "InternetGatewayDevice.LANDevice." "" "0"
         ;;
     esac
-    return $?
 }
 
 get_lan_device_instance() {
@@ -233,7 +225,6 @@ get_lan_device_instance() {
         [ "$nl" = "0" ] && easycwmp_output "InternetGatewayDevice.LANDevice.1." "" "0"
         ;;
     esac
-    return $?
 }
 
 get_lan_device_wlan_configuration_object() {
@@ -243,7 +234,6 @@ get_lan_device_wlan_configuration_object() {
         [ "$nl" = "0" ] && easycwmp_output "InternetGatewayDevice.LANDevice.1.WLANConfiguration." "" "1"
         ;;
     esac
-    return $?
 }
 
 get_lan_device_wlan_configuration_instance() {
@@ -254,7 +244,6 @@ get_lan_device_wlan_configuration_instance() {
         [ "$nl" = "0" ] && easycwmp_output "$param" "" "1"
         ;;
     esac
-    return $?
 }
 
 get_lan_device() {
@@ -359,7 +348,6 @@ build_instances_lan_device() {
             $UCI_COMMIT
         fi
     done
-    return $?
 }
 
 
