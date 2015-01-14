@@ -58,7 +58,7 @@ fi
 
 # for most of routers
 if [ $is_special -eq 0 ];then
-    wireless_ifaces=`$UCI_SHOW wireless| grep "wireless\.@wifi-iface\[[0-9]\+\]\.instance" | cut -d'.' -f2`
+    wireless_ifaces=`$UCI_SHOW wireless| grep "wireless\.@wifi-iface\[[0-9]\+\]\.device" | cut -d'.' -f2`
 fi
 wireless_ifaces_cnt=$(echo "$wireless_ifaces" | wc -l)
 
@@ -68,9 +68,9 @@ if [ $? -eq 1 ];then
     local num=1
     for iface in $wireless_ifaces; do
         $UCI_SET wireless.$iface.instance=$num
-        $UCI_COMMIT
         let num++
     done
+    $UCI_COMMIT
 fi
     
 get_wlan_enable() {
