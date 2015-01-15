@@ -195,9 +195,9 @@ get_wan_device_instance() {
         [ "$nl" = "0" ] && easycwmp_output "InternetGatewayDevice.WANDevice.1." "" "0"
         ;;
     esac
-    }
+}
 
-    get_wan_device_wan_connection_device_object() {
+get_wan_device_wan_connection_device_object() {
     nl="$1"
     case "$action" in
         get_name)
