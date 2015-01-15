@@ -83,7 +83,7 @@ set_device_info_provisioningcode() {
 _get_device_info_manufacturer() {
     local val=`$UCI_GET easycwmp.@device[0].manufacturer 2> /dev/null`
     if [ -z "$val" ] || [ "$val" = "easycwmp" ]; then
-        val=$oui
+        val=$(echo $machine | tr A-Z a-z | awk '{print $1}')
     fi
     echo "$val"
     return 0

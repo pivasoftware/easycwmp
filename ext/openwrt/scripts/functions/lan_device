@@ -6,7 +6,9 @@
 # Copyright (C) 2011-2012 Luka Perkov <freecwmp@lukaperkov.net>
 
 is_special=0
-if [ "$oui" = "hiwifi" ]; then
+#see http://standards.ieee.org/develop/regauth/oui/public.html
+#D4EE07     (base 16)       HIWIFI Co., Ltd.
+if [ "$oui" = "D4EE07" ]; then
     # from 0.9008.2.8061s, hiwifi use special config
     # config wifi-device 'radio0' 
     #     option type 'ralink' 

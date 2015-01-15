@@ -6,7 +6,6 @@
 # Copyright (C) 2011-2012 Luka Perkov <freecwmp@lukaperkov.net>
 
 machine=$(grep "machine" /proc/cpuinfo | awk -F: '{print $2}' | sed -e 's/\(^ *\)//' -e 's/\( *$\)//')
-oui=$(echo $machine | tr A-Z a-z | awk '{print $1}')
 openwrt_version=$(cat /etc/openwrt_version | head -1)
 
 #on the router hull, there is a device mac address, it's lan mac not wan mac.
@@ -18,6 +17,10 @@ network_get_mac() {
     echo ${tmp//:/}
     return $?
 }
+lan_mac=$(network_get_mac lan)
+#see http://en.wikipedia.org/wiki/Organizationally_unique_identifier
+#http://standards.ieee.org/develop/regauth/oui/public.html
+oui=${lan_mac:0:6}
 
 # TODO: merge this one somewhere in OpenWrt
 uci_remove_list_element() {
