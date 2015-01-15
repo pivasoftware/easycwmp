@@ -5,8 +5,8 @@
 #     Author: sinkcup <sinkcup@163.com>
 # Copyright (C) 2011-2012 Luka Perkov <freecwmp@lukaperkov.net>
 
-local is_special=0
-if [ "$oui" = "hiwifi" ] ; then
+is_special=0
+if [ "$oui" = "hiwifi" ]; then
     # from 0.9008.2.8061s, hiwifi use special config
     # config wifi-device 'radio0' 
     #     option type 'ralink' 
@@ -52,7 +52,6 @@ if [ "$oui" = "hiwifi" ] ; then
 
     if [ $is_special -eq 1 ];then
         wireless_ifaces=`$UCI_SHOW wireless | grep "wireless.[a-z]\+=wifi-iface" | awk -F= '{print $1}' | awk -F. '{print $2}'`
-        wireless_ifaces_cnt=$(echo $wireless_ifaces | wc -l)
     fi
 fi
 
@@ -62,17 +61,6 @@ if [ $is_special -eq 0 ];then
 fi
 wireless_ifaces_cnt=$(echo "$wireless_ifaces" | wc -l)
 
-#some routers' config don't have "option instance"
-tmp=$(cat /etc/config/wireless | grep "option instance")
-if [ $? -eq 1 ];then
-    local num=1
-    for iface in $wireless_ifaces; do
-        $UCI_SET wireless.$iface.instance=$num
-        let num++
-    done
-    $UCI_COMMIT
-fi
-    
 get_wlan_enable() {
     local param="InternetGatewayDevice.LANDevice.1.WLANConfiguration.$1.Enable"
     local uci_iface="$2"
@@ -189,8 +177,8 @@ get_wlan_configuration_instances() {
     local nl="$1"
     [ "$action" != "get_name" -o "$nl" = "1" ] && return
     local num
-    local instances=`$UCI_SHOW wireless| grep "wireless\.@wifi-iface\[[0-9]\+\]\.instance" | cut -d'=' -f2`
-    for num in $instances; do
+    for iface in $wireless_ifaces; do                         
+        num=`$UCI_GET wireless.$iface.instance`
         easycwmp_output "InternetGatewayDevice.LANDevice.1.WLANConfiguration.$num." "" "1"
     done
 } 
@@ -198,15 +186,28 @@ get_wlan_configuration_instances() {
 get_wlan_num_and_uci_iface() {
     local param="$1"
     local param_check="$2"
+    local tmp
     easycwmp_parse_formated_parameter "$param" "$param_check" "rc" "__num"
     [ "$rc" != "0" ] && return
-    local __uci_iface=`$UCI_SHOW wireless | grep "wireless\.@wifi-iface\[[0-9]\+\].instance=$__num" | head -1 | cut -d'.' -f2`
-    eval "export -- \"$3=\"\"$__num\"\"\""
-    eval "export -- \"$4=\"\"$__uci_iface\"\"\""
+    for iface in $wireless_ifaces; do                                                     
+        tmp=`$UCI_GET wireless.$iface.instance`                                     
+        if [ "$tmp" = "$__num" ];then
+            eval "export -- \"$3=\"\"$__num\"\"\""
+            eval "export -- \"$4=\"\"$iface\"\"\""
+            break
+        fi
+    done
 }
 
 get_max_instance() {
-    echo ${wireless_ifaces_cnt:-0}
+    local max=0
+    for iface in $wireless_ifaces; do
+        local num=`$UCI_GET wireless.$iface.instance`
+        if [ $num -gt $max ]; then
+            max=$num
+        fi
+    done
+    echo $max
 }
 
 get_lan_device_object() {
@@ -339,15 +340,27 @@ set_lan_device() {
     return $E_INVALID_PARAMETER_NAME
 }
 
+#some routers' config don't have "option instance"
 build_instances_lan_device() {
     local iface
-    local instance=`get_max_instance`
+    local num=1
+    local is_need_reset=0
+ 
     for iface in $wireless_ifaces; do
         if [ "`$UCI_GET wireless.$iface.instance`" = "" ]; then
-            $UCI_SET wireless.$iface.instance=$((++instance))
-            $UCI_COMMIT
+            is_need_reset=1
+            break
         fi
     done
+    
+    if [ $is_need_reset -eq 1 ];then
+        local num=1
+        for iface in $wireless_ifaces; do
+            $UCI_SET wireless.$iface.instance=$((num++))
+        done
+        $UCI_COMMIT
+    fi
+    return 0
 }
 
 
