@@ -5,6 +5,9 @@
 #     Author: sinkcup <sinkcup@163.com>
 # Copyright (C) 2011-2012 Luka Perkov <freecwmp@lukaperkov.net>
 
+wireless_devices=`$UCI_SHOW wireless | grep "wireless.[a-z0-9]\+=wifi-device" | awk -F= '{print $1}' | awk -F. '{print $2}'`
+wireless_devices_cnt=$(echo "$wireless_devices" | wc -l)
+
 is_special=0
 #see http://standards.ieee.org/develop/regauth/oui/public.html
 #D4EE07     (base 16)       HIWIFI Co., Ltd.
@@ -64,9 +67,10 @@ fi
 wireless_ifaces_cnt=$(echo "$wireless_ifaces" | wc -l)
 
 get_wlan_enable() {
-    local param="InternetGatewayDevice.LANDevice.1.WLANConfiguration.$1.Enable"
-    local uci_iface="$2"
-    local nl="$3"
+    local param="InternetGatewayDevice.LANDevice.$1.WLANConfiguration.$3.Enable"
+    local uci_device="$2"
+    local uci_iface="$4"
+    local nl="$5"
     local type="xsd:boolean"
     local val=""
     local permissions="1"
@@ -88,22 +92,41 @@ get_wlan_enable() {
 
 get_wlan_enable_all() {
     local nl="$1"
+    local device
+    local iface
+    for device in $wireless_devices; do
+        local device_num=`$UCI_GET wireless.$device.instance`
+        get_wlan_enable_by_device "$device_num" "$device" "$nl"
+    done
+}
+
+get_wlan_enable_by_device() {
+    local device_num="$1"
+    local device="$2"
+    local nl="$3"
     local iface
     for iface in $wireless_ifaces; do
-        local num=`$UCI_GET wireless.$iface.instance`
-        get_wlan_enable "$num" "$iface" "$nl"
+        local iface_num=`$UCI_GET wireless.$iface.instance`
+        local iface_device=`$UCI_GET wireless.$iface.device`
+        if [ "$iface_device" = "$device" ]; then
+            get_wlan_enable "$device_num" "$device" "$iface_num" "$iface" "$nl"
+        fi
     done
 }
 
 set_wlan_enable() {
-    local param="InternetGatewayDevice.LANDevice.1.WLANConfiguration.$1.Enable"
-    local uci_iface="$2"
-    local val="$3"
+    local param="InternetGatewayDevice.LANDevice.$1.WLANConfiguration.$3.Enable"
+    local uci_iface="$4"
+    local val="$5"
     case $action in
         set_value)
-        [ "$val" = "1" ] && val="0" || val="1"
-        execute_command_in_apply_service "wifi"
-        $UCI_SET wireless.wl0.disabled="$val"
+            local disable="1"
+            if [ "$val" = "1" -o "$val" = "true" ]; then
+                disable="0"
+            fi
+            $UCI_SET wireless.$uci_iface.disabled="$disable"
+            $UCI_COMMIT wireless
+            execute_command_in_apply_service "wifi"
         ;;
         set_notification)
         easycwmp_set_parameter_notification "$param" "$val"
@@ -112,9 +135,10 @@ set_wlan_enable() {
 }
 
 get_wlan_ssid() {
-    local param="InternetGatewayDevice.LANDevice.1.WLANConfiguration.$1.SSID"
-    local uci_iface="$2"
-    local nl="$3"
+    local param="InternetGatewayDevice.LANDevice.$1.WLANConfiguration.$3.SSID"
+    local uci_device="$2"
+    local uci_iface="$4"
+    local nl="$5"
     local val=""
     local permissions="1"
     case "$action" in
@@ -132,23 +156,41 @@ get_wlan_ssid() {
     return 0
 }
 
+#TODO: DRY, same as get_wlan_enable_all
 get_wlan_ssid_all() {
     local nl="$1"
+    local device
+    local iface
+    for device in $wireless_devices; do
+        local device_num=`$UCI_GET wireless.$device.instance`
+        get_wlan_ssid_by_device "$device_num" "$device" "$nl"
+    done
+}
+
+#TODO: DRY, same as get_wlan_enable_by_device
+get_wlan_ssid_by_device() {
+    local device_num="$1"
+    local device="$2"
+    local nl="$3"
     local iface
     for iface in $wireless_ifaces; do
-        local num=`$UCI_GET wireless.$iface.instance`
-        get_wlan_ssid "$num" "$iface" "$nl"
+        local iface_num=`$UCI_GET wireless.$iface.instance`
+        local iface_device=`$UCI_GET wireless.$iface.device`
+        if [ "$iface_device" = "$device" ]; then
+            get_wlan_ssid "$device_num" "$device" "$iface_num" "$iface" "$nl"
+        fi
     done
 }
 
 set_wlan_ssid() {
-    local param="InternetGatewayDevice.LANDevice.1.WLANConfiguration.$1.SSID"
-    local uci_iface="$2"
-    local val="$3"
+    local param="InternetGatewayDevice.LANDevice.$1.WLANConfiguration.$3.SSID"
+    local uci_iface="$4"
+    local val="$5"
     case $action in
         set_value)
-        execute_command_in_apply_service "wifi"
         $UCI_SET wireless.$uci_iface.ssid="$val"
+        $UCI_COMMIT wireless
+        execute_command_in_apply_service "wifi"
         ;;
         set_notification)
         easycwmp_set_parameter_notification "$param" "$val"
@@ -178,24 +220,48 @@ delete_wlan_iface() {
 get_wlan_configuration_instances() {
     local nl="$1"
     [ "$action" != "get_name" -o "$nl" = "1" ] && return
-    local num
-    for iface in $wireless_ifaces; do                         
-        num=`$UCI_GET wireless.$iface.instance`
-        easycwmp_output "InternetGatewayDevice.LANDevice.1.WLANConfiguration.$num." "" "1"
+    for device in $wireless_devices; do
+        local device_num=`$UCI_GET wireless.$device.instance`
+        for iface in $wireless_ifaces; do
+            local iface_num=`$UCI_GET wireless.$iface.instance`
+            easycwmp_output "InternetGatewayDevice.LANDevice.$device_num.WLANConfiguration.$iface_num." "" "1"
+        done
     done
-} 
+}
+
+get_wlan_device_num_and_uci_device() {
+    local param="$1"
+    local param_check="$2"
+    easycwmp_parse_formated_parameter "$param" "$param_check" "rc" "__nums"
+    [ "$rc" != "0" ] && return
+    local __device_num=`echo $__nums | awk '{print $1}'`
+    local device
+    for device in $wireless_devices; do
+        local tmp=`$UCI_GET wireless.$device.instance`                                     
+        if [ "$tmp" = "$__device_num" ];then
+            eval "export -- \"$3=\"\"$__device_num\"\"\""
+            eval "export -- \"$4=\"\"$device\"\"\""
+            break
+        fi
+    done
+}
 
 get_wlan_num_and_uci_iface() {
     local param="$1"
     local param_check="$2"
-    local tmp
-    easycwmp_parse_formated_parameter "$param" "$param_check" "rc" "__num"
+    local uci_device="$4"
+    easycwmp_parse_formated_parameter "$param" "$param_check" "rc" "__nums"
     [ "$rc" != "0" ] && return
-    for iface in $wireless_ifaces; do                                                     
-        tmp=`$UCI_GET wireless.$iface.instance`                                     
-        if [ "$tmp" = "$__num" ];then
-            eval "export -- \"$3=\"\"$__num\"\"\""
-            eval "export -- \"$4=\"\"$iface\"\"\""
+    local __iface_num=`echo $__nums | awk '{print $2}'`
+    local iface
+    local __tmp_device
+    local __tmp_iface_num
+    for iface in $wireless_ifaces; do
+        __tmp_uci_device=`$UCI_GET wireless.$iface.device`
+        __tmp_iface_num=`$UCI_GET wireless.$iface.instance`
+        if [ "$__tmp_uci_device" = "$uci_device" -a "$__tmp_iface_num" = "$__iface_num" ];then
+            eval "export -- \"$5=\"\"$__iface_num\"\"\""
+            eval "export -- \"$6=\"\"$iface\"\"\""
             break
         fi
     done
@@ -213,7 +279,7 @@ get_max_instance() {
 }
 
 get_lan_device_object() {
-    nl="$1"
+    local nl="$1"
     case "$action" in
         get_name)
         [ "$nl" = "0" ] && easycwmp_output "InternetGatewayDevice.LANDevice." "" "0"
@@ -221,22 +287,25 @@ get_lan_device_object() {
     esac
 }
 
-get_lan_device_instance() {
-    nl="$1"
-    case "$action" in
-        get_name)
-        [ "$nl" = "0" ] && easycwmp_output "InternetGatewayDevice.LANDevice.1." "" "0"
-        ;;
-    esac
+get_lan_device_instances() {
+    local nl="$1"
+    [ "$action" != "get_name" -o "$nl" = "1" ] && return
+    local device
+    local num
+    for device in $wireless_devices; do
+        num=`$UCI_GET wireless.$device.instance`
+        easycwmp_output "InternetGatewayDevice.LANDevice.$num." "" "1"
+    done
 }
 
 get_lan_device_wlan_configuration_object() {
-    nl="$1"
-    case "$action" in
-        get_name)
-        [ "$nl" = "0" ] && easycwmp_output "InternetGatewayDevice.LANDevice.1.WLANConfiguration." "" "1"
-        ;;
-    esac
+    local nl="$1"
+    [ "$action" != "get_name" -o "$nl" = "1" ] && return
+    local device
+    for device in $wireless_devices; do
+        local device_num=`$UCI_GET wireless.$device.instance`
+        easycwmp_output "InternetGatewayDevice.LANDevice.$device_num.WLANConfiguration." "" "1"
+    done
 }
 
 get_lan_device_wlan_configuration_instance() {
@@ -252,57 +321,67 @@ get_lan_device_wlan_configuration_instance() {
 get_lan_device() {
     case "$1" in
         InternetGatewayDevice.)
-        get_lan_device_object 0
-        get_lan_device_instance "$2"
-        get_lan_device_wlan_configuration_object "$2"
-        get_wlan_configuration_instances "$2"
-        get_wlan_enable_all "$2"
-        get_wlan_ssid_all "$2"
-        return 0
+            get_lan_device_object 0
+            get_lan_device_instances "$2"
+            get_lan_device_wlan_configuration_object "$2"
+            get_wlan_configuration_instances "$2"
+            get_wlan_enable_all "$2"
+            get_wlan_ssid_all "$2"
+            return 0
         ;;
         InternetGatewayDevice.LANDevice.)
-        get_lan_device_object "$2"
-        get_lan_device_instance 0
-        get_lan_device_wlan_configuration_object "$2"
-        get_wlan_configuration_instances "$2"
-        get_wlan_enable_all "$2"
-        get_wlan_ssid_all "$2"
-        return 0
+            get_lan_device_object "$2"
+            get_lan_device_instances "$2"
+            get_lan_device_wlan_configuration_object "$2"
+            get_wlan_configuration_instances "$2"
+            get_wlan_enable_all "$2"
+            get_wlan_ssid_all "$2"
+            return 0
         ;;
-        InternetGatewayDevice.LANDevice.1.)
-        get_lan_device_instance "$2"
-        get_lan_device_wlan_configuration_object 0
-        get_wlan_configuration_instances "$2"
-        get_wlan_enable_all "$2"
-        get_wlan_ssid_all "$2"
-        return 0
+        InternetGatewayDevice.LANDevice.[0-9]*.WLANConfiguration.[0-9]*.Enable)
+            get_wlan_device_num_and_uci_device "$1" "InternetGatewayDevice.LANDevice.{i}.WLANConfiguration.{i}.Enable" device_num uci_device
+            [ "$uci_device" = "" -o "$device_num" = "" ] && return $E_INVALID_PARAMETER_NAME
+            get_wlan_num_and_uci_iface "$1" "InternetGatewayDevice.LANDevice.{i}.WLANConfiguration.{i}.Enable" "$device_num" "$uci_device" iface_num uci_iface
+            [ "$uci_iface" = "" -o "$iface_num" = "" ] && return $E_INVALID_PARAMETER_NAME
+            get_wlan_enable "$device_num" "$uci_device" "$iface_num" "$uci_iface" "$2"
+            return $?
         ;;
-        InternetGatewayDevice.LANDevice.1.WLANConfiguration.)
-        get_lan_device_wlan_configuration_object "$2"
-        get_wlan_configuration_instances 0
-        get_wlan_enable_all "$2"
-        get_wlan_ssid_all "$2"
-        return 0
+        InternetGatewayDevice.LANDevice.[0-9]*.WLANConfiguration.[0-9]*.SSID)
+            get_wlan_device_num_and_uci_device "$1" "InternetGatewayDevice.LANDevice.{i}.WLANConfiguration.{i}.SSID" device_num uci_device
+            [ "$uci_device" = "" -o "$device_num" = "" ] && return $E_INVALID_PARAMETER_NAME
+            get_wlan_num_and_uci_iface "$1" "InternetGatewayDevice.LANDevice.{i}.WLANConfiguration.{i}.SSID" "$device_num" "$uci_device" iface_num uci_iface
+            [ "$uci_iface" = "" -o "$iface_num" = "" ] && return $E_INVALID_PARAMETER_NAME
+            get_wlan_ssid "$device_num" "$uci_device" "$iface_num" "$uci_iface" "$2"
+            return $?
         ;;
-        InternetGatewayDevice.LANDevice.1.WLANConfiguration.[0-9]*.Enable)
-        get_wlan_num_and_uci_iface "$1" "InternetGatewayDevice.LANDevice.1.WLANConfiguration.{i}.Enable" num uci_iface
-        [ "$uci_iface" = "" -o "$num" = "" ] && return $E_INVALID_PARAMETER_NAME
-        get_wlan_enable "$num" "$uci_iface" "$2"
-        return $?
+        InternetGatewayDevice.LANDevice.[0-9]*.WLANConfiguration.[0-9]*.)
+            get_wlan_device_num_and_uci_device "$1" "InternetGatewayDevice.LANDevice.{i}.WLANConfiguration.{i}." device_num uci_device
+            [ "$uci_device" = "" -o "$device_num" = "" ] && return $E_INVALID_PARAMETER_NAME
+            get_wlan_num_and_uci_iface "$1" "InternetGatewayDevice.LANDevice.{i}.WLANConfiguration.{i}." "$device_num" "$uci_device" iface_num uci_iface
+            [ "$uci_iface" = "" -o "$iface_num" = "" ] && return $E_INVALID_PARAMETER_NAME
+            get_lan_device_wlan_configuration_instance "$1" "$2"
+            get_wlan_enable "$device_num" "$uci_device" "$iface_num" "$uci_iface" 0
+            get_wlan_ssid "$device_num" "$uci_device" "$iface_num" "$uci_iface" 0
+            return 0
         ;;
-        InternetGatewayDevice.LANDevice.1.WLANConfiguration.[0-9]*.SSID)
-        get_wlan_num_and_uci_iface "$1" "InternetGatewayDevice.LANDevice.1.WLANConfiguration.{i}.SSID" num uci_iface
-        [ "$uci_iface" = "" -o "$num" = "" ] && return $E_INVALID_PARAMETER_NAME
-        get_wlan_ssid "$num" "$uci_iface" "$2"
-        return $?
+        InternetGatewayDevice.LANDevice.[0-9]*.WLANConfiguration.)
+            get_lan_device_wlan_configuration_object "$2" "$3"
+            get_wlan_configuration_instances 0
+            get_wlan_device_num_and_uci_device "$1" "InternetGatewayDevice.LANDevice.{i}.WLANConfiguration." device_num uci_device
+            [ "$uci_device" = "" -o "$device_num" = "" ] && return $E_INVALID_PARAMETER_NAME
+            get_wlan_enable_by_device "$device_num" "$uci_device" "$2"
+            get_wlan_ssid_by_device "$device_num" "$uci_device" "$2"
+            return 0
         ;;
-        InternetGatewayDevice.LANDevice.1.WLANConfiguration.[0-9]*.)
-        get_wlan_num_and_uci_iface "$1" "InternetGatewayDevice.LANDevice.1.WLANConfiguration.{i}." num uci_iface
-        [ "$uci_iface" = "" -o "$num" = "" ] && return $E_INVALID_PARAMETER_NAME
-        get_lan_device_wlan_configuration_instance "$1" "$2"
-        get_wlan_enable "$num" "$uci_iface" 0
-        get_wlan_ssid "$num" "$uci_iface" 0
-        return 0
+        InternetGatewayDevice.LANDevice.[0-9]*.)
+            get_lan_device_instances "$2" "$3"
+            get_lan_device_wlan_configuration_object 0
+            get_wlan_configuration_instances "$2"
+            get_wlan_device_num_and_uci_device "$1" "InternetGatewayDevice.LANDevice.{i}." device_num uci_device
+            [ "$uci_device" = "" -o "$device_num" = "" ] && return $E_INVALID_PARAMETER_NAME
+            get_wlan_enable_by_device "$device_num" "$uci_device" "$2"
+            get_wlan_ssid_by_device "$device_num" "$uci_device" "$2"
+            return 0
         ;;
     esac
     return $E_INVALID_PARAMETER_NAME
@@ -312,40 +391,70 @@ set_lan_device() {
     local num uci_iface
     case "$1" in
         InternetGatewayDevice.LANDevice.|\
-        InternetGatewayDevice.LANDevice.1.|\
-        InternetGatewayDevice.LANDevice.1.WLANConfiguration.|\
-        InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.)
-        [ "$action" = "set_value" ] && return $E_INVALID_PARAMETER_NAME
-        easycwmp_set_parameter_notification "$1" "$2"
-        return 0
+        InternetGatewayDevice.LANDevice.[0-9]*.|\
+        InternetGatewayDevice.LANDevice.[0-9]*.WLANConfiguration.|\
+        InternetGatewayDevice.LANDevice.[0-9]*.WLANConfiguration.1.)
+            [ "$action" = "set_value" ] && return $E_INVALID_PARAMETER_NAME
+            easycwmp_set_parameter_notification "$1" "$2"
+            return 0
         ;;
-        InternetGatewayDevice.LANDevice.1.WLANConfiguration.[0-9]*.Enable)
-        get_wlan_num_and_uci_iface "$1" "InternetGatewayDevice.LANDevice.1.WLANConfiguration.{i}.Enable" num uci_iface
-        [ "$uci_iface" = "" -o "$num" = "" ] && return $E_INVALID_PARAMETER_NAME
-        set_wlan_enable "$num" "$uci_iface" "$2"
-        return 0
+        InternetGatewayDevice.LANDevice.[0-9]*.WLANConfiguration.[0-9]*.Enable)
+            get_wlan_device_num_and_uci_device "$1" "InternetGatewayDevice.LANDevice.{i}.WLANConfiguration.{i}.Enable" device_num uci_device
+            [ "$uci_device" = "" -o "$device_num" = "" ] && return $E_INVALID_PARAMETER_NAME
+            get_wlan_num_and_uci_iface "$1" "InternetGatewayDevice.LANDevice.{i}.WLANConfiguration.{i}.Enable" "$device_num" "$uci_device" iface_num uci_iface
+            [ "$uci_iface" = "" -o "$iface_num" = "" ] && return $E_INVALID_PARAMETER_NAME
+            set_wlan_enable "$device_num" "$uci_device" "$iface_num" "$uci_iface" "$2"
+            return 0
         ;;
-        InternetGatewayDevice.LANDevice.1.WLANConfiguration.[0-9]*.SSID)
-        get_wlan_num_and_uci_iface "$1" "InternetGatewayDevice.LANDevice.1.WLANConfiguration.{i}.SSID" num uci_iface
-        [ "$uci_iface" = "" -o "$num" = "" ] && return $E_INVALID_PARAMETER_NAME
-        set_wlan_ssid "$num" "$uci_iface" "$2"
-        return 0
+        InternetGatewayDevice.LANDevice.[0-9]*.WLANConfiguration.[0-9]*.SSID)
+            get_wlan_device_num_and_uci_device "$1" "InternetGatewayDevice.LANDevice.{i}.WLANConfiguration.{i}.SSID" device_num uci_device
+            [ "$uci_device" = "" -o "$device_num" = "" ] && return $E_INVALID_PARAMETER_NAME
+            get_wlan_num_and_uci_iface "$1" "InternetGatewayDevice.LANDevice.{i}.WLANConfiguration.{i}.SSID" "$device_num" "$uci_device" iface_num uci_iface
+            [ "$uci_iface" = "" -o "$iface_num" = "" ] && return $E_INVALID_PARAMETER_NAME
+            set_wlan_ssid "$device_num" "$uci_device" "$iface_num" "$uci_iface" "$2"
+            return 0
         ;;
-        InternetGatewayDevice.LANDevice.1.WLANConfiguration.[0-9]*.)
-        [ "$action" = "set_value" ] && return $E_INVALID_PARAMETER_NAME
-        get_wlan_num_and_uci_iface "$1" "InternetGatewayDevice.LANDevice.1.WLANConfiguration.{i}." num uci_iface
-        [ "$uci_iface" = "" -o "$num" = "" ] && return $E_INVALID_PARAMETER_NAME
-        easycwmp_set_parameter_notification "$1" "$2"
-        return 0
+        InternetGatewayDevice.LANDevice.[0-9]*.WLANConfiguration.[0-9]*.)
+            [ "$action" = "set_value" ] && return $E_INVALID_PARAMETER_NAME
+            get_wlan_num_and_uci_iface "$1" "InternetGatewayDevice.LANDevice.1.WLANConfiguration.{i}." num uci_iface
+            [ "$uci_iface" = "" -o "$num" = "" ] && return $E_INVALID_PARAMETER_NAME
+            easycwmp_set_parameter_notification "$1" "$2"
+            return 0
         ;;
     esac
     return $E_INVALID_PARAMETER_NAME
 }
 
-#some routers' config don't have "option instance"
 build_instances_lan_device() {
+    build_instances_wifi_device
+    build_instances_wifi_iface
+}
+
+#some routers' config "config wifi-device" don't have "option instance"
+build_instances_wifi_device() {
+    local device
+    local is_need_reset=0
+ 
+    for device in $wireless_devices; do
+        if [ "`$UCI_GET wireless.$device.instance`" = "" ]; then
+            is_need_reset=1
+            break
+        fi
+    done
+    
+    if [ $is_need_reset -eq 1 ];then
+        local num=1
+        for device in $wireless_devices; do
+            $UCI_SET wireless.$device.instance=$((num++))
+        done
+        $UCI_COMMIT
+    fi
+    return 0
+}
+
+#some routers' config "config wifi-iface" don't have "option instance"
+build_instances_wifi_iface() {
     local iface
-    local num=1
     local is_need_reset=0
  
     for iface in $wireless_ifaces; do
@@ -354,17 +463,21 @@ build_instances_lan_device() {
             break
         fi
     done
-    
-    if [ $is_need_reset -eq 1 ];then
-        local num=1
-        for iface in $wireless_ifaces; do
-            $UCI_SET wireless.$iface.instance=$((num++))
+
+    if [ $is_need_reset -eq 1 ]; then
+        local device
+        for device in $wireless_devices; do
+            local device_num=`$UCI_GET wireless.$device.instance`
+            local num_$device_num=1
         done
-        $UCI_COMMIT
+        for iface in $wireless_ifaces; do
+            local iface_device=`$UCI_GET wireless.$iface.device`
+            local device_num=`$UCI_GET wireless.$iface_device.instance`
+            $UCI_SET wireless.$iface.instance=$(((num_$device_num)++))
+        done
     fi
     return 0
 }
-
 
 add_object_lan_device() {
     case "$1" in
