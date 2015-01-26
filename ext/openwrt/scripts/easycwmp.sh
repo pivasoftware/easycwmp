@@ -299,6 +299,7 @@ handle_action() {
             local dw_url="$__arg1"
             [ "$__arg4" != "" -o "$__arg5" != "" ] && dw_url=`echo  "$__arg1" | sed -e "s@://@://$__arg4:$__arg5\@@g`
             wget -O $DOWNLOAD_FILE "$dw_url"
+            ORG_FILE_NAME=${dw_url##*'/'}
             fault_code="$?"
             if [ "$fault_code" != "0" ]; then
                 let fault_code=9000+$E_DOWNLOAD_FAILURE
@@ -310,15 +311,14 @@ handle_action() {
     fi
     if [ "$action" = "apply_download" ]; then
         if [ "$__arg1" = "3 Vendor Configuration File" ]; then 
-            /sbin/uci import < $DOWNLOAD_FILE  
+            /sbin/uci import $ORG_FILE_NAME -f $DOWNLOAD_FILE  
             fault_code="$?"
             if [ "$fault_code" != "0" ]; then
                 let fault_code=$E_DOWNLOAD_FAIL_FILE_CORRUPTED+9000
                 easycwmp_status_output "" "$fault_code"
             else
-                $UCI_COMMIT
+                $UCI_COMMIT $ORG_FILE_NAME
                 sync
-                reboot
                 easycwmp_status_output "" "" "1"
             fi
         elif [ "$__arg1" = "1 Firmware Upgrade Image" ]; then
