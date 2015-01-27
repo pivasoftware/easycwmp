@@ -1,0 +1,155 @@
+#!/bin/sh
+# EasyCwmp is a GPLv2 open source implementation of the TR069 cwmp standard.
+# Author: sinkcup <sinkcup@163.com>
+
+get_user_encrypted_password() {
+    local param="InternetGatewayDevice.User.1.EncryptedPassword"
+    local nl="$2"
+    local type="xsd:string"
+    local val=""
+    local permissions="1"
+    case "$action" in
+        get_value)
+            val=`grep '^root:' /etc/shadow | awk -F: '{print $2}'`
+        ;;
+        get_name)
+        [ "$nl" = "1" ] && return $E_INVALID_ARGUMENTS
+        ;;
+        get_notification)
+        easycwmp_get_parameter_notification "val" "$param"
+        ;;
+    esac
+    easycwmp_output "$param" "$val" "$permissions" "$type"
+    return 0
+}
+
+get_user_last_changed() {
+    local param="InternetGatewayDevice.User.1.LastChanged"
+    local nl="$2"
+    local type="xsd:unsignedInt"
+    local val=""
+    local permissions="0"
+    case "$action" in
+        get_value)
+            val=`grep '^root:' /etc/shadow | awk -F: '{print $3}'`
+        ;;
+        get_name)
+        [ "$nl" = "1" ] && return $E_INVALID_ARGUMENTS
+        ;;
+        get_notification)
+        easycwmp_get_parameter_notification "val" "$param"
+        ;;
+    esac
+    easycwmp_output "$param" "$val" "$permissions" "$type"
+    return 0
+}
+
+get_user_username() {
+    local param="InternetGatewayDevice.User.1.Username"
+    local nl="$2"
+    local type="xsd:string"
+    local val=""
+    local permissions="0"
+    case "$action" in
+        get_value)
+            val=`grep '^root:' /etc/shadow | awk -F: '{print $1}'`
+        ;;
+        get_name)
+        [ "$nl" = "1" ] && return $E_INVALID_ARGUMENTS
+        ;;
+        get_notification)
+        easycwmp_get_parameter_notification "val" "$param"
+        ;;
+    esac
+    easycwmp_output "$param" "$val" "$permissions" "$type"
+    return 0
+}
+
+set_user_encrypted_password() {
+    local param="InternetGatewayDevice.User.1.EncryptedPassword"
+    local val="$2"
+    case $action in
+        set_value)
+            #sh is diff vs shell, can't use ${string/substring/replacement}
+            local v1=`grep '^root:' /etc/shadow | awk -F: '{print $1}'`
+            local n3=$(($(date +%s) / 60 / 60 / 24))
+            local v4=`grep '^root:' /etc/shadow | awk -F: '{print $4}'`
+            local v5=`grep '^root:' /etc/shadow | awk -F: '{print $5}'`
+            local v6=`grep '^root:' /etc/shadow | awk -F: '{print $6}'`
+            local new_line=$v1:$val:$n3:$v4:$v5:$v6:::
+            local content=`sed '/^root:.*$/d' /etc/shadow`
+            echo -e "$new_line\n""$content" > /etc/shadow
+        ;;
+        set_notification)
+        easycwmp_set_parameter_notification "$param" "$val"
+        ;;
+    esac
+}
+
+get_user_object() {
+    local nl="$1"
+    case "$action" in
+        get_name)
+        [ "$nl" = "0" ] && easycwmp_output "InternetGatewayDevice.User." "" "0"
+        ;;
+    esac
+}
+
+get_user_instances() {
+    local nl="$1"
+    [ "$action" != "get_name" -o "$nl" = "1" ] && return
+    easycwmp_output "InternetGatewayDevice.User.1." "" "1"
+}
+
+get_user() {
+    case "$1" in
+        InternetGatewayDevice.|\
+        InternetGatewayDevice.User.)
+            get_user_object 0
+            get_user_instances "$2"
+            get_user_encrypted_password "$2"
+            get_user_last_changed "$2"
+            get_user_username "$2"
+            return 0
+        ;;
+        InternetGatewayDevice.User.[0-9]*.EncryptedPassword)
+            get_user_encrypted_password "$2"
+            return $?
+        ;;
+        InternetGatewayDevice.User.[0-9]*.LastChanged)
+            get_user_last_changed "$2"
+            return $?
+        ;;
+        InternetGatewayDevice.User.[0-9]*.Username)
+            get_user_username "$2"
+            return $?
+        ;;
+        InternetGatewayDevice.User.[0-9]*.)
+            get_user_encrypted_password "$2"
+            get_user_last_changed "$2"
+            get_user_username "$2"
+            return 0
+        ;;
+    esac
+    return $E_INVALID_PARAMETER_NAME
+}
+
+set_user() {
+    case "$1" in
+        InternetGatewayDevice.User.|\
+        InternetGatewayDevice.User.[0-9]*.)
+            [ "$action" = "set_value" ] && return $E_INVALID_PARAMETER_NAME
+            easycwmp_set_parameter_notification "$1" "$2"
+            return 0
+        ;;
+        InternetGatewayDevice.User.[0-9]*.EncryptedPassword)
+            set_user_encrypted_password "$2"
+            return 0
+        ;;
+    esac
+    return $E_INVALID_PARAMETER_NAME
+}
+
+build_instances_user() {
+    return 0
+}

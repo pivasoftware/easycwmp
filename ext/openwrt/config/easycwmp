@@ -40,5 +40,7 @@ config scripts
 	list function lan_device
 	list location /usr/share/easycwmp/functions/management_server
 	list function management_server
+	list location /usr/share/easycwmp/functions/user
+	list function user
 	list location /usr/share/easycwmp/functions/wan_device
 	list function wan_device
