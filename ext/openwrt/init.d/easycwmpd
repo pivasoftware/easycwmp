@@ -3,14 +3,29 @@
 
 START=90
 
+change_config() {
+    local iface=`uci get easycwmp.@local[0].interface`
+    if [ "$iface" = "eth0" ]; then
+        . /lib/functions/network.sh; network_get_device if_wan wan;
+        if [ "$if_wan" = "$iface" ]; then
+            return 0
+        fi
+        uci set easycwmp.@local[0].interface="$if_wan"
+        uci commit easycwmp
+    fi
+    return 0
+}
+
 boot() {
-        service_start /usr/sbin/easycwmpd --boot
+    change_config
+    service_start /usr/sbin/easycwmpd --boot
 }
 
 start() {
-        service_start /usr/sbin/easycwmpd --getrpcmethod
+    change_config
+    service_start /usr/sbin/easycwmpd --getrpcmethod
 }
 
 stop() {
-        service_stop /usr/sbin/easycwmpd
+    service_stop /usr/sbin/easycwmpd
 }
