@@ -1,6 +1,9 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.1.0 (date of 20th of February 2015)
+  - 0000035: improve the easycwmp scripts. make the implementation of new parameters more easier
+
 * EasyCwmp-1.0.5 (date of 29th of december 2014)
   - #0000025: easycwmp excutable carshes upon CTRL + C
   - #0000024: remove Accept and change content type of the HTTP header
