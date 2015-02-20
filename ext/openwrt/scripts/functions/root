@@ -1,0 +1,19 @@
+#!/bin/sh
+# Copyright (C) 2015 PIVA Software <www.pivasoftware.com>
+# 	Author: MOHAMED Kallel <mohamed.kallel@pivasoftware.com>
+
+#############################
+#   Entry point functuons   #
+#############################
+
+prefix_list="$DMROOT. $prefix_list"
+entry_execute_method_list="entry_execute_method_root $entry_execute_method_list"
+
+entry_execute_method_root() {
+	case "$1" in ""|"$DMROOT.")
+		common_execute_method_obj "$1" "$2" "$3" "$DMROOT." "0"
+		return 0;
+		;;
+	esac
+	return $E_INVALID_PARAMETER_NAME;
+}

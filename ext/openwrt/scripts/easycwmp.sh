@@ -24,14 +24,19 @@ UCI_BATCH="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} batch"
 
 DOWNLOAD_FILE="/tmp/easycwmp_download"
 EASYCWMP_PROMPT="easycwmp>"
-set_fault_tmp_file="/tmp/set_fault_tmp"
-apply_service_tmp_file="/tmp/easycwmp_apply_service"
+set_fault_tmp_file="/tmp/.easycwmp_set_fault_tmp"
+apply_service_tmp_file="/tmp/.easycwmp_apply_service"
+set_command_tmp_file="/tmp/.easycwmp_set_command_tmp"
+FUNCTION_PATH="/usr/share/easycwmp/functions"
 easycwmp_config_changed=""
+g_fault_code=""
 
-get_functions=""
-set_functions=""
-add_object_functions=""
-delete_object_functions=""
+DMROOT="InternetGatewayDevice"
+prefix_list=""
+entry_execute_method_list=""
+entry_build_instances_list=""
+entry_add_object_list=""
+entry_delete_object_list=""
 
 # Fault codes
 E_REQUEST_DENIED="1"
@@ -83,6 +88,7 @@ __arg1=""; __arg2=""; __arg3=""; __arg4=""; __arg5="";
 
 json_get_opt() {
 	__arg1=""; __arg2=""; __arg3=""; __arg4=""; __arg5="";
+	
 	json_init
 	json_load "$1"
 	local command class
@@ -186,105 +192,62 @@ if [ -z "$action" ]; then
 	exit 1
 fi
 
-load_script() {
-	. $1 
-}
+dmscripts=`ls $FUNCTION_PATH`
+for dms in $dmscripts; do
+	. $FUNCTION_PATH/$dms
+done
 
-load_function() {
-	get_functions="$get_functions get_$1"
-	set_functions="$set_functions set_$1"
-	add_object_functions="$add_object_functions add_object_$1"
-	delete_object_functions="$delete_object_functions delete_object_$1"
-	build_instances_$1  2> /dev/null
-}
-
-handle_scripts() {
-	local section="$1"
-	config_get prefix "$section" "prefix"
-	config_list_foreach "$section" 'location' load_script
-	config_list_foreach "$section" 'function' load_function
-}
-
-config_load easycwmp
-config_foreach handle_scripts "scripts"
 
 handle_action() {
 	if [ "$action" = "get_value" ]; then
-		local __param
-		[ "$__arg1" = "" ] && __param="InternetGatewayDevice." || __param="$__arg1"
-		easycwmp_execute_functions "$get_functions" "$__param"
-		fault_code="$?"
-		
-		if [ "$fault_code" != "0" ]; then
-			let fault_code=$fault_code+9000
-			easycwmp_output "$__arg1" "" "" "" "$fault_code"
+		(common_entry_get_value "$__arg1")
+		local fault="$?"
+		if [ "$fault" != "0" ]; then
+			common_json_output_fault "$__arg1" "$((fault+9000))"
 		fi
+		return
 	fi
 	
 	if [ "$action" = "get_name" ]; then
-		local __param="$__arg1"		
 		[ "`echo $__arg2 | awk '{print tolower($0)}'`" = "false" ] &&  __arg2="0"
 		[ "`echo $__arg2 | awk '{print tolower($0)}'`" = "true" ] &&  __arg2="1"
 		if [ "$__arg2" != "0" -a "$__arg2" != "1" ]; then
-			let fault_code=$E_INVALID_ARGUMENTS+9000
-			easycwmp_output "$__arg1" "" "" "" "$fault_code"
+			common_json_output_fault "$__arg1" "$((E_INVALID_ARGUMENTS+9000))"
 			return
 		fi
-		if [ "$__arg1" = "InternetGatewayDevice." -a "$__arg2" = "0" ]; then
-			easycwmp_output "InternetGatewayDevice." "" "0"
+		(common_entry_get_name "$__arg1" "$__arg2")
+		local fault="$?"
+		if [ "$fault" != "0" ]; then
+			common_json_output_fault "$__arg1" "$((fault+9000))"
 		fi
-		if [ "$__arg1" = "" ]; then
-			easycwmp_output "InternetGatewayDevice." "" "0"
-			if [ "$__arg2" = "1" ]; then
-				return
-			fi
-			__param="InternetGatewayDevice."
-		fi
-		easycwmp_execute_functions "$get_functions" "$__param" "$__arg2"
-		fault_code="$?"
-		
-		if [ "$fault_code" != "0" ]; then
-			let fault_code=$fault_code+9000
-			easycwmp_output "$__arg1" "" "" "" "$fault_code"
-		fi
+		return
 	fi
 	
 	if [ "$action" = "get_notification" ]; then
-		local __param
-		[ "$__arg1" = "" ] && __param="InternetGatewayDevice." || __param="$__arg1"
-		easycwmp_execute_functions "$get_functions" "$__param"
-		fault_code="$?"
-		if [ "$fault_code" != "0" ]; then
-			let fault_code=$fault_code+9000
-			easycwmp_output "$__arg1" "" "" "" "$fault_code"
+		(common_entry_get_notification "$__arg1")
+		local fault="$?"
+		if [ "$fault" != "0" ]; then
+			common_json_output_fault "$__arg1" "$((fault+9000))"
 		fi
+		return
 	fi
 	
 	if [ "$action" = "set_value" ]; then
-
-		local fault_code="0"
-		[ "$__arg1" = "" ] && fault_code=$E_INVALID_PARAMETER_NAME
-		if [ "$fault_code" = "0" ]; then
-			easycwmp_execute_functions "$set_functions" "$__arg1" "$__arg2"
-			fault_code="$?"
+		(common_entry_set_value "$__arg1" "$__arg2")
+		local fault="$?"
+		if [ "$fault" != "0" ]; then
+			common_set_parameter_fault "$__arg1" "$((fault+9000))"
 		fi
-		if [ "$fault_code" != "0" ]; then
-			let fault_code=$fault_code+9000
-			easycwmp_set_parameter_fault "$__arg1" "$fault_code"
-		fi
+		return
 	fi
 	
 	if [ "$action" = "set_notification" ]; then
-		local fault_code="0"
-		[ "$__arg1" = "" ] && fault_code=$E_INVALID_PARAMETER_NAME
-		if [ "$fault_code" = "0" ]; then
-			easycwmp_execute_functions "$set_functions" "$__arg1" "$__arg2"
-			fault_code="$?"
+		(common_entry_set_notification "$__arg1" "$__arg2")
+		local fault="$?"
+		if [ "$fault" != "0" ]; then
+			common_set_parameter_fault "$__arg1" "$((fault+9000))"
 		fi
-		if [ "$fault_code" != "0" ]; then
-			let fault_code=$fault_code+9000
-			easycwmp_set_parameter_fault "$__arg1" "$fault_code"
-		fi
+		return
 	fi
 	
 	if [ "$action" = "download" ]; then
@@ -293,7 +256,7 @@ handle_action() {
 		dl_size_byte=$((${dl_size}*1024))
 		if [ "$dl_size_byte" -lt "$__arg3" ]; then
 			let fault_code=9000+$E_DOWNLOAD_FAILURE
-			easycwmp_status_output "" "$fault_code"
+			common_json_output_fault "" "$fault_code"
 		else 
 			rm -f $DOWNLOAD_FILE 2> /dev/null
 			local dw_url="$__arg1"
@@ -302,11 +265,12 @@ handle_action() {
 			fault_code="$?"
 			if [ "$fault_code" != "0" ]; then
 				let fault_code=9000+$E_DOWNLOAD_FAILURE
-				easycwmp_status_output "" "$fault_code"
+				common_json_output_fault "" "$fault_code"
 			else
-				easycwmp_status_output "" "" "1"
+				common_json_output_status "1"
 			fi
 		fi
+		return
 	fi
 	if [ "$action" = "apply_download" ]; then
 		if [ "$__arg1" = "3 Vendor Configuration File" ]; then 
@@ -314,25 +278,26 @@ handle_action() {
 			fault_code="$?"
 			if [ "$fault_code" != "0" ]; then
 				let fault_code=$E_DOWNLOAD_FAIL_FILE_CORRUPTED+9000
-				easycwmp_status_output "" "$fault_code"
+				common_json_output_fault "" "$fault_code"
 			else
 				$UCI_COMMIT
 				sync
 				reboot
-				easycwmp_status_output "" "" "1"
+				common_json_output_status "1"
 			fi
 		elif [ "$__arg1" = "1 Firmware Upgrade Image" ]; then
 			/sbin/sysupgrade $DOWNLOAD_FILE 
 			fault_code="$?"
 			if [ "$fault_code" != "0" ]; then
 				let fault_code=$E_DOWNLOAD_FAIL_FILE_CORRUPTED+9000
-				easycwmp_status_output "" "$fault_code"
+				common_json_output_fault "" "$fault_code"
 			else
-				easycwmp_status_output "" "" "1"
+				common_json_output_status "1"
 			fi
 		else
-			easycwmp_status_output "" "$(($E_INVALID_ARGUMENTS+9000))"
+			common_json_output_fault "" "$(($E_INVALID_ARGUMENTS+9000))"
 		fi
+		return
 	fi
 	if [ "$action" = "factory_reset" ]; then
 		jffs2_mark_erase "rootfs_data"
@@ -347,28 +312,44 @@ handle_action() {
 	
 	if [ "$action" = "apply_notification" -o "$action" = "apply_value" ]; then
 		if [ ! -f "$set_fault_tmp_file" ]; then
-			$UCI_COMMIT
-			if [ "$action" = "apply_value" ]; then
-				$UCI_SET easycwmp.@acs[0].parameter_key="$__arg1"
+			local rev=""
+			while read line; do
+				[ -z "$line" ] && continue
+				local param=`echo $line | awk '{print $1}'`
+				local setcmd=${line#$param }
+				eval "$setcmd"
+				local fault="$?"
+				if [ "$fault" != "0" ]; then
+					rev=1
+					common_json_output_fault "$param" "$((fault+9000))"
+				fi
+			done < $set_command_tmp_file
+			if [ -n "$rev" ]; then
+				local cfg cfg_reverts=`$UCI_CHANGES | cut -d'.' -f1 | sort -u`
+				for cfg in $cfg_reverts; do
+					$UCI_REVERT $cfg
+				done
+			else
+				if [ "$action" = "apply_value" ]; then
+					$UCI_SET easycwmp.@acs[0].parameter_key="$__arg1"
+					common_json_output_status "1"
+				fi
+				if [ "$action" = "apply_notification" ]; then
+					common_json_output_status "0"
+				fi
 				$UCI_COMMIT
-				easycwmp_status_output "" "" "1"
-			fi
-			if [ "$action" = "apply_notification" ]; then
-				easycwmp_status_output "" "" "0"
 			fi
 		else
 			cat "$set_fault_tmp_file" 
-			local cfg
-			local cfg_reverts=`$UCI_CHANGES | cut -d'.' -f1 | sort -u`
-			for cfg in $cfg_reverts; do
-				$UCI_REVERT $cfg
-			done
 		fi
 		rm -f "$set_fault_tmp_file"
+		rm -f "$set_command_tmp_file"
+		return
 	fi
 	if [ "$action" = "apply_object" ]; then
 		$UCI_SET easycwmp.@acs[0].parameter_key="$__arg1"
 		$UCI_COMMIT
+		return
 	fi
 	if [ "$action" = "apply_service" ]; then
 		if [ -f "$apply_service_tmp_file" ]; then
@@ -376,32 +357,35 @@ handle_action() {
 			/bin/sh "$apply_service_tmp_file"
 			rm -f "$apply_service_tmp_file"
 		fi
+		return
 	fi
-		
+
 	if [ "$action" = "add_object" ]; then
-		easycwmp_execute_functions "$add_object_functions" "$__arg1"
-		fault_code="$?"
-		if [ "$fault_code" != "0" ]; then
-			let fault_code=$fault_code+9000
-			easycwmp_status_output "" "$fault_code"
+		(common_entry_add_object "$__arg1")
+		local fault="$?"
+		if [ "$fault" != "0" ]; then
+			common_json_output_fault "" "$((fault+9000))"
 		fi
+		return
 	fi
-	
+
 	if [ "$action" = "delete_object" ]; then
-		easycwmp_execute_functions "$delete_object_functions" "$__arg1"
-		fault_code="$?"
-		if [ "$fault_code" != "0" ]; then
-			let fault_code=$fault_code+9000
-			easycwmp_status_output "" "$fault_code"
+		(common_entry_delete_object "$__arg1")
+		local fault="$?"
+		if [ "$fault" != "0" ]; then
+			common_json_output_fault "" "$((fault+9000))"
 		fi
+		return
 	fi
 
 	if [ "$action" = "inform_parameter" ]; then
-		easycwmp_get_inform_parameters
+		(common_entry_inform)
+		return
 	fi
 	
 	if [ "$action" = "inform_device_id" ]; then
-		easycwmp_get_inform_deviceid
+		common_get_inform_deviceid
+		return
 	fi
 	
 	if [ "$action" = "json_input" ]; then
