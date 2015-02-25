@@ -12,7 +12,7 @@ entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_
 entry_execute_method_root_ManagementServer() {
 	case "$1" in ""|"$DMROOT."|"$DMROOT.ManagementServer."*)
 		common_execute_method_obj "$1" "$2" "$3" "$DMROOT.ManagementServer." "0"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.ManagementServer.URL" "1" "management_server_get_url" "management_server_set_url"
+		common_execute_method_param "$1" "$2" "$3" "$DMROOT.ManagementServer.URL" "1" "$UCI_GET easycwmp.@acs[0].url" "management_server_set_url"
 		common_execute_method_param "$1" "$2" "$3" "$DMROOT.ManagementServer.Username" "1" "$UCI_GET easycwmp.@acs[0].username" "management_server_set easycwmp.@acs[0].username"
 		common_execute_method_param "$1" "$2" "$3" "$DMROOT.ManagementServer.Password" "1" "" "management_server_set easycwmp.@acs[0].password"
 		common_execute_method_param "$1" "$2" "$3" "$DMROOT.ManagementServer.PeriodicInformEnable" "1" "$UCI_GET easycwmp.@acs[0].periodic_enable" "management_server_set easycwmp.@acs[0].periodic_enable" "xsd:boolean"
@@ -31,38 +31,13 @@ entry_execute_method_root_ManagementServer() {
 #######################################
 #   Data model parameters functions   #
 #######################################
-management_server_get_url() {
-	local scheme=`$UCI_GET easycwmp.@acs[0].scheme`
-	local hostname=`$UCI_GET easycwmp.@acs[0].hostname`
-	local port=`$UCI_GET easycwmp.@acs[0].port`
-	local path=`$UCI_GET easycwmp.@acs[0].path`
-	port=${port+:$port}
-	echo "$scheme://$hostname$port$path"
-}
-
 management_server_set_url() {
 	local val=$1
-	local scheme
-	local hostname
-	local path
-	local port
 	
 	local chk=`echo $val | grep "[a-zA-Z0-9_]\+://.*"`
 	[ "$chk" = "" ] && return $E_INVALID_PARAMETER_VALUE
 
-	scheme=${val%%://*}
-	val=${val#*://}
-	path=${val#*/}
-	[ "$path" = "$val" ] && path="" || path="/$path"
-	val=${val%%/*}
-	port=${val#*:}
-	[ "$port" = "$val" ] && port=""
-	hostname=${val%%:*};
-	
-	$UCI_SET easycwmp.@acs[0].scheme=$scheme
-	$UCI_SET easycwmp.@acs[0].hostname=$hostname
-	$UCI_SET easycwmp.@acs[0].port=$port
-	$UCI_SET easycwmp.@acs[0].path=$path
+	$UCI_SET easycwmp.@acs[0].url=$val
 	common_easycwmp_config_load
 	return 0
 }

@@ -10,12 +10,9 @@ config local
 	option provisioning_code ''
 
 config acs
-	option scheme http
+	option url http://192.168.1.110:8080/openacs/acs
 	option username easycwmp
 	option password easycwmp
-	option hostname  192.168.1.110 
-	option port  8080 
-	option path  /openacs/acs 
 	option parameter_key ''
 	option periodic_enable '1'
 	option periodic_interval '100'

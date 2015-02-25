@@ -23,12 +23,9 @@ int config_remove_event(char *event);
 int config_check_acs_url(void);
 
 struct acs {
-	char *scheme;
+	char *url;
 	char *username;
 	char *password;
-	char *hostname;
-	char *port;
-	char *path;
 	bool periodic_enable;
 	int  periodic_interval;
 	time_t periodic_time;

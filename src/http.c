@@ -36,13 +36,7 @@ CURL *curl;
 int
 http_client_init(void)
 {
-	if (asprintf(&http_c.url, "%s://%s:%s@%s:%s%s",
-			 config->acs->scheme,
-			 config->acs->username,
-			 config->acs->password,
-			 config->acs->hostname,
-			 config->acs->port,
-			 config->acs->path) == -1)
+	if ((http_c.url = strdup(config->acs->url)) == NULL)
 		return -1;
 
 	DDF("+++ HTTP CLIENT CONFIGURATION +++\n");

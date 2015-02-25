@@ -108,12 +108,9 @@ static int config_init_local(void)
 
 static void config_free_acs(void) {
 	if (config->acs) {
-		FREE(config->acs->scheme);
+		FREE(config->acs->url);
 		FREE(config->acs->username);
 		FREE(config->acs->password);
-		FREE(config->acs->hostname);
-		FREE(config->acs->port);
-		FREE(config->acs->path);
 		FREE(config->acs->ssl_cert);
 		FREE(config->acs->ssl_cacert);
 	}
@@ -132,13 +129,13 @@ static int config_init_acs(void)
 			config->acs->periodic_time = -1;
 
 			uci_foreach_element(&s->options, e) {
-				if (!strcmp((uci_to_option(e))->e.name, "scheme")) {
+				if (!strcmp((uci_to_option(e))->e.name, "url")) {
 					bool valid = false;
 
-					if (!(strncmp((uci_to_option(e))->v.string, "http", 5)))
+					if (!(strncmp((uci_to_option(e))->v.string, "http:", 5)))
 						valid = true;
 
-					if (!(strncmp((uci_to_option(e))->v.string, "https", 6)))
+					if (!(strncmp((uci_to_option(e))->v.string, "https:", 6)))
 						valid = true;
 
 					if (!valid) {
@@ -146,8 +143,8 @@ static int config_init_acs(void)
 						return -1;
 					}
 
-					config->acs->scheme = strdup(uci_to_option(e)->v.string);
-					DD("easycwmp.@acs[0].scheme=%s\n", config->acs->scheme);
+					config->acs->url = strdup(uci_to_option(e)->v.string);
+					DD("easycwmp.@acs[0].url=%s\n", config->acs->url);
 					continue;
 				}
 
@@ -160,28 +157,6 @@ static int config_init_acs(void)
 				if (!strcmp((uci_to_option(e))->e.name, "password")) {
 					config->acs->password = strdup(uci_to_option(e)->v.string);
 					DD("easycwmp.@acs[0].password=%s\n", config->acs->password);
-					continue;
-				}
-
-				if (!strcmp((uci_to_option(e))->e.name, "hostname")) {
-					config->acs->hostname = strdup(uci_to_option(e)->v.string);
-					DD("easycwmp.@acs[0].hostname=%s\n", config->acs->hostname);
-					continue;
-				}
-
-				if (!strcmp((uci_to_option(e))->e.name, "port")) {
-					if (!atoi((uci_to_option(e))->v.string)) {
-						D("in section acs port has invalid value...\n");
-						return -1;
-					}
-					config->acs->port = strdup(uci_to_option(e)->v.string);
-					DD("easycwmp.@acs[0].port=%s\n", config->acs->port);
-					continue;
-				}
-
-				if (!strcmp((uci_to_option(e))->e.name, "path")) {
-					config->acs->path = strdup(uci_to_option(e)->v.string);
-					DD("easycwmp.@acs[0].path=%s\n", config->acs->path);
 					continue;
 				}
 
@@ -225,23 +200,8 @@ static int config_init_acs(void)
 				}
 			}
 
-			if (!config->acs->scheme) {
-				D("in acs you must define scheme\n");
-				return -1;
-			}
-
-			if (!config->acs->hostname) {
-				D("in acs you must define hostname\n");
-				return -1;
-			}
-
-			if (!config->acs->port) {
-				D("in acs you must define port\n");
-				return -1;
-			}
-
-			if (!config->acs->path) {
-				D("in acs you must define path\n");
+			if (!config->acs->url) {
+				D("acs url must be defined in the config\n");
 				return -1;
 			}
 

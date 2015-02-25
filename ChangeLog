@@ -1,8 +1,13 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.1.1 (date of 25th of February 2015)
+  - #0000036: acs url should be configured via only one option in the acs section
+  - #0000034: Avoid the inherit of opened sockets and opend files to the fork() child
+  - #0000037: make fails with struct storage size of 'tm' isn't known
+
 * EasyCwmp-1.1.0 (date of 20th of February 2015)
-  - 0000035: improve the easycwmp scripts. make the implementation of new parameters more easier
+  - #0000035: improve the easycwmp scripts. make the implementation of new parameters more easier
 
 * EasyCwmp-1.0.5 (date of 29th of december 2014)
   - #0000025: easycwmp excutable carshes upon CTRL + C
@@ -12,7 +17,7 @@ EasyCwmp change log:
   - #000023: Add InternetGatewayDevice.ManagementServer.PeriodicInformTime parameter 
   
 * EasyCwmp-1.0.3 (date of 24th of september 2014)
-  - #00011 :  Add cwmp id to the RPC ACS (Inform, GetRPCMethod, TransferComplete...)
+  - #00011 : Add cwmp id to the RPC ACS (Inform, GetRPCMethod, TransferComplete...)
   - #00010 : XML parsing problem (fixed)
 
 * EasyCwmp-1.0.2 (date of 9th of september 2014)

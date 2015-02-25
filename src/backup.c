@@ -80,23 +80,12 @@ void backup_add_acsurl(char *acs_url)
 void backup_check_acs_url(void)
 {
 	mxml_node_t *b;
-	char *c = NULL;
-
-	if (asprintf(&c, "%s://%s:%s@%s:%s%s",
-				 config->acs->scheme,
-				 config->acs->username,
-				 config->acs->password,
-				 config->acs->hostname,
-				 config->acs->port,
-				 config->acs->path) == -1)
-		return;
 
 	b = mxmlFindElement(backup_tree, backup_tree, "acs_url", NULL, NULL, MXML_DESCEND);
 	if (!b || (b->child && b->child->type == MXML_TEXT && b->child->value.text.string &&
-		strcmp(c, b->child->value.text.string) != 0)) {
-		backup_add_acsurl(c);
+		strcmp(config->acs->url, b->child->value.text.string) != 0)) {
+		backup_add_acsurl(config->acs->url);
 	}
-	free(c);
 }
 
 mxml_node_t *backup_add_transfer_complete(char *command_key, int fault_code, char *start_time, int method_id)
