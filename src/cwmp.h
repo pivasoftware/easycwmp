@@ -121,6 +121,7 @@ struct cwmp_internal {
 	int method_id;
 	bool get_rpc_methods;
 	bool hold_requests;
+	int netlink_sock[2];
 };
 
 extern struct cwmp_internal *cwmp;

@@ -167,42 +167,43 @@ static int netlink_init(void)
 		struct ifaddrmsg msg;
 	} req;
 	struct sockaddr_nl addr;
-	int sock[2];
 
 	memset(&addr, 0, sizeof(addr));
 	memset(&req, 0, sizeof(req));
 
-	if ((sock[0] = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE)) == -1) {
+	if ((cwmp->netlink_sock[0] = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE)) == -1) {
 		D("couldn't open NETLINK_ROUTE socket");
 		return -1;
 	}
+	fcntl(cwmp->netlink_sock[0], F_SETFD, fcntl(cwmp->netlink_sock[0], F_GETFD) | FD_CLOEXEC);
 
 	addr.nl_family = AF_NETLINK;
 	addr.nl_groups = RTMGRP_IPV4_IFADDR;
-	if ((bind(sock[0], (struct sockaddr *)&addr, sizeof(addr))) == -1) {
+	if ((bind(cwmp->netlink_sock[0], (struct sockaddr *)&addr, sizeof(addr))) == -1) {
 		D("couldn't bind netlink socket");
 		return -1;
 	}
 
-	netlink_event.fd = sock[0];
+	netlink_event.fd = cwmp->netlink_sock[0];
 	uloop_fd_add(&netlink_event, ULOOP_READ | ULOOP_EDGE_TRIGGER);
 
-	if ((sock[1] = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE)) == -1) {
+	if ((cwmp->netlink_sock[1] = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE)) == -1) {
 		D("couldn't open NETLINK_ROUTE socket");
 		return -1;
 	}
+	fcntl(cwmp->netlink_sock[1], F_SETFD, fcntl(cwmp->netlink_sock[1], F_GETFD) | FD_CLOEXEC);
 
 	req.hdr.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifaddrmsg));
 	req.hdr.nlmsg_flags = NLM_F_REQUEST | NLM_F_ROOT;
 	req.hdr.nlmsg_type = RTM_GETADDR;
 	req.msg.ifa_family = AF_INET;
 
-	if ((send(sock[1], &req, req.hdr.nlmsg_len, 0)) == -1) {
+	if ((send(cwmp->netlink_sock[1], &req, req.hdr.nlmsg_len, 0)) == -1) {
 		D("couldn't send netlink socket");
 		return -1;
 	}
 
-	struct uloop_fd dummy_event = { .fd = sock[1] };
+	struct uloop_fd dummy_event = { .fd = cwmp->netlink_sock[1] };
 	netlink_new_msg(&dummy_event, 0);
 
 	return 0;
@@ -244,6 +245,7 @@ int main (int argc, char **argv)
 		exit(EXIT_FAILURE);
 	if (flock(fd, LOCK_EX | LOCK_NB) == -1)
 		exit(EXIT_SUCCESS);
+	fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC);
 
 	log_message(NAME, L_NOTICE, "daemon started\n");
 
@@ -329,6 +331,9 @@ int main (int argc, char **argv)
 	free(cwmp);
 
 	closelog();
+	close(fd);
+	if (cwmp->netlink_sock[0] != -1) close(cwmp->netlink_sock[0]);
+	if (cwmp->netlink_sock[1] != -1) close(cwmp->netlink_sock[1]);
 
 	log_message(NAME, L_NOTICE, "exiting\n");
 	return 0;
