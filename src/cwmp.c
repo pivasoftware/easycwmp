@@ -736,7 +736,6 @@ int cwmp_get_int_event_code(char *code)
 
 long int cwmp_periodic_inform_time(void)
 {
-	struct tm tm;
 	long int delta_time;
 	long int periodic_time;
 

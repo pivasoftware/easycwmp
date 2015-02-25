@@ -14,6 +14,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <microxml.h> 
+#include <time.h>
 #include "cwmp.h"
 #include "backup.h" 
 #include "config.h"

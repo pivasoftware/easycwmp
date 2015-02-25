@@ -239,7 +239,7 @@ int main (int argc, char **argv)
 				exit(EXIT_FAILURE);
 		}
 	}
-	int fd = open("/var/run/easycwmp.pid", O_RDWR | O_CREAT);
+	int fd = open("/var/run/easycwmp.pid", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if(fd == -1)
 		exit(EXIT_FAILURE);
 	if (flock(fd, LOCK_EX | LOCK_NB) == -1)
@@ -309,7 +309,11 @@ int main (int argc, char **argv)
 	}
 	char *buf = NULL;
 	asprintf(&buf, "%d", getpid());
-	write(fd, buf, strlen(buf));
+	int error = write(fd, buf, strlen(buf));
+	if ( error < 0) {
+		D("Unable to write the easycwmpd pid to /var/run/easycwmpd.pid\n");
+	}
+
 	free(buf);
 
 	log_message(NAME, L_NOTICE, "entering main loop\n");
