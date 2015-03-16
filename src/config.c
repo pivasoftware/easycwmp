@@ -48,6 +48,7 @@ static int config_init_local(void)
 		if (strcmp(s->type, "local") == 0) {
 			config_free_local();
 
+			config->local->logging_level = DEFAULT_LOGGING_LEVEL;
 			uci_foreach_element(&s->options, e1) {
 				if (!strcmp((uci_to_option(e1))->e.name, "interface")) {
 					config->local->interface = strdup(uci_to_option(e1)->v.string);
@@ -80,6 +81,17 @@ static int config_init_local(void)
 				if (!strcmp((uci_to_option(e1))->e.name, "ubus_socket")) {
 					config->local->ubus_socket = strdup(uci_to_option(e1)->v.string);
 					DD("easycwmp.@local[0].ubus_socket=%s\n", config->local->ubus_socket);
+					continue;
+				}
+				
+        if (!strcmp((uci_to_option(e1))->e.name, "logging_level")) {
+					char *c;
+					int log_level = atoi((uci_to_option(e1))->v.string);					 
+					asprintf(&c, "%d", log_level);
+					if (!strcmp(c, uci_to_option(e1)->v.string)) 
+						config->local->logging_level = log_level;						
+					free(c);
+					DD("easycwmp.@local[0].logging_level=%d\n", config->local->logging_level);
 					continue;
 				}
 			}
@@ -272,7 +284,6 @@ void config_exit(void)
 
 void config_load(void)
 {
-	log_message(NAME, L_NOTICE, "configuration (re)load\n");
 
 	uci_easycwmp = config_init_package("easycwmp");
 
@@ -289,7 +300,7 @@ void config_load(void)
 	return;
 
 error:
-	log_message(NAME, L_CRIT, "configuration (re)loading failed\n");
+	log_message(NAME, L_CRIT, "configuration (re)loading failed, exit daemon\n");
 	D("configuration (re)loading failed\n"); 
 	exit(EXIT_FAILURE);
 }

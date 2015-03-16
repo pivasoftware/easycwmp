@@ -8,6 +8,8 @@ config local
 	option username easycwmp
 	option password easycwmp
 	option provisioning_code ''
+#Logging levels: Critic=0, Warning=1, Notice=2, Info=3, Debug=4
+	option logging_level '3'
 
 config acs
 	option url http://192.168.1.110:8080/openacs/acs

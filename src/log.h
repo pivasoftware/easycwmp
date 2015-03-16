@@ -15,6 +15,8 @@
 
 #include <stdlib.h>
 
+#define DEFAULT_LOGGING_LEVEL 3
+
 enum {
 	L_CRIT,
 	L_WARNING,

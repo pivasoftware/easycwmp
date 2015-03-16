@@ -257,7 +257,7 @@ static void cwmp_handle_end_session()
 		exit(EXIT_SUCCESS);
 	}
 	if (cwmp->end_session & ENDS_RELOAD_CONFIG) {
-		log_message(NAME, L_NOTICE, "end session: config reload\n");
+		log_message(NAME, L_NOTICE, "end session: configuration reload\n");
 		config_load();
 	}
 	cwmp->end_session = 0;

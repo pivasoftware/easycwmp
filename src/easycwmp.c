@@ -63,6 +63,7 @@ static void print_version(void)
 
 static void easycwmp_do_reload(struct uloop_timeout *timeout)
 {
+	log_message(NAME, L_NOTICE, "configuration reload\n");
 	config_load();
 }
 
@@ -247,8 +248,6 @@ int main (int argc, char **argv)
 		exit(EXIT_SUCCESS);
 	fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC);
 
-	log_message(NAME, L_NOTICE, "daemon started\n");
-
 	setlocale(LC_CTYPE, "");
 	umask(0037);
 
@@ -268,6 +267,7 @@ int main (int argc, char **argv)
 	uloop_init();
 	backup_init();
 	config_load();
+	log_message(NAME, L_NOTICE, "daemon started\n");
 	cwmp_init_deviceid();
 	if (start_event & START_BOOT) {
 		cwmp_add_event(EVENT_BOOT, NULL, 0, EVENT_BACKUP);

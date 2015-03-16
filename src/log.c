@@ -17,6 +17,7 @@
 
 #include "log.h"
 #include "easycwmp.h"
+#include "config.h"
 
 static const int log_class[] = {
 	[L_CRIT] = LOG_CRIT,
@@ -30,10 +31,11 @@ void log_message(char *name, int priority, const char *format, ...)
 {
 	va_list vl;
 
-	openlog(name, 0, LOG_DAEMON);
-	va_start(vl, format);
-	vsyslog(log_class[priority], format, vl);
-	va_end(vl);
-	closelog();
+	if (!config || priority <= config->local->logging_level) {
+		openlog(name, 0, LOG_DAEMON);
+		va_start(vl, format);
+		vsyslog(log_class[priority], format, vl);
+		va_end(vl);
+		closelog();
+	}
 }
-

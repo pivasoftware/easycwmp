@@ -41,6 +41,7 @@ struct local {
 	char *username;
 	char *password;
 	char *ubus_socket;
+	int logging_level;
 };
 
 struct core_config {
