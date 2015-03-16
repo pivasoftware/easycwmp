@@ -205,7 +205,10 @@ int backup_extract_transfer_complete( mxml_node_t *node, char **msg_out, int *me
 	if (!b) goto error;
 	n = mxmlFindElement(tree_m, tree_m, "CommandKey", NULL, NULL, MXML_DESCEND);
 	if (!n) goto error;
-	n = mxmlNewText(n, 0, b->child->value.text.string);
+	if (b->child)
+		n = mxmlNewText(n, 0, b->child->value.text.string);
+	else
+		n = mxmlNewText(n, 0, "");
 	if (!n) goto error;
 
 	b = mxmlFindElement(node, node, "fault_code", NULL, NULL, MXML_DESCEND);
