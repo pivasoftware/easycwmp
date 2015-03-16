@@ -100,6 +100,7 @@ struct notification {
 
 	char *parameter;
 	char *value;
+	char *type;
 };
 
 struct deviceid {

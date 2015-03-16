@@ -443,6 +443,9 @@ static int xml_prepare_notifications_inform(mxml_node_t *parameter_list, int *co
 		b = mxmlNewElement(n, "Value");
 		if (!b) goto error;
 
+#ifdef ACS_MULTI
+		mxmlElementSetAttr(b, "xsi:type", notification->type);
+#endif
 		b = mxmlNewText(b, 0, notification->value);
 		if (!b) goto error;
 

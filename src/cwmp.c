@@ -616,6 +616,7 @@ void cwmp_add_notification(char *parameter, char *value, char *type)
 		list_add_tail(&n->list, &cwmp->notifications);
 		n->parameter = strdup(parameter);
 		n->value = strdup(value);
+		n->type = type ? strdup(type) : strdup("xsd:string");
 	}
 	cwmp_add_event(EVENT_VALUE_CHANGE, NULL, 0, EVENT_NO_BACKUP);
 	if (strncmp(c, "2", 1) == 0) {
@@ -632,6 +633,7 @@ void cwmp_clear_notifications(void)
 	list_for_each_entry_safe(n, p, &cwmp->notifications, list) {
 		FREE(n->parameter);
 		FREE(n->value);
+		FREE(n->type);
 		list_del(&n->list);
 		FREE(n);
 	}
