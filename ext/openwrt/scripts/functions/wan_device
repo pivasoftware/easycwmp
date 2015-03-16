@@ -12,9 +12,9 @@ entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_
 
 entry_execute_method_root_WANDevice() {
 	case "$1" in ""|"$DMROOT."|"$DMROOT.WANDevice."*)
-		common_execute_method_obj "$1" "$2" "$3" "$DMROOT.WANDevice." "0"
-		common_execute_method_obj "$1" "$2" "$3" "$DMROOT.WANDevice.1." "0"
-		common_execute_method_obj "$1" "$2" "$3" "$DMROOT.WANDevice.1.WANConnectionDevice." "0"
+		common_execute_method_obj "$DMROOT.WANDevice." "0"
+		common_execute_method_obj "$DMROOT.WANDevice.1." "0"
+		common_execute_method_obj "$DMROOT.WANDevice.1.WANConnectionDevice." "0"
 		local map maps=`wan_device_get_interface_maps` 
 		for map in $maps; do
 			local iface=${map%%:*}
@@ -23,7 +23,7 @@ entry_execute_method_root_WANDevice() {
 			map=${map#*:}
 			local protocol=${map%%:*}
 			local default=${map#*:}
-			sub_entry_wandevice_wanconnectiondevice "$1" "$2" "$3" "$j" "$iface" "$protocol" "$default"
+			sub_entry_wandevice_wanconnectiondevice "$1" "$j" "$iface" "$protocol" "$default"
 		done
 		return 0
 		;;
@@ -32,27 +32,27 @@ entry_execute_method_root_WANDevice() {
 }
 
 sub_entry_wandevice_wanconnectiondevice() {
-	local j="$4"
-	local iface="$5"
-	local protocol="$6"
-	local default="$7"
-	case_param "$1" belong "$DMROOT.WANDevice.1.WANConnectionDevice.$j." || return
+	local j="$2"
+	local iface="$3"
+	local protocol="$4"
+	local default="$5"
+	case_param "$1" belongto "$DMROOT.WANDevice.1.WANConnectionDevice.$j." || return
 	
-	common_execute_method_obj "$1" "$2" "$3" "$DMROOT.WANDevice.1.WANConnectionDevice.$j." "0"
+	common_execute_method_obj "$DMROOT.WANDevice.1.WANConnectionDevice.$j." "0"
 	case $protocol in
 		IP)
-		common_execute_method_obj "$1" "$2" "$3" "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANIPConnection." "0"
-		common_execute_method_obj "$1" "$2" "$3" "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANIPConnection.1." "0"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANIPConnection.1.ConnectionStatus" "0" "wan_device_get_ipcx_status"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANIPConnection.1.ExternalIPAddress" "0" "wan_device_get_ipcx_ipaddr $iface" "" "" "$default"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANIPConnection.1.MACAddress" "0" "wan_device_get_ipcx_macaddr $iface"
+		common_execute_method_obj "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANIPConnection." "0"
+		common_execute_method_obj "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANIPConnection.1." "0"
+		common_execute_method_param "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANIPConnection.1.ConnectionStatus" "0" "wan_device_get_ipcx_status"
+		common_execute_method_param "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANIPConnection.1.ExternalIPAddress" "0" "wan_device_get_ipcx_ipaddr $iface" "" "" "$default"
+		common_execute_method_param "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANIPConnection.1.MACAddress" "0" "wan_device_get_ipcx_macaddr $iface"
 		;;
 		PPP)
-		common_execute_method_obj "$1" "$2" "$3" "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANPPPConnection." "0"
-		common_execute_method_obj "$1" "$2" "$3" "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANPPPConnection.1." "0"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANPPPConnection.1.Enable" "1" "wan_device_get_ipcx_macaddr $iface" "wan_device_set_wan_ppp_enable $iface" "xsd:boolean"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANPPPConnection.1.Username" "1" "$UCI_GET network.$iface.username" "wan_device_set_wan_ppp_cfg network.$iface.username"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANPPPConnection.1.Password" "1" "" "wan_device_set_wan_ppp_cfg network.$iface.password"
+		common_execute_method_obj "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANPPPConnection." "0"
+		common_execute_method_obj "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANPPPConnection.1." "0"
+		common_execute_method_param "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANPPPConnection.1.Enable" "1" "wan_device_get_ipcx_macaddr $iface" "wan_device_set_wan_ppp_enable $iface" "xsd:boolean"
+		common_execute_method_param "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANPPPConnection.1.Username" "1" "$UCI_GET network.$iface.username" "wan_device_set_wan_ppp_cfg network.$iface.username"
+		common_execute_method_param "$DMROOT.WANDevice.1.WANConnectionDevice.$j.WANPPPConnection.1.Password" "1" "" "wan_device_set_wan_ppp_cfg network.$iface.password"
 		;;
 	esac
 }
@@ -62,7 +62,7 @@ sub_entry_wandevice_wanconnectiondevice() {
 #######################################
 
 wan_device_get_interface_maps() {
-	#shoul return a list like this: "<interface1>:<instance1>:<protocol>:<default interface? 1 : 0> <interface2>:<instance>:<protocol>:<default interface? 1 : 0>"
+	#should return a list like this: "<interface1>:<instance1>:<protocol>:<default interface? 1 : 0> <interface2>:<instance>:<protocol>:<default interface? 1 : 0>"
 	echo "mng:1:IP:1 wan:2:PPP:0"
 }
 

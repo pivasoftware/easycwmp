@@ -168,8 +168,11 @@ common_entry_get_value() {
 	else method="common_get_value_inparam_isparam_check"
 	fi
 	
+	g_entry_param="$param"
+	g_entry_arg=""
+	g_entry_method="$method"	
 	for entry in $entry_execute_method_list; do
-		$entry "$param" "$method"
+		$entry "$g_entry_param" 
 	done
 	return $g_fault_code
 }
@@ -182,7 +185,10 @@ common_entry_get_name() {
 	local tmp=" $prefix_list "
 	
 	if [ -z "$param" -a "$nextlevel" = "1" ]; then
-		entry_execute_method_root "" "common_get_name" "1"
+		g_entry_param="$param"
+		g_entry_arg="$nextlevel"
+		g_entry_method="common_get_name"
+		entry_execute_method_root "$g_entry_param" 
 		return 0
 	fi
 	if [ -z "$param" -o "${tmp/ $param /}" != "$tmp" ]; then 
@@ -196,8 +202,11 @@ common_entry_get_name() {
 	else method="common_get_name_inparam_isparam_check"
 	fi
 	
+	g_entry_param="$param"
+	g_entry_arg="$nextlevel"
+	g_entry_method="$method"
 	for entry in $entry_execute_method_list; do
-		$entry "$param" "$method" "$nextlevel"
+		$entry "$g_entry_param" 
 	done
 	return $g_fault_code
 }
@@ -212,8 +221,11 @@ common_entry_get_notification() {
 	else method="common_get_notification_inparam_isparam_check"
 	fi
 	
+	g_entry_param="$param"
+	g_entry_arg=""
+	g_entry_method="$method"
 	for entry in $entry_execute_method_list; do
-		$entry "$param" "$method"
+		$entry "$g_entry_param" 
 	done
 	return $g_fault_code
 }
@@ -225,8 +237,11 @@ common_entry_set_value() {
 
 	[ -z "$param" -o "${param%.}" != "$param" ] && return $E_INVALID_PARAMETER_NAME
 	
+	g_entry_param="$param"
+	g_entry_arg="$val"
+	g_entry_method="$method"
 	for entry in $entry_execute_method_list; do
-		$entry "$param" "$method" "$val"
+		$entry "$g_entry_param"
 	done
 	return $E_INVALID_PARAMETER_NAME
 }
@@ -237,16 +252,22 @@ common_entry_set_notification() {
 	local entry method="common_set_notification_check"
 
 	[ -z "$param" ] && return $E_NOTIFICATION_REJECTED
+	g_entry_param="$param"
+	g_entry_arg="$notification"
+	g_entry_method="$method"
 	for entry in $entry_execute_method_list; do
-		$entry "$param" "$method" "$notification"
+		$entry "$g_entry_param" 
 	done
 	return $E_INVALID_PARAMETER_NAME
 }
 
 common_entry_inform() {
 	local entry method="common_inform_check"
+  g_entry_param=""
+	g_entry_arg=""
+  g_entry_method="$method"
 	for entry in $entry_execute_method_list; do
-		$entry "" "$method"
+		$entry "$g_entry_param"
 	done
 	return 0
 }
@@ -281,27 +302,20 @@ common_entry_delete_object() {
 ##### common execute methods #####
 
 common_execute_method_obj() {
-	local inparam="$1"
-	local method="$2"
-	local arg="$3"
-	local refparam="$4"
-	local permission="$5"
-	
-	"$method""_obj" "$arg" "$inparam" "$refparam" "$permission"
+	local refparam="$1"
+	local permission="$2"
+	"$g_entry_method""_obj" "$g_entry_arg" "$g_entry_param" "$refparam" "$permission"
 }
 
 common_execute_method_param() {
-	local inparam="$1"
-	local method="$2"
-	local arg="$3"
-	local refparam="$4"
-	local permission="$5"
-	local getcmd="$6"
-	local setcmd="$7"
-	local type="$8"
-	local forcedinform="$9"
+	local refparam="$1"
+	local permission="$2"
+	local getcmd="$3"
+	local setcmd="$4"
+	local type="$5"
+	local forcedinform="$6"
 	
-	"$method""_param" "$arg" "$inparam" "$refparam" "$permission" "$getcmd" "$setcmd" "$type" "$forcedinform"
+	"$g_entry_method""_param" "$g_entry_arg" "$g_entry_param" "$refparam" "$permission" "$getcmd" "$setcmd" "$type" "$forcedinform"
 }
 ##### get value #####
 common_get_value_param() {

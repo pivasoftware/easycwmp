@@ -38,6 +38,9 @@ entry_build_instances_list=""
 entry_add_object_list=""
 entry_delete_object_list=""
 
+g_entry_param=""
+g_entry_method=""
+g_entry_arg=""
 # Fault codes
 E_REQUEST_DENIED="1"
 E_INTERNAL_ERROR="2"

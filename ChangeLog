@@ -1,6 +1,12 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.1.2 (date of 16th of March 2015)
+  - #0000041: remove the "$1" "$2" "$3" from the definition of data model parameters in the scripts
+  - #0000039: Ability to reduce the amount of logging
+  - #0000030: no type provided for paramters added to inform message when notification is activated
+  - #0000032: upgrade firmware return 0, but don't take effect and make a new file /etc/easycwmp/.backup.xml
+
 * EasyCwmp-1.1.1 (date of 25th of February 2015)
   - #0000036: acs url should be configured via only one option in the acs section
   - #0000034: Avoid the inherit of opened sockets and opend files to the fork() child

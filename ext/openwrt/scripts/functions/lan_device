@@ -14,13 +14,13 @@ entry_delete_object_list="$entry_delete_object_list entry_delete_object_root_LAN
 
 entry_execute_method_root_LANDevice() {
 	case "$1" in ""|"$DMROOT."|"$DMROOT.LANDevice."*)
-		common_execute_method_obj "$1" "$2" "$3" "$DMROOT.LANDevice." "0"
-		common_execute_method_obj "$1" "$2" "$3" "$DMROOT.LANDevice.1." "0"
-		common_execute_method_obj "$1" "$2" "$3" "$DMROOT.LANDevice.1.WLANConfiguration." "1"
+		common_execute_method_obj "$DMROOT.LANDevice." "0"
+		common_execute_method_obj "$DMROOT.LANDevice.1." "0"
+		common_execute_method_obj "$DMROOT.LANDevice.1.WLANConfiguration." "1"
 		local iface ifaces=`$UCI_SHOW wireless | grep "wireless\.@wifi-iface\[[0-9]\+\]=wifi-iface" | awk -F'[.=]' '{print $2}'` 
 		for iface in $ifaces; do
 			local j=`lan_device_update_instance $iface`
-			sub_entry_landevice_wlanconfig "$1" "$2" "$3" "$j" "$iface"
+			sub_entry_landevice_wlanconfig "$1" "$j" "$iface"
 		done
 		return 0
 		;;
@@ -29,13 +29,13 @@ entry_execute_method_root_LANDevice() {
 }
 
 sub_entry_landevice_wlanconfig() {
-	local j="$4"
-	local iface="$5"
-	case_param "$1" belong "$DMROOT.LANDevice.1.WLANConfiguration.$j." || return
+	local j="$2"
+	local iface="$3"
+	case_param "$1" belongto "$DMROOT.LANDevice.1.WLANConfiguration.$j." || return
 	
-	common_execute_method_obj "$1" "$2" "$3" "$DMROOT.LANDevice.1.WLANConfiguration.$j." "1"
-	common_execute_method_param "$1" "$2" "$3" "$DMROOT.LANDevice.1.WLANConfiguration.$j.Enable" "1" "lan_device_get_wlan_enable" "lan_device_set_wlan_enable" "xsd:boolean"
-	common_execute_method_param "$1" "$2" "$3" "$DMROOT.LANDevice.1.WLANConfiguration.$j.SSID" "1" "$UCI_GET wireless.$iface.ssid" "lan_device_set_wlan_cfg wireless.$iface.ssid"
+	common_execute_method_obj "$DMROOT.LANDevice.1.WLANConfiguration.$j." "1"
+	common_execute_method_param "$DMROOT.LANDevice.1.WLANConfiguration.$j.Enable" "1" "lan_device_get_wlan_enable" "lan_device_set_wlan_enable" "xsd:boolean"
+	common_execute_method_param "$DMROOT.LANDevice.1.WLANConfiguration.$j.SSID" "1" "$UCI_GET wireless.$iface.ssid" "lan_device_set_wlan_cfg wireless.$iface.ssid"
 }
 
 entry_add_object_root_LANDevice() {

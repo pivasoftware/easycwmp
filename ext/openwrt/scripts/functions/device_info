@@ -2,9 +2,9 @@
 # Copyright (C) 2015 PIVA Software <www.pivasoftware.com>
 # 	Author: MOHAMED Kallel <mohamed.kallel@pivasoftware.com>
 
-#common_execute_method_param "$parameter" "$method" "$permission" "$get_cmd" "$set_cmd" "xsd:$type"
-#  Default:
-#   $type = string
+#common_execute_method_param "$parameter" "$permission" "$get_cmd" "$set_cmd" "xsd:$type" "$forcedinform"
+#  $forcedinform should be set to 1 if the parameter is included in the inform message otherwise empty
+#  Default of $type = string
 
 #############################
 #   Entry point functuons   #
@@ -15,17 +15,17 @@ entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_
 
 entry_execute_method_root_DeviceInfo() {
 	case "$1" in ""|"$DMROOT."|"$DMROOT.DeviceInfo."*)
-		common_execute_method_obj "$1" "$2" "$3" "$DMROOT.DeviceInfo." "0"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.DeviceInfo.SpecVersion" "0" "echo 1.0" "" "" "1"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.DeviceInfo.ProvisioningCode" "1" "$UCI_GET easycwmp.@local[0].provisioning_code" "device_info_set_provisioningcode" "" "1"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.DeviceInfo.Manufacturer" "0" "$UCI_GET easycwmp.@device[0].manufacturer" "" "" "1"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.DeviceInfo.ManufacturerOUI" "0" "$UCI_GET easycwmp.@device[0].oui" "" "" "1"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.DeviceInfo.ProductClass" "0" "$UCI_GET easycwmp.@device[0].product_class" "" "" "1"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.DeviceInfo.SerialNumber" "0" "$UCI_GET easycwmp.@device[0].serial_number" "" "" "1"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.DeviceInfo.HardwareVersion" "0" "$UCI_GET easycwmp.@device[0].hardware_version" "" "" "1"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.DeviceInfo.SoftwareVersion" "0" "$UCI_GET easycwmp.@device[0].software_version" "" "" "1"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.DeviceInfo.UpTime" "0" "device_info_get_uptime" "" "xsd:unsignedInt"
-		common_execute_method_param "$1" "$2" "$3" "$DMROOT.DeviceInfo.DeviceLog" "0" "dmesg | tail -n1"
+		common_execute_method_obj "$DMROOT.DeviceInfo." "0"
+		common_execute_method_param "$DMROOT.DeviceInfo.SpecVersion" "0" "echo 1.0" "" "" "1"
+		common_execute_method_param "$DMROOT.DeviceInfo.ProvisioningCode" "1" "$UCI_GET easycwmp.@local[0].provisioning_code" "device_info_set_provisioningcode" "" "1"
+		common_execute_method_param "$DMROOT.DeviceInfo.Manufacturer" "0" "$UCI_GET easycwmp.@device[0].manufacturer" "" "" "1"
+		common_execute_method_param "$DMROOT.DeviceInfo.ManufacturerOUI" "0" "$UCI_GET easycwmp.@device[0].oui" "" "" "1"
+		common_execute_method_param "$DMROOT.DeviceInfo.ProductClass" "0" "$UCI_GET easycwmp.@device[0].product_class" "" "" "1"
+		common_execute_method_param "$DMROOT.DeviceInfo.SerialNumber" "0" "$UCI_GET easycwmp.@device[0].serial_number" "" "" "1"
+		common_execute_method_param "$DMROOT.DeviceInfo.HardwareVersion" "0" "$UCI_GET easycwmp.@device[0].hardware_version" "" "" "1"
+		common_execute_method_param "$DMROOT.DeviceInfo.SoftwareVersion" "0" "$UCI_GET easycwmp.@device[0].software_version" "" "" "1"
+		common_execute_method_param "$DMROOT.DeviceInfo.UpTime" "0" "device_info_get_uptime" "" "xsd:unsignedInt"
+		common_execute_method_param "$DMROOT.DeviceInfo.DeviceLog" "0" "dmesg | tail -n1"
 		return 0;
 		;;
 	esac

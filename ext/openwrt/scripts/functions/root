@@ -11,7 +11,7 @@ entry_execute_method_list="entry_execute_method_root $entry_execute_method_list"
 
 entry_execute_method_root() {
 	case "$1" in ""|"$DMROOT.")
-		common_execute_method_obj "$1" "$2" "$3" "$DMROOT." "0"
+		common_execute_method_obj "$DMROOT." "0"
 		return 0;
 		;;
 	esac
