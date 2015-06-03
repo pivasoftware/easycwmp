@@ -116,15 +116,49 @@ common_set_parameter_fault() {
 	common_json_output_fault "$_parm" "$_fault" >> $set_fault_tmp_file
 }
 
-common_get_inform_deviceid()
-{
+common_get_Manufacturer() {
+	local val=`cat "/etc/device_info" | grep "DEVICE_MANUFACTURER" | cut -f 2 -d '=' | sed "s/'//g"`
+	echo $val
+}
+
+common_get_ProductClass() {
+	local val=`cat "/etc/device_info" | grep "DEVICE_PRODUCT" | cut -f 2 -d '=' | sed "s/'//g"`
+	echo $val
+}
+
+common_get_HardwareVersion() {
+	local val=`cat "/etc/device_info" | grep "DEVICE_REVISION" | cut -f 2 -d '=' | sed "s/'//g"`
+	echo $val
+}
+
+common_get_SoftwareVersion() {
+	# TODO ubus call
+	local val=`cat "/etc/openwrt_version"`
+	echo $val
+}
+
+common_get_SerialNumber() {
+	local val=`ifconfig eth0 | grep "HWaddr" | awk '{print $5;}' | sed 's/://g'`
+	echo $val
+}
+
+common_get_OrganizationallyUniqueIdentifier() {
+	local val=`ifconfig eth0 | grep "HWaddr" | awk '{print $5;}' | sed 's/://g' | cut -c-6`
+	echo $val
+}
+
+common_get_inform_deviceid() {
 	local msg
+	local manufacturer=`common_get_Manufacturer`
+	local organizationallyUniqueIdentifier=`common_get_OrganizationallyUniqueIdentifier`
+	local productClass=`common_get_ProductClass`
+	local serialNumber=`common_get_SerialNumber`
 
 	json_init
-	json_add_string "manufacturer" "`$UCI_GET easycwmp.@device[0].manufacturer 2> /dev/null`"
-	json_add_string "oui" "`$UCI_GET easycwmp.@device[0].oui 2> /dev/null`"
-	json_add_string "product_class" "`$UCI_GET easycwmp.@device[0].product_class 2> /dev/null`"
-	json_add_string "serial_number" "`$UCI_GET easycwmp.@device[0].serial_number 2> /dev/null`"
+	json_add_string "manufacturer" "$manufacturer"
+	json_add_string "oui" "$organizationallyUniqueIdentifier"
+	json_add_string "product_class" "$productClass"
+	json_add_string "serial_number" "$serialNumber"
 
 	json_close_object
 	local msg=`json_dump`
@@ -154,6 +188,17 @@ common_set_bool() {
 	else
 		return $E_INVALID_PARAMETER_VALUE
 	fi
+	return 0
+}
+
+common_set_list() {
+	local cfg="$1"
+	local val="$2"
+	local element list=`echo "$val" | sed 's/,/ /g'`
+	$UCI_DELETE $cfg
+	for element in $list; do
+		$UCI_ADD_LIST $cfg="$element"
+	done
 	return 0
 }
 
