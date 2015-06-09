@@ -31,11 +31,11 @@ entry_execute_method_root_LANDevice() {
 sub_entry_landevice_wlanconfig() {
 	local j="$2"
 	local iface="$3"
-	case_param "$1" belongto "$DMROOT.LANDevice.1.WLANConfiguration.$j." || return
-	
-	common_execute_method_obj "$DMROOT.LANDevice.1.WLANConfiguration.$j." "1"
-	common_execute_method_param "$DMROOT.LANDevice.1.WLANConfiguration.$j.Enable" "1" "lan_device_get_wlan_enable" "lan_device_set_wlan_enable" "xsd:boolean"
-	common_execute_method_param "$DMROOT.LANDevice.1.WLANConfiguration.$j.SSID" "1" "$UCI_GET wireless.$iface.ssid" "lan_device_set_wlan_cfg wireless.$iface.ssid"
+	case_param "$1" belongto "$DMROOT.LANDevice.1.WLANConfiguration.$j." && {
+		common_execute_method_obj "$DMROOT.LANDevice.1.WLANConfiguration.$j." "1"
+		common_execute_method_param "$DMROOT.LANDevice.1.WLANConfiguration.$j.Enable" "1" "lan_device_get_wlan_enable" "lan_device_set_wlan_enable" "xsd:boolean"
+		common_execute_method_param "$DMROOT.LANDevice.1.WLANConfiguration.$j.SSID" "1" "$UCI_GET wireless.$iface.ssid" "lan_device_set_wlan_cfg wireless.$iface.ssid"
+	}
 }
 
 entry_add_object_root_LANDevice() {
