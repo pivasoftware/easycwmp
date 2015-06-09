@@ -187,8 +187,8 @@ common_entry_get_name() {
 	if [ -z "$param" -a "$nextlevel" = "1" ]; then
 		g_entry_param="$param"
 		g_entry_arg="$nextlevel"
-		g_entry_method="common_get_name"
-		entry_execute_method_root "$g_entry_param" 
+		g_entry_method="common_get_name_emptyin_nl1"
+		$entry_method_root "$g_entry_param"  
 		return 0
 	fi
 	if [ -z "$param" -o "${tmp/ $param /}" != "$tmp" ]; then 
@@ -472,6 +472,30 @@ common_get_name_inparam_isobj_check_obj() {
 	esac
 	return $E_INVALID_PARAMETER_NAME
 }
+
+common_get_name_emptyin_nl1_param() {
+	local arg="$1"
+	local inparam="$2"
+	local refparam="$3"
+	local permission="$4"
+	local getcmd="$5"
+	local setcmd="$6"
+	local type="$7"
+	local forcedinform="$8"
+	
+	return 0
+}
+
+common_get_name_emptyin_nl1_obj() {
+	local arg="$1"
+	local inparam="$2"
+	local refparam="$3"
+	local permission="$4"
+	
+	common_json_output_get_name "$refparam" "$permission"
+	return 0
+}
+
 
 ##### get notification #####
 common_get_notification_param() {

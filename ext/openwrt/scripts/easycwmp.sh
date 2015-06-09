@@ -37,6 +37,7 @@ entry_execute_method_list=""
 entry_build_instances_list=""
 entry_add_object_list=""
 entry_delete_object_list=""
+entry_method_root=""
 
 g_entry_param=""
 g_entry_method=""
@@ -200,6 +201,8 @@ for dms in $dmscripts; do
 	. $FUNCTION_PATH/$dms
 done
 
+prefix_list="$DMROOT. $prefix_list"
+entry_execute_method_list="$entry_method_root $entry_execute_method_list"
 
 handle_action() {
 	if [ "$action" = "get_value" ]; then
