@@ -1,22 +1,29 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.1.3 (date of 9th of March 2015)
+  - #0000056: define add object and delete object functions as arguments in "common_execute_method_obj"
+  - #0000055: Supporting parameters under root path
+  - #0000054: Some issues in script file lan_device
+  - #0000045: Handling of ParameterKey Containing Whitespace
+  - #0000044: Change the usage of the case_param function. Use "&& {...}" instead of "|| return"
+
 * EasyCwmp-1.1.2 (date of 16th of March 2015)
   - #0000041: remove the "$1" "$2" "$3" from the definition of data model parameters in the scripts
   - #0000039: Ability to reduce the amount of logging
-  - #0000030: no type provided for paramters added to inform message when notification is activated
+  - #0000030: no type provided for parameters added to inform message when notification is activated
   - #0000032: upgrade firmware return 0, but don't take effect and make a new file /etc/easycwmp/.backup.xml
 
 * EasyCwmp-1.1.1 (date of 25th of February 2015)
   - #0000036: acs url should be configured via only one option in the acs section
-  - #0000034: Avoid the inherit of opened sockets and opend files to the fork() child
+  - #0000034: Avoid the inherit of opened sockets and opened files to the fork() child
   - #0000037: make fails with struct storage size of 'tm' isn't known
 
 * EasyCwmp-1.1.0 (date of 20th of February 2015)
   - #0000035: improve the easycwmp scripts. make the implementation of new parameters more easier
 
 * EasyCwmp-1.0.5 (date of 29th of december 2014)
-  - #0000025: easycwmp excutable carshes upon CTRL + C
+  - #0000025: easycwmp executable crashes upon CTRL + C
   - #0000024: remove Accept and change content type of the HTTP header
 
 * EasyCwmp-1.0.4 (date of 21st of november 2014)
