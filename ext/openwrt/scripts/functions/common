@@ -274,37 +274,42 @@ common_entry_inform() {
 
 common_entry_add_object() {
 	local param="$1"
-	local entry
+	[ -z "$param" -o "$param" = "$DMROOT" ] && return $E_INVALID_PARAMETER_NAME
 	
-	for entry in $entry_add_object_list; do
+	g_entry_param="$param"
+	g_entry_arg=""
+	g_entry_method="common_add_object"
+	
+	local entry
+	for entry in $entry_execute_method_list; do
 		$entry "$param"
-		local e="$?"
-		[ "$e" != "0" ] && continue;
-		common_set_parameter_notification "$param$instance." "0"
-		return 0
 	done
 	return $E_INVALID_PARAMETER_NAME
 }
 
 common_entry_delete_object() {
 	local param="$1"
-	local entry
+	[ -z "$param" -o "$param" = "$DMROOT" ] && return $E_INVALID_PARAMETER_NAME
 	
-	for entry in $entry_delete_object_list; do
+	g_entry_param="$param"
+	g_entry_arg=""
+	g_entry_method="common_delete_object"
+	
+	local entry
+	for entry in $entry_execute_method_list; do
 		$entry "$param"
-		local e="$?"
-		[ "$e" != "0" ] && continue;
-		common_remove_parameter_notification "$param"
-		return 0
 	done
 	return $E_INVALID_PARAMETER_NAME
 }
+
 ##### common execute methods #####
 
 common_execute_method_obj() {
 	local refparam="$1"
 	local permission="$2"
-	"$g_entry_method""_obj" "$g_entry_arg" "$g_entry_param" "$refparam" "$permission"
+	local addobj="$3"
+	local delobj="$4"
+	"$g_entry_method""_obj" "$g_entry_arg" "$g_entry_param" "$refparam" "$permission" "$addobj" "$delobj"
 }
 
 common_execute_method_param() {
@@ -617,6 +622,49 @@ common_set_notification_check_obj() {
 	[ "$inparam" != "$refparam" ] && return $E_INVALID_PARAMETER_NAME
 	local notification="$arg"
 	common_set_parameter_notification "$refparam" "$notification"
+	exit 0
+}
+
+##### add object #####
+common_add_object_param() {
+	return $E_INVALID_PARAMETER_NAME
+}
+
+common_add_object_obj() {
+	local arg="$1"
+	local inparam="$2"
+	local refparam="$3"
+	local permission="$4"
+	local addobj="$5"
+	local delobj="$6"
+
+	[ "$inparam" != "$refparam" ] && return $E_INVALID_PARAMETER_NAME
+	[ -z "$addobj" ] && return $E_INVALID_PARAMETER_NAME
+	local instance=`$addobj $refparam`
+	common_set_parameter_notification "$refparam$instance." "0"
+	common_json_output_status "1" "$instance"
+	exit 0
+}
+
+##### delete object #####
+common_delete_object_param() {
+	return $E_INVALID_PARAMETER_NAME
+}
+
+common_delete_object_obj() {
+	local arg="$1"
+	local inparam="$2"
+	local refparam="$3"
+	local permission="$4"
+	local addobj="$5"
+	local delobj="$6"
+
+	[ "$inparam" != "$refparam" ] && return $E_INVALID_PARAMETER_NAME
+	[ -z "$delobj" ] && return $E_INVALID_PARAMETER_NAME
+	$delobj $refparam
+	local e=$?
+	[ "$e" != "0" ] && exit $e
+	common_json_output_status "1"
 	exit 0
 }
 
