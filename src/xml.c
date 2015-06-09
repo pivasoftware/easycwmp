@@ -108,19 +108,18 @@ const char *xml_format_cb(mxml_node_t *node, int pos)
 	}
 }
 
-char *xml_get_value_with_whitespace(mxml_node_t *b)
+char *xml_get_value_with_whitespace(mxml_node_t **b, mxml_node_t *body_in)
 {
-	mxml_node_t *y = b->parent;
 	char * value = calloc(1, sizeof(char));
 	do {
-		value = realloc(value, strlen(value) + strlen(b->value.text.string) + 2);
+		value = realloc(value, strlen(value) + strlen((*b)->value.text.string) + 2);
 		if (value[0] != '\0')
 			strcat(value, " ");
 
-		strcat(value, b->value.text.string);
-	 } while ((b = mxmlWalkNext(b, y, MXML_DESCEND)) &&
-			(b->value.text.whitespace == true) &&
-			(b->type == MXML_TEXT && b->value.text.string));
+		strcat(value, (*b)->value.text.string);
+	 } while ((*b = mxmlWalkNext(*b, body_in, MXML_DESCEND)) &&
+			((*b)->value.text.whitespace == true) &&
+			((*b)->type == MXML_TEXT && (*b)->value.text.string));
 	return value;
 }
 
@@ -766,7 +765,7 @@ int xml_handle_set_parameter_values(mxml_node_t *body_in,
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Value")) {
 			free(parameter_value);
-			parameter_value = xml_get_value_with_whitespace(b);
+			parameter_value = xml_get_value_with_whitespace(&b, body_in);
 		}
 
 		if (b && b->type == MXML_ELEMENT &&
@@ -780,12 +779,14 @@ int xml_handle_set_parameter_values(mxml_node_t *body_in,
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "ParameterKey")) {
-			param_key = b->value.text.string;
+			free(param_key);
+			param_key = xml_get_value_with_whitespace(&b, body_in);
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "ParameterKey") &&
 			!b->child) {
-			param_key = "";
+			free(param_key);
+			param_key = strdup("");
 		}
 
 		if (parameter_name && parameter_value) {
@@ -797,7 +798,8 @@ int xml_handle_set_parameter_values(mxml_node_t *body_in,
 	}
 
 	external_action_simple_execute("apply", "value", param_key);
-
+	free(param_key);
+	
 	if (external_action_handle(json_handle_set_parameter_value))
 		goto fault_out;
 
@@ -1277,7 +1279,7 @@ static int xml_handle_download(mxml_node_t *body_in,
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "FileType")) {
-			file_type = xml_get_value_with_whitespace(b);
+			file_type = xml_get_value_with_whitespace(&b, body_in);
 			b = b->parent->last_child;
 		}
 		if (b && b->type == MXML_TEXT &&
@@ -1528,12 +1530,14 @@ static int xml_handle_AddObject(mxml_node_t *body_in,
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "ParameterKey")) {
-			param_key = b->value.text.string;
+			free(param_key);
+			param_key = xml_get_value_with_whitespace(&b, body_in);
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "ParameterKey") &&
 			!b->child) {
-			param_key = "";
+			free(param_key);
+			param_key = strdup("");
 		}
 		b = mxmlWalkNext(b, body_in, MXML_DESCEND);
 	}
@@ -1563,6 +1567,7 @@ static int xml_handle_AddObject(mxml_node_t *body_in,
 	}
 
 	external_action_simple_execute("apply", "object", param_key);
+	free(param_key);
 
 	t = mxmlNewElement(body_out, "cwmp:AddObjectResponse");
 	if (!t) goto error;
@@ -1629,12 +1634,14 @@ static int xml_handle_DeleteObject(mxml_node_t *body_in,
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "ParameterKey")) {
-			param_key = b->value.text.string;
+			free(param_key);
+			param_key = xml_get_value_with_whitespace(&b, body_in);
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "ParameterKey") &&
 			!b->child) {
-			param_key = "";
+			free(param_key);
+			param_key = strdup("");
 		}
 		b = mxmlWalkNext(b, body_in, MXML_DESCEND);
 	}
@@ -1664,6 +1671,7 @@ static int xml_handle_DeleteObject(mxml_node_t *body_in,
 	}
 
 	external_action_simple_execute("apply", "object", param_key);
+	free(param_key);
 
 	t = mxmlNewElement(body_out, "cwmp:DeleteObjectResponse");
 	if (!t) goto error;

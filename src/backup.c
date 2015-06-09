@@ -223,7 +223,7 @@ int backup_extract_transfer_complete( mxml_node_t *node, char **msg_out, int *me
 	if (b->child && b->child->type == MXML_TEXT && b->child->value.text.string) {
 		n = mxmlFindElement(tree_m, tree_m, "FaultString", NULL, NULL, MXML_DESCEND);
 		if (!n) goto error;
-		char *c = xml_get_value_with_whitespace(b->child);
+		char *c = xml_get_value_with_whitespace(&(b->child),b->child->parent);
 		n = mxmlNewText(n, 0, c);
 		free(c);
 		if (!n) goto error;
@@ -374,7 +374,7 @@ int backup_load_download(void)
 		c = mxmlFindElement(b, b, "file_type",NULL, NULL, MXML_DESCEND);
 		if (!c)return -1;
 		if(c->child)
-			file_type = xml_get_value_with_whitespace(c->child);
+			file_type = xml_get_value_with_whitespace(&(c->child),c->child->parent);
 		else
 			file_type = strdup("");
 
