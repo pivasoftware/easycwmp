@@ -123,13 +123,21 @@ char *xml_get_value_with_whitespace(mxml_node_t **b, mxml_node_t *body_in)
 	return value;
 }
 
-void xml_exit(void)
+static inline void xml_free_ns(void)
 {
-	FREE(ns.soap_env);
+	int i = 0;
 	FREE(ns.soap_enc);
 	FREE(ns.xsd);
 	FREE(ns.xsi);
 	FREE(ns.cwmp);
+	for (i = 0; i < ARRAY_SIZE(ns.soap_env), ns.soap_env[i]; i++) {
+		FREE(ns.soap_env[i]);
+	}
+}
+
+void xml_exit(void)
+{
+	xml_free_ns();
 }
 
 int xml_check_duplicated_parameter(mxml_node_t *tree)
@@ -155,6 +163,47 @@ int xml_check_duplicated_parameter(mxml_node_t *tree)
 	return 0;
 }
 
+int xml_mxml_get_attrname_array(mxml_node_t *node,
+								const char  *value,
+								char *name_arr[],
+								int size)
+{
+	int	i, j = 0;
+	mxml_attr_t	*attr;
+
+	if (!node || node->type != MXML_ELEMENT || !value)
+		return (-1);
+
+	for (i = node->value.element.num_attrs, attr = node->value.element.attrs;
+		i > 0;
+		i --, attr ++)
+	{
+		if (!strcmp(attr->value, value) && *(attr->name + 5) == ':')
+		{
+			name_arr[j++] = strdup((attr->name + 6));
+		}
+		if (j >= size) break;
+	}
+
+	return (j ? 0 : -1);
+}
+
+mxml_node_t *xml_mxml_find_node_by_env_type(mxml_node_t *tree_in, char *bname) {
+	mxml_node_t *b;
+	char *c;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(ns.soap_env), ns.soap_env[i]; i++) {
+		if (asprintf(&c, "%s:%s", ns.soap_env[i], bname) == -1)
+			return NULL;
+
+		b = mxmlFindElement(tree_in, tree_in, c, NULL, NULL, MXML_DESCEND);
+		FREE(c);
+		if (b) return b;
+	}
+	return NULL;
+}
+
 static int xml_recreate_namespace(mxml_node_t *tree)
 {
 	mxml_node_t *b = tree;
@@ -163,28 +212,24 @@ static int xml_recreate_namespace(mxml_node_t *tree)
 	int i;
 
 	do {
-		FREE(ns.soap_env);
-		FREE(ns.soap_enc);
-		FREE(ns.xsd);
-		FREE(ns.xsi);
-		FREE(ns.cwmp);
+		xml_free_ns();
 
-		c = (char *) mxmlElementGetAttrName(b, soap_env_url);
-		if (!c)
-			continue;
-		if (*(c + 5) == ':') {
-			ns.soap_env = strdup((c + 6));
-		} else {
-			continue;
+		for (i = 0; cwmp_urls[i] != NULL; i++) {
+			cwmp_urn = cwmp_urls[i];
+			c = (char *) mxmlElementGetAttrName(b, cwmp_urn);
+			if (c && *(c + 5) == ':') {
+				ns.cwmp = strdup((c + 6));
+				break;
+			}
 		}
+		if (!ns.cwmp) continue;
+
+		if (xml_mxml_get_attrname_array(b, soap_env_url, ns.soap_env, ARRAY_SIZE(ns.soap_env)))
+			return -1;
 
 		c = (char *) mxmlElementGetAttrName(b, soap_enc_url);
-		if (!c)
-			continue;
-		if (*(c + 5) == ':') {
+		if (c && (*(c + 5) == ':')) {
 			ns.soap_enc = strdup((c + 6));
-		} else {
-			continue;
 		}
 
 		c = (char *) mxmlElementGetAttrName(b, xsd_url);
@@ -196,17 +241,6 @@ static int xml_recreate_namespace(mxml_node_t *tree)
 		if (c && (*(c + 5) == ':')) {
 			ns.xsi = strdup((c + 6));
 		}
-
-		for (i = 0; cwmp_urls[i] != NULL; i++) {
-			cwmp_urn = cwmp_urls[i];
-			c = (char *) mxmlElementGetAttrName(b, cwmp_urn);
-			if (c && *(c + 5) == ':') {
-				ns.cwmp = strdup((c + 6));
-				break;
-			}
-		}
-
-		if (!ns.cwmp) return -1;
 		return 0;
 	} while (b = mxmlWalkNext(b, tree, MXML_DESCEND));
 
@@ -281,11 +315,7 @@ int xml_handle_message(char *msg_in, char **msg_out)
 	if (!b) goto error;
 
 find_method:
-	if (asprintf(&c, "%s:%s", ns.soap_env, "Body") == -1)
-		goto error;
-
-	b = mxmlFindElement(tree_in, tree_in, c, NULL, NULL, MXML_DESCEND);
-	FREE(c);
+	b = xml_mxml_find_node_by_env_type(tree_in, "Body");
 	if (!b) {
 		code = FAULT_9003;
 		goto fault_out;
@@ -344,6 +374,7 @@ fault_out:
 	body_out = mxmlFindElement(tree_out, tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
 	if (!body_out) goto error;
 	xml_create_generic_fault_message(body_out, code);
+	*msg_out = mxmlSaveAllocString(tree_out, xml_format_cb);
 	mxmlDelete(tree_in);
 	mxmlDelete(tree_out);
 	return 0;
@@ -574,10 +605,7 @@ int xml_parse_inform_response_message(char *msg_in)
 	if (!tree) goto error;
 	if(xml_recreate_namespace(tree)) goto error;
 
-	if (asprintf(&c, "%s:%s", ns.soap_env, "Fault") == -1)
-		goto error;
-	b = mxmlFindElement(tree, tree, c, NULL, NULL, MXML_DESCEND);
-	FREE(c);
+	b = xml_mxml_find_node_by_env_type(tree, "Fault");
 	if (b) {
 		b = mxmlFindElementText(b, b, "8005", MXML_DESCEND);
 		if (b) {
@@ -631,11 +659,7 @@ int xml_parse_get_rpc_methods_response_message(char *msg_in)
 	if (!tree) goto error;
 	if(xml_recreate_namespace(tree)) goto error;
 
-	if (asprintf(&c, "%s:%s", ns.soap_env, "Fault") == -1)
-		goto error;
-
-	b = mxmlFindElement(tree, tree, c, NULL, NULL, MXML_DESCEND);
-	FREE(c);
+	b = xml_mxml_find_node_by_env_type(tree, "Fault");
 	if (b) {
 		b = mxmlFindElementText(b, b, "8005", MXML_DESCEND);
 		if (b) {
@@ -668,11 +692,7 @@ int xml_parse_transfer_complete_response_message(char *msg_in)
 	if (!tree) goto error;
 	if(xml_recreate_namespace(tree)) goto error;
 
-	if (asprintf(&c, "%s:%s", ns.soap_env, "Fault") == -1)
-		goto error;
-
-	b = mxmlFindElement(tree, tree, c, NULL, NULL, MXML_DESCEND);
-	FREE(c);
+	b = xml_mxml_find_node_by_env_type(tree, "Fault");
 	if (b) {
 		b = mxmlFindElementText(b, b, "8005", MXML_DESCEND);
 		if (b) {

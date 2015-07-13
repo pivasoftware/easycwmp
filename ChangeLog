@@ -1,7 +1,10 @@
 EasyCwmp change log:
 ====================
 
-* EasyCwmp-1.1.3 (date of 9th of March 2015)
+* EasyCwmp-1.1.4 (date of 13th of July 2015)
+  - #0000061: Parse Inform xml message from ACS failed
+
+* EasyCwmp-1.1.3 (date of 9th of June 2015)
   - #0000056: define add object and delete object functions as arguments in "common_execute_method_obj"
   - #0000055: Supporting parameters under root path
   - #0000054: Some issues in script file lan_device

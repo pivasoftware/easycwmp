@@ -53,7 +53,7 @@ struct fault_code
 
 struct cwmp_namespaces
 {
-	char *soap_env;
+	char *soap_env[8]; //Some ACS soap messages contains more than 1 env
 	char *soap_enc;
 	char *xsd;
 	char *xsi;
