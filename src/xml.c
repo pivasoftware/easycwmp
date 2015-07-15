@@ -1300,7 +1300,6 @@ static int xml_handle_download(mxml_node_t *body_in,
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "FileType")) {
 			file_type = xml_get_value_with_whitespace(&b, body_in);
-			b = b->parent->last_child;
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
