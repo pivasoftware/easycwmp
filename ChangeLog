@@ -1,6 +1,9 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.1.6 (date of 23th of July 2015)
+  - #0000070: Event code responded after firmware upgrade is not accurate
+
 * EasyCwmp-1.1.5 (date of 15th of July 2015)
   - #0000067: Firmware upgrade functionality is broken in EasyCwmp1.1.3 version
 

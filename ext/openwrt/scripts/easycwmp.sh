@@ -292,6 +292,8 @@ handle_action() {
 				common_json_output_status "1"
 			fi
 		elif [ "$__arg1" = "1 Firmware Upgrade Image" ]; then
+			local gr_backup=`grep "^/etc/easycwmp/\.backup\.xml" /etc/sysupgrade.conf`
+			[ -z $gr_backup ] && echo "/etc/easycwmp/.backup.xml" >> /etc/sysupgrade.conf
 			/sbin/sysupgrade $DOWNLOAD_FILE 
 			fault_code="$?"
 			if [ "$fault_code" != "0" ]; then
