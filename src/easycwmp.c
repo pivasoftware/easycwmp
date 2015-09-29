@@ -24,6 +24,7 @@
 #include <libubox/uloop.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/file.h>
 
 #include "easycwmp.h"
 #include "config.h"
@@ -95,7 +96,7 @@ static void easycwmp_netlink_interface(struct nlmsghdr *nlh)
 			// running on big endian system
 		} else {
 			// running on little endian system
-			addr = __bswap_32(addr);
+			addr = __builtin_bswap32(addr);
 		}
 
 		if_indextoname(ifa->ifa_index, if_name);

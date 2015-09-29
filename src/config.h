@@ -14,6 +14,7 @@
 #define _EASYCWMP_CONFIG_H__
 
 #include <uci.h>
+#include <time.h>
 
 #include "easycwmp.h"
 
