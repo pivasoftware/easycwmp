@@ -39,7 +39,7 @@ int json_handle_method_status(char *line)
 	char *status, *fault_code;
 
 	js_obj = json_tokener_parse(line);
-	if (js_obj == NULL || is_error(js_obj) || json_object_get_type(js_obj) != json_type_object)
+	if (js_obj == NULL || json_object_get_type(js_obj) != json_type_object)
 		return -1;
 
 	status = json_common_get_string(js_obj, "status");
@@ -57,7 +57,7 @@ int json_handle_set_parameter_value(char *line)
 
 
 	js_obj = json_tokener_parse(line);
-	if (js_obj == NULL || is_error(js_obj) || json_object_get_type(js_obj) != json_type_object)
+	if (js_obj == NULL || json_object_get_type(js_obj) != json_type_object)
 		return -1;
 
 	if (status = json_common_get_string(js_obj, "status")) {
@@ -81,7 +81,7 @@ int json_handle_get_parameter_attribute(char *line)
 	char *param_name, *param_notification, *fault_code;
 
 	js_obj=json_tokener_parse(line);
-	if (js_obj == NULL || is_error(js_obj) || json_object_get_type(js_obj) != json_type_object)
+	if (js_obj == NULL || json_object_get_type(js_obj) != json_type_object)
 		return -1;
 
 	param_name = json_common_get_string(js_obj, "parameter");
@@ -100,7 +100,7 @@ int json_handle_get_parameter_value(char *line)
 	char *param_name, *param_value, *param_type, *fault_code;
 
 	js_obj=json_tokener_parse(line);
-	if (js_obj == NULL || is_error(js_obj) || json_object_get_type(js_obj) != json_type_object)
+	if (js_obj == NULL || json_object_get_type(js_obj) != json_type_object)
 		return -1;
 
 	param_name = json_common_get_string(js_obj, "parameter");
@@ -122,7 +122,7 @@ int json_handle_get_parameter_name(char *line)
 	char *param_name, *param_permission, *fault_code;
 
 	js_obj=json_tokener_parse(line);
-	if (js_obj == NULL || is_error(js_obj) || json_object_get_type(js_obj) != json_type_object)
+	if (js_obj == NULL || json_object_get_type(js_obj) != json_type_object)
 			return -1;
 
 	param_name = json_common_get_string(js_obj, "parameter");
@@ -141,7 +141,7 @@ int json_handle_deviceid(char *line)
 	char *param_name, *param_permission, *fault_code, *c;
 
 	js_obj=json_tokener_parse(line);
-	if (js_obj == NULL || is_error(js_obj) || json_object_get_type(js_obj) != json_type_object)
+	if (js_obj == NULL || json_object_get_type(js_obj) != json_type_object)
 			return -1;
 
 	cwmp_free_deviceid();
@@ -165,7 +165,7 @@ int json_handle_add_object(char *line)
 	char *status, *fault_code, *instance;
 
 	js_obj=json_tokener_parse(line);
-	if (js_obj == NULL || is_error(js_obj) || json_object_get_type(js_obj) != json_type_object)
+	if (js_obj == NULL || json_object_get_type(js_obj) != json_type_object)
 		return -1;
 
 	status = json_common_get_string(js_obj, "status");
