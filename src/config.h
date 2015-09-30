@@ -28,6 +28,7 @@ struct acs {
 	char *username;
 	char *password;
 	bool periodic_enable;
+	bool http100continue_disable;
 	int  periodic_interval;
 	time_t periodic_time;
 	char *ssl_cert;

@@ -473,9 +473,8 @@ static int xml_prepare_notifications_inform(mxml_node_t *parameter_list, int *co
 		b = mxmlNewElement(n, "Value");
 		if (!b) goto error;
 
-#ifdef ACS_MULTI
 		mxmlElementSetAttr(b, "xsi:type", notification->type);
-#endif
+
 		b = mxmlNewText(b, 0, notification->value);
 		if (!b) goto error;
 
@@ -562,9 +561,7 @@ int xml_prepare_inform_message(char **msg_out)
 		b = mxmlNewElement(n, "Value");
 		if (!b) goto error;
 
-#ifdef ACS_MULTI
 		mxmlElementSetAttr(b, "xsi:type", external_parameter->type);
-#endif
 		b = mxmlNewText(b, 0, external_parameter->data ? external_parameter->data : "");
 		if (!b) goto error;
 
@@ -576,13 +573,11 @@ int xml_prepare_inform_message(char **msg_out)
 	if (xml_prepare_notifications_inform(parameter_list, &counter))
 		goto error;
 
-#ifdef ACS_MULTI
 	if (asprintf(&c, "cwmp:ParameterValueStruct[%d]", counter) == -1)
 		goto error;
 
 	mxmlElementSetAttr(parameter_list, "soap_enc:arrayType", c);
 	FREE(c);
-#endif
 
 	*msg_out = mxmlSaveAllocString(tree, xml_format_cb);
 
@@ -930,23 +925,19 @@ int xml_handle_get_parameter_values(mxml_node_t *body_in,
 		t = mxmlNewElement(n, "Value");
 		if (!t) goto out;
 
-#ifdef ACS_MULTI
 		mxmlElementSetAttr(t, "xsi:type", external_parameter->type);
-#endif
 		t = mxmlNewText(t, 0, external_parameter->data ? external_parameter->data : "");
 		if (!t) goto out;
 
 		counter++;
 		external_parameter_delete(external_parameter);
 	}
-#ifdef ACS_MULTI
 	char *c;
 	if (asprintf(&c, "cwmp:ParameterValueStruct[%d]", counter) == -1)
 		goto out;
 
 	mxmlElementSetAttr(parameter_list, "soap_enc:arrayType", c);
 	FREE(c);
-#endif
 
 	log_message(NAME, L_NOTICE, "send GetParameterValuesResponse to the ACS\n");
 	return 0;
@@ -1044,14 +1035,12 @@ int xml_handle_get_parameter_names(mxml_node_t *body_in,
 		external_parameter_delete(external_parameter);
 	}
 
-#ifdef ACS_MULTI
 	char *c;
 	if (asprintf(&c, "cwmp:ParameterInfoStruct[%d]", counter) == -1)
 		goto out;
 
 	mxmlElementSetAttr(parameter_list, "soap_enc:arrayType", c);
 	FREE(c);
-#endif
 
 	log_message(NAME, L_NOTICE, "send GetParameterNamesResponse to the ACS\n");
 	return 0;
@@ -1141,14 +1130,12 @@ static int xml_handle_get_parameter_attributes(mxml_node_t *body_in,
 
 		external_parameter_delete(external_parameter);
 	}
-#ifdef ACS_MULTI
 	char *c;
 	if (asprintf(&c, "cwmp:ParameterAttributeStruct[%d]", counter) == -1)
 		goto out;
 
 	mxmlElementSetAttr(parameter_list, "soap_enc:arrayType", c);
 	FREE(c);
-#endif
 
 	log_message(NAME, L_NOTICE, "send GetParameterAttributesResponse to the ACS\n");
 	return 0;

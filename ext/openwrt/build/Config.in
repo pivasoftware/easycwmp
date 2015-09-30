@@ -1,0 +1,15 @@
+if PACKAGE_easycwmp
+
+config EASYCWMP_SCRIPTS_FULL
+	bool "Install all easycwmp scripts"
+	default y
+
+config EASYCWMP_DEBUG
+	bool "Compile with debug options"
+	default n
+
+config EASYCWMP_DEVEL
+	bool "Compile with development options"
+	default n
+
+endif

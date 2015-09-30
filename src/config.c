@@ -183,18 +183,25 @@ static int config_init_acs(void)
 					DD("easycwmp.@acs[0].periodic_interval=%d\n", config->acs->periodic_interval);
 					continue;
 				}
+
 				if (!strcmp((uci_to_option(e))->e.name, "periodic_time")) {
 					strptime(uci_to_option(e)->v.string,"%FT%T", &tm);
 					config->acs->periodic_time = mktime(&tm);
 					DD("easycwmp.@acs[0].periodic_time=%s\n", uci_to_option(e)->v.string);
 					continue;
 				}
+
+				if (!strcmp((uci_to_option(e))->e.name, "http100continue_disable")) {
+					config->acs->http100continue_disable = (atoi(uci_to_option(e)->v.string)) ? true : false;
+					DD("easycwmp.@acs[0].http100continue_disable=%d\n", config->acs->http100continue_disable);
+					continue;
+				}
+
 				if (!strcmp((uci_to_option(e))->e.name, "ssl_cert")) {
 					config->acs->ssl_cert = strdup(uci_to_option(e)->v.string);
 					DD("easycwmp.@acs[0].ssl_cert=%s\n", config->acs->ssl_cert);
 					continue;
 				}
-
 				if (!strcmp((uci_to_option(e))->e.name, "ssl_cacert")) {
 					config->acs->ssl_cacert = strdup(uci_to_option(e)->v.string);
 					DD("easycwmp.@acs[0].ssl_cacert=%s\n", config->acs->ssl_cacert);
