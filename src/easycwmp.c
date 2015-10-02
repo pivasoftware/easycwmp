@@ -80,7 +80,7 @@ static void easycwmp_netlink_interface(struct nlmsghdr *nlh)
 	struct rtattr *rth = IFA_RTA(ifa);
 	int rtl = IFA_PAYLOAD(nlh);
 	char if_name[IFNAMSIZ], if_addr[INET_ADDRSTRLEN];
-	static old_addr=0;
+	static uint32_t old_addr=0;
 
 	memset(&if_name, 0, sizeof(if_name));
 	memset(&if_addr, 0, sizeof(if_addr));
