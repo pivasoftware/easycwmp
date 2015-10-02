@@ -258,7 +258,7 @@ handle_action() {
 	
 	if [ "$action" = "download" ]; then
 # TODO: check firmaware size with falsh to be improved  
-		dl_size=`df  |grep  /tmp | awk '{print $4;}'`
+		dl_size=`df  |grep  "/tmp$" | awk '{print $4;}'`
 		dl_size_byte=$((${dl_size}*1024))
 		if [ "$dl_size_byte" -lt "$__arg3" ]; then
 			let fault_code=9000+$E_DOWNLOAD_FAILURE
