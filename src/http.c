@@ -49,21 +49,9 @@ http_client_init(void)
 		DD("ssl_verify: SSL certificate validation disabled.\n");
 	DDF("--- HTTP CLIENT CONFIGURATION ---\n");
 
-	http_c.header_list = NULL;
-	http_c.header_list = curl_slist_append(http_c.header_list, "User-Agent: easycwmp");
-	if (!http_c.header_list) return -1;
-	http_c.header_list = curl_slist_append(http_c.header_list, "Accept:");
-	if (!http_c.header_list) return -1;
-	http_c.header_list = curl_slist_append(http_c.header_list, "Content-Type: text/html; charset=utf-8");
-	if (!http_c.header_list) return -1;
-	if (config->acs->http100continue_disable) {
-		http_c.header_list = curl_slist_append(http_c.header_list, "Expect:");
-		if (!http_c.header_list) return -1;
-	}
 	curl = curl_easy_init();
 	if (!curl) return -1;
 	curl_easy_setopt(curl, CURLOPT_URL, http_c.url);
-	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, http_c.header_list);
 	curl_easy_setopt(curl, CURLOPT_USERNAME, config->acs->username ? config->acs->username : "");
 	curl_easy_setopt(curl, CURLOPT_PASSWORD, config->acs->password ? config->acs->password : "");
 	curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC|CURLAUTH_DIGEST);
@@ -95,10 +83,6 @@ http_client_exit(void)
 		curl = NULL;
 	}
 	curl_global_cleanup();
-	if (http_c.header_list) {
-		curl_slist_free_all(http_c.header_list);
-		http_c.header_list = NULL;
-	}
 	if (access(fc_cookies, W_OK) == 0)
 		remove(fc_cookies);
 }
@@ -129,16 +113,37 @@ http_send_message(char *msg_out, char **msg_in)
 	CURLcode res;
 
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, msg_out);
-	if (msg_out)
+	http_c.header_list = NULL;
+	http_c.header_list = curl_slist_append(http_c.header_list, "Accept:");
+	if (!http_c.header_list) return -1;
+	http_c.header_list = curl_slist_append(http_c.header_list, "User-Agent: easycwmp");
+	if (!http_c.header_list) return -1;
+	http_c.header_list = curl_slist_append(http_c.header_list, "Content-Type: text/html; charset=utf-8");
+	if (!http_c.header_list) return -1;
+	if (config->acs->http100continue_disable) {
+		http_c.header_list = curl_slist_append(http_c.header_list, "Expect:");
+		if (!http_c.header_list) return -1;
+	}
+	if (msg_out) {
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long) strlen(msg_out));
-	else
+		http_c.header_list = curl_slist_append(http_c.header_list, "SOAPAction;");
+		if (!http_c.header_list) return -1;
+	}
+	else {
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, 0);
+	}
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, http_c.header_list);
 
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, msg_in);
 
 	*msg_in = (char *) calloc (1, sizeof(char));
 
 	res = curl_easy_perform(curl);
+
+	if (http_c.header_list) {
+		curl_slist_free_all(http_c.header_list);
+		http_c.header_list = NULL;
+	}
 
 	if (!strlen(*msg_in)) {
 		FREE(*msg_in);
