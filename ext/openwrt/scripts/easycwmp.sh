@@ -308,7 +308,11 @@ handle_action() {
 		return
 	fi
 	if [ "$action" = "factory_reset" ]; then
-		jffs2_mark_erase "rootfs_data"
+		if [ "`which jffs2_mark_erase`" != "" ]; then
+			jffs2_mark_erase "rootfs_data"
+		else
+			/sbin/jffs2mark -y
+		fi
 		sync
 		reboot
 	fi
