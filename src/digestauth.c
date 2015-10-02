@@ -17,6 +17,7 @@
 #include <limits.h>
 #include <errno.h>
 #include <time.h>
+#include <fcntl.h>
 #include "md5.h"
 #include "digestauth.h"
 #include "easycwmp.h"
@@ -40,7 +41,19 @@
 
 #define MAX_NONCE_LENGTH 129
 
-#define NONCE_PRIV_KEY "h5ffku7rlxp6tjf2xamnfqjev5ul"
+#define STRING_POSSIBLE "abcdefghijkl0123456789mnopqrstuvwxyz"
+
+char NONCE_PRIV_KEY[] = "h5ffku7rlxp6tjf2xamnfqjev5ul";
+
+void http_digest_init_nonce_priv_key(void) {
+	int i = 0;
+	char *possible = STRING_POSSIBLE;
+	int dev_random = open("/dev/urandom", O_RDONLY);
+	int result = read(dev_random, NONCE_PRIV_KEY, sizeof(NONCE_PRIV_KEY) - 1);
+	for(i = 0; i < (sizeof(NONCE_PRIV_KEY) - 1); i++) {
+		NONCE_PRIV_KEY[i] = possible[NONCE_PRIV_KEY[i] % (sizeof(STRING_POSSIBLE) - 1)];
+	}
+}
 
 static time_t MHD_monotonic_time(void)
 {

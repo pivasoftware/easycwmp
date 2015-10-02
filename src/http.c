@@ -167,6 +167,8 @@ http_send_message(char *msg_out, char **msg_in)
 void
 http_server_init(void)
 {
+	http_digest_init_nonce_priv_key();
+
 	http_s.http_event.cb = http_new_client;
 
 	http_s.http_event.fd = usock(USOCK_TCP | USOCK_SERVER, config->local->ip, config->local->port);
