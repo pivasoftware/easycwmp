@@ -7,7 +7,6 @@
 
 . /lib/functions.sh
 . /usr/share/libubox/jshn.sh
-. /usr/share/shflags/shflags.sh
 . /usr/share/easycwmp/defaults
 
 UCI_GET="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get"
@@ -63,11 +62,9 @@ E_DOWNLOAD_FAIL_COMPLETE_DOWNLOAD="17"
 E_DOWNLOAD_FAIL_FILE_CORRUPTED="18"
 E_DOWNLOAD_FAIL_FILE_AUTHENTICATION="19"
 
-# define a 'name' command-line string flag
-DEFINE_boolean 'json' false 'send values using json' 'j'
-
-FLAGS_HELP=`cat << EOF
-USAGE: $0 [flags] command [parameter] [values]
+easycwmp_usage() {
+cat << EOF
+USAGE: $1 command [parameter] [values]
 command:
   get [value|notification|name]
   set [value|notification]
@@ -79,14 +76,8 @@ command:
   reboot
   inform [parameter|device_id]
   json_input
-EOF`
-
-FLAGS "$@" || exit 1
-eval set -- "${FLAGS_ARGV}"
-
-if [ ${FLAGS_help} -eq ${FLAGS_TRUE} ]; then
-	exit 1
-fi
+EOF
+}
 
 __arg1=""; __arg2=""; __arg3=""; __arg4=""; __arg5="";
 
@@ -187,7 +178,10 @@ case "$1" in
 		;;
 	json_input)
 		action="json_input"
-		;;	
+		;;
+	*)
+		easycwmp_usage $0
+		;;
 esac
 
 

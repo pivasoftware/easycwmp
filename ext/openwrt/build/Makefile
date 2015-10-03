@@ -26,7 +26,7 @@ define Package/easycwmp
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=CWMP client (using libcurl)
-  DEPENDS:=+libubus +libuci +libubox +libmicroxml +libjson-c +shflags +libcurl
+  DEPENDS:=+libubus +libuci +libubox +libmicroxml +libjson-c +libcurl
 endef
 
 define Package/easycwmp/description

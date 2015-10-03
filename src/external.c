@@ -203,10 +203,9 @@ int external_init()
 		close(pfds_in[0]);
 
 		int i=0;
-		const char *argv[5];
+		const char *argv[4];
 		argv[i++] = "/bin/sh";
 		argv[i++] = fc_script;
-		argv[i++] = "--json";
 		argv[i++] = "json_input";
 		argv[i++] = NULL;
 
