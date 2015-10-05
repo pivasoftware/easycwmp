@@ -1,6 +1,19 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.1.7 (date of 5th of October 2015)
+  - #0000066: pull request on github
+  - #0000065: http_digest_auth_fail_response with easycwmp
+  - #0000084: Remove the shflags dependencie
+  - #0000081: Firmware update fails
+  - #0000083: factory reset does not work anymore on CC
+  - #0000062: Support SOAPAction in the http header
+  - #0000085: wrong declaration of the variable old_addr in easycwmp.c
+  - #0000076: NONCE_PRIV_KEY
+  - #0000068: build error (is_error() in json.c) when compiling with the last version of json-c
+  - #0000072: Add a configuration option to enable/disable the expect 100 continue in the http header
+  - #0000071: compilation error of easycwmp in the last version of openwrt: tunknown type name 'time_t'
+
 * EasyCwmp-1.1.6 (date of 23th of July 2015)
   - #0000070: Event code responded after firmware upgrade is not accurate
 
