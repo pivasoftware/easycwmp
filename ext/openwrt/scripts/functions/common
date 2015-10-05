@@ -157,6 +157,17 @@ common_set_bool() {
 	return 0
 }
 
+common_set_list() {
+	local cfg="$1"
+	local val="$2"
+	local element list=${val//,/ }
+	$UCI_DELETE $cfg
+	for element in $list; do
+		$UCI_ADD_LIST $cfg="$element"
+	done
+	return 0
+}
+
 ##### common entries called by easycwmp.sh #####
 common_entry_get_value() {
 	local param="$1"
