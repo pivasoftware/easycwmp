@@ -63,7 +63,12 @@ opkg install
 
 Note: If you run easycwmpd with  start command then it will send inform to the ACS containing "2 PERIODIC" event and send GetRPCMethods to the ACS. And if you run easycwmpd with boot command then it will send inform to the ACS containing "1 BOOT" event.
 
- 
+Note: A third party application could trigger EasyCwmp daemon to send notify (inform with value change event) by calling the command:
+
+ubus call tr069 notify
+
+If the EasyCwmp daemon receive the ubus call notify then it will check if there is a value changed of parameters with notification not equal to 0
+
 
 5. EasyCwmp install for other Linux distributions:
 ==================================================
@@ -88,6 +93,10 @@ sudo chown -R $USER:$GROUP /opt/{dev,git}
 curl
 ====
 Your distribution should already have curl development package. Use that for now.
+
+Note: If you build libcurl with an SSL package dependency, it is recommended to build with OpenSSL since EasyCwmp was mainly tested with libcurl using OpenSSL.
+
+The digest authentication with ACS server will not work if you build libcurl with PolarSSL.
 
  
 
@@ -218,21 +227,6 @@ sudo ln -sf /usr/lib/libmicroxml.so.1.0 /lib/libmicroxml.so.1
 
  
 
-shflags
-=======
-
-Get the sources:
-
-svn co http://shflags.googlecode.com/svn/trunk/source/1.0/lib /opt/dev/shflags
-cd /opt/dev/shflags/
-
-Install:
-
-sudo mkdir -p /usr/share/shflags/
-sudo cp shflags /usr/share/shflags/shflags.sh
-
- 
-
 easycwmp
 ========
 
@@ -328,3 +322,9 @@ Make changes in /etc/config/easycwmp and in /usr/share/easycwmp/defaults so easy
 Finally run easycwmpd as root:
 
 /usr/sbin/easycwmpd -f -b
+
+Note: A third party application could trigger EasyCwmp daemon to send notify (inform with value change event) by calling the command:
+
+ubus call tr069 notify
+
+If the EasyCwmp daemon receive the ubus call notify then it will check if there is a value changed of parameters with notification not equal to 0
