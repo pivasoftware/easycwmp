@@ -4,6 +4,7 @@
 START=90
 
 UCI_SET="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} set"
+UCI_COMMIT="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} commit"
 init_device_info() {
 	local val
 
@@ -20,6 +21,7 @@ init_device_info() {
 	[ -n "$val" ] && $UCI_SET easycwmp.@device[0].software_version=$val
 	
 	#The same thing here for OUI and SerialNumber
+	$UCI_COMMIT easycwmp
 }
 
 boot() {
