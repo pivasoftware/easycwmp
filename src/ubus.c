@@ -33,17 +33,7 @@ static void ubus_easycwmpd_stop_callback(struct uloop_timeout *timeout)
 	uloop_end();
 }
 
-enum ubus_notify {
-	NOTIFY_PARAM,
-	NOTIFY_VALUE,
-	NOTIFY_TYPE,
-	__NOTIFY_MAX
-};
-
 static const struct blobmsg_policy notify_policy[] = {
-	[NOTIFY_PARAM] = { .name = "parameter", .type = BLOBMSG_TYPE_STRING },
-	[NOTIFY_VALUE] = { .name = "value", .type = BLOBMSG_TYPE_STRING },
-	[NOTIFY_TYPE] = { .name = "type", .type = BLOBMSG_TYPE_STRING },
 };
 
 static int
@@ -51,22 +41,9 @@ easycwmpd_handle_notify(struct ubus_context *ctx, struct ubus_object *obj,
 			struct ubus_request_data *req, const char *method,
 			struct blob_attr *msg)
 {
-	struct blob_attr *tb[__NOTIFY_MAX];
+	log_message(NAME, L_NOTICE, "triggered ubus notification\n");
 
-	blobmsg_parse(notify_policy, ARRAY_SIZE(notify_policy), tb,
-			  blob_data(msg), blob_len(msg));
-
-	if (!tb[NOTIFY_PARAM])
-		return UBUS_STATUS_INVALID_ARGUMENT;
-
-	if (!tb[NOTIFY_VALUE])
-		return UBUS_STATUS_INVALID_ARGUMENT;
-
-	log_message(NAME, L_NOTICE, "triggered ubus notification parameter %s\n",
-			blobmsg_data(tb[NOTIFY_PARAM]));
-	cwmp_add_notification(blobmsg_data(tb[NOTIFY_PARAM]),
-			blobmsg_data(tb[NOTIFY_VALUE]),
-			tb[NOTIFY_TYPE] ? blobmsg_data(tb[NOTIFY_TYPE]) : NULL);
+	easycwmp_notify();
 
 	return 0;
 }

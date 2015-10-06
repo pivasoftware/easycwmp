@@ -36,13 +36,17 @@ char *json_common_get_string(json_object *js_obj, char *key )
 int json_handle_method_status(char *line)
 {
 	json_object *js_obj;
-	char *status, *fault_code;
+	char *status, *cfg_load, *fault_code;
 
 	js_obj = json_tokener_parse(line);
 	if (js_obj == NULL || json_object_get_type(js_obj) != json_type_object)
 		return -1;
 
-	status = json_common_get_string(js_obj, "status");
+	if (status = json_common_get_string(js_obj, "status")) {
+		cfg_load = json_common_get_string(js_obj, "config_load");
+		if (cfg_load && atoi(cfg_load))
+			cwmp->end_session |= ENDS_RELOAD_CONFIG;
+	}
 	fault_code = json_common_get_string(js_obj, "fault_code");
 	external_method_resp_status(status, fault_code);
 
@@ -173,6 +177,28 @@ int json_handle_add_object(char *line)
 	fault_code = json_common_get_string(js_obj, "fault_code");
 
 	external_add_obj_resp(status, instance, fault_code);
+
+	json_object_put(js_obj);
+	return 0;
+}
+
+int json_handle_check_parameter_value_change(char *line)
+{
+	json_object *js_obj;
+	char *param_name, *param_value, *param_notif, *param_type;
+
+	js_obj=json_tokener_parse(line);
+	if (js_obj == NULL || json_object_get_type(js_obj) != json_type_object)
+		return -1;
+
+	param_name = json_common_get_string(js_obj, "parameter");
+	param_value = json_common_get_string(js_obj, "value");
+	param_notif = json_common_get_string(js_obj, "notification");
+	param_type = json_common_get_string(js_obj, "type");
+	if (param_type == NULL || param_type[0] == '\0')
+		param_type = "xsd:string";
+
+	cwmp_add_notification(param_name, param_value, param_type, param_notif);
 
 	json_object_put(js_obj);
 	return 0;

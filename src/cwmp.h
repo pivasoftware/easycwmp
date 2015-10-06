@@ -142,7 +142,7 @@ void cwmp_init(void);
 void cwmp_connection_request(int code);
 void cwmp_remove_event(int remove_policy, int method_id);
 void cwmp_clear_event_list(void);
-void cwmp_add_notification(char *parameter, char *value, char *type);
+void cwmp_add_notification(char *parameter, char *value, char *type, char *notification);
 void cwmp_clear_notifications(void);
 void cwmp_scheduled_inform(struct uloop_timeout *timeout);
 void cwmp_add_handler_end_session(int handler);
@@ -154,5 +154,6 @@ int cwmp_get_int_event_code(char *code);
 
 struct event *cwmp_add_event(int code, char *key, int method_id, int backup);
 long int cwmp_periodic_inform_time(void);
+void cwmp_update_value_change(void);
 #endif
 

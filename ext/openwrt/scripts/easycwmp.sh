@@ -27,6 +27,7 @@ set_fault_tmp_file="/tmp/.easycwmp_set_fault_tmp"
 apply_service_tmp_file="/tmp/.easycwmp_apply_service"
 set_command_tmp_file="/tmp/.easycwmp_set_command_tmp"
 FUNCTION_PATH="/usr/share/easycwmp/functions"
+NOTIF_PARAM_VALUES="/tmp/.easycwmp_notif_param_value"
 easycwmp_config_changed=""
 g_fault_code=""
 
@@ -131,6 +132,12 @@ json_get_opt() {
 			action="end"
 			echo "$EASYCWMP_PROMPT"
 			;;
+		update_value_change)
+			action="update_value_change"
+			;;
+		check_value_change)
+			action="check_value_change"
+			;;
 		exit)
 			exit 0
 			;;
@@ -178,6 +185,12 @@ case "$1" in
 		;;
 	json_input)
 		action="json_input"
+		;;
+	update_value_change)
+		action="update_value_change"
+		;;
+	check_value_change)
+		action="check_value_change"
 		;;
 	*)
 		easycwmp_usage $0
@@ -321,8 +334,9 @@ handle_action() {
 			local rev=""
 			while read line; do
 				[ -z "$line" ] && continue
-				local param=`echo $line | awk '{print $1}'`
-				local setcmd=${line#$param }
+				local param=${line%%<delim>*}
+				local setcmd=${line#*<delim>}
+				setcmd=${setcmd%<delim>*}
 				eval "$setcmd"
 				local fault="$?"
 				if [ "$fault" != "0" ]; then
@@ -337,10 +351,26 @@ handle_action() {
 				done
 			else
 				if [ "$action" = "apply_value" ]; then
+					while read line; do
+						[ -z "$line" ] && continue
+						local param=${line%%<delim>*}
+						local gtmp=`grep "\"$param\"" $NOTIF_PARAM_VALUES`
+						if [ -n "$gtmp" ]; then
+							local getcmd=${line##*<delim>}
+							local vtmp=`$getcmd`
+							json_init
+							json_load "$gtmp"
+							json_add_string "value" "$vtmp"
+							json_close_object
+							gtmp=`json_dump`
+							sed -i "/$param/s/.*/$gtmp/" $NOTIF_PARAM_VALUES
+						fi
+					done < $set_command_tmp_file
 					$UCI_SET easycwmp.@acs[0].parameter_key="$__arg1"
 					common_json_output_status "1"
 				fi
 				if [ "$action" = "apply_notification" ]; then
+					common_easycwmp_config_load
 					common_json_output_status "0"
 				fi
 				$UCI_COMMIT
@@ -391,6 +421,23 @@ handle_action() {
 	
 	if [ "$action" = "inform_device_id" ]; then
 		common_get_inform_deviceid
+		return
+	fi
+
+	if [ "$action" = "update_value_change" ]; then
+		(common_entry_update_value_change)
+		return
+	fi
+
+	if [ "$action" = "check_value_change" ]; then
+		local line param oldvalue
+		while read line; do
+			json_init
+			json_load "$line"
+			json_get_var param parameter
+			(common_entry_check_value_change $param $oldvalue)
+		done < $NOTIF_PARAM_VALUES
+		(common_entry_update_value_change)
 		return
 	fi
 	

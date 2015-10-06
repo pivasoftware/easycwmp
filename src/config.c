@@ -304,6 +304,7 @@ void config_load(void)
 	first_run = false;
 	config_free_ctx();
 
+	cwmp_update_value_change();
 	return;
 
 error:

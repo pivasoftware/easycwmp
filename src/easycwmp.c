@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <sys/file.h>
 
+#include "json.h"
 #include "easycwmp.h"
 #include "config.h"
 #include "cwmp.h"
@@ -33,10 +34,12 @@
 #include "log.h"
 
 static void easycwmp_do_reload(struct uloop_timeout *timeout);
+static void easycwmp_do_notify(struct uloop_timeout *timeout);
 static void netlink_new_msg(struct uloop_fd *ufd, unsigned events);
 
 static struct uloop_fd netlink_event = { .cb = netlink_new_msg };
 static struct uloop_timeout reload_timer = { .cb = easycwmp_do_reload };
+static struct uloop_timeout notify_timer = { .cb = easycwmp_do_notify };
 
 struct option long_opts[] = {
 	{"foreground", no_argument, NULL, 'f'},
@@ -65,12 +68,34 @@ static void print_version(void)
 static void easycwmp_do_reload(struct uloop_timeout *timeout)
 {
 	log_message(NAME, L_NOTICE, "configuration reload\n");
+	if (external_init()) {
+		D("external scripts initialization failed\n");
+		return;
+	}
 	config_load();
+	external_exit();
+}
+
+static void easycwmp_do_notify(struct uloop_timeout *timeout)
+{
+	log_message(NAME, L_NOTICE, "checking if there is notify value change\n");
+	if (external_init()) {
+		D("external scripts initialization failed\n");
+		return;
+	}
+	external_action_simple_execute("check_value_change", NULL, NULL);
+	external_action_handle(json_handle_check_parameter_value_change);
+	external_exit();
 }
 
 void easycwmp_reload(void)
 {
 	uloop_timeout_set(&reload_timer, 100);
+}
+
+void easycwmp_notify(void)
+{
+	uloop_timeout_set(&notify_timer, 1);
 }
 
 
@@ -267,9 +292,16 @@ int main (int argc, char **argv)
 	INIT_LIST_HEAD(&cwmp->scheduled_informs);
 	uloop_init();
 	backup_init();
+	if (external_init()) {
+		D("external scripts initialization failed\n");
+		return -1;
+	}
 	config_load();
 	log_message(NAME, L_NOTICE, "daemon started\n");
 	cwmp_init_deviceid();
+
+	external_exit();
+
 	if (start_event & START_BOOT) {
 		cwmp_add_event(EVENT_BOOT, NULL, 0, EVENT_BACKUP);
 		cwmp_add_inform_timer();

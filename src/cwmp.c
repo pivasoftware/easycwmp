@@ -580,25 +580,13 @@ void cwmp_clear_event_list(void)
 	}
 }
 
-void cwmp_add_notification(char *parameter, char *value, char *type)
+void cwmp_add_notification(char *parameter, char *value, char *type, char *notification)
 {
-	char *c;
-	struct external_parameter *external_parameter;
 	struct notification *n = NULL;
 	struct list_head *p;
 	bool uniq = true;
 
-	if (external_init()) {
-		D("external scripts initialization failed\n");
-		return;
-	}
-	external_action_parameter_execute("get", "notification", parameter, NULL);
-	external_action_handle(json_handle_get_parameter_attribute);
-	external_exit();
-	if (external_list_parameter.next == &external_list_parameter) goto out;
-	external_parameter = list_entry(external_list_parameter.next, struct external_parameter, list);
-	c = external_parameter->data ? external_parameter->data : "0";
-	if (strncmp(c, "0", 1) == 0)  goto out;
+	if (notification[0] == '0')  return;
 
 	list_for_each(p, &cwmp->notifications) {
 		n = list_entry(p, struct notification, list);
@@ -612,18 +600,16 @@ void cwmp_add_notification(char *parameter, char *value, char *type)
 
 	if (uniq) {
 		n = calloc(1, sizeof(*n));
-		if (!n) goto out;
+		if (!n) return;
 		list_add_tail(&n->list, &cwmp->notifications);
 		n->parameter = strdup(parameter);
 		n->value = strdup(value);
 		n->type = type ? strdup(type) : strdup("xsd:string");
 	}
 	cwmp_add_event(EVENT_VALUE_CHANGE, NULL, 0, EVENT_NO_BACKUP);
-	if (strncmp(c, "2", 1) == 0) {
+	if (notification[0] == '2') {
 		cwmp_add_inform_timer();
 	}
-out:
-	external_free_list_parameter();
 }
 
 void cwmp_clear_notifications(void)
@@ -649,16 +635,9 @@ void cwmp_free_deviceid(void)
 
 int cwmp_init_deviceid(void)
 {
-	if (external_init()) {
-		D("external scripts initialization failed\n");
-		return -1;
-	}
-
 	external_action_simple_execute("inform", "device_id", NULL);
 	if (external_action_handle(json_handle_deviceid))
 		return -1;
-
-	external_exit();
 
 	if (!cwmp->deviceid.product_class || cwmp->deviceid.product_class[0] == '\0') {
 		D("in device you must define product_class\n");
@@ -681,6 +660,11 @@ int cwmp_init_deviceid(void)
 	}
 
 	return 0;
+}
+
+void cwmp_update_value_change(void) {
+	external_action_simple_execute("update_value_change", NULL, NULL);
+	external_action_handle(NULL);
 }
 
 void cwmp_clean(void)

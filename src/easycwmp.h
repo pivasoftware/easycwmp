@@ -47,6 +47,7 @@ enum start_event_enum {
 };
 
 void easycwmp_reload(void);
+void easycwmp_notify(void);
 
 #define TRACE(MESSAGE,args...) { \
   const char *A[] = {MESSAGE}; \

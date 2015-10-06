@@ -313,6 +313,35 @@ common_entry_delete_object() {
 	return $E_INVALID_PARAMETER_NAME
 }
 
+common_entry_update_value_change() {
+	local entry method="common_update_value_change"
+  g_entry_param=""
+	g_entry_arg=""
+  g_entry_method="$method"
+	rm -f $NOTIF_PARAM_VALUES
+	for entry in $entry_execute_method_list; do
+		$entry "$g_entry_param"
+	done
+	return 0
+}
+
+common_entry_check_value_change() {
+	local param="$1"
+	local oldvalue="$2"
+
+	g_fault_code=$E_INVALID_PARAMETER_NAME
+	local entry method=""
+	method="common_check_value_change"
+	
+	g_entry_param="$param"
+	g_entry_arg="$oldvalue"
+	g_entry_method="$method"	
+	for entry in $entry_execute_method_list; do
+		$entry "$g_entry_param" 
+	done
+	return $g_fault_code
+}
+
 ##### common execute methods #####
 
 common_execute_method_obj() {
@@ -599,7 +628,7 @@ common_set_value_check_param() {
 	local val="$arg"
 	[ "$inparam" != "$refparam" ] && return $E_INVALID_PARAMETER_NAME
 	[ "$permission" != "1" -o -z "$setcmd" ] && exit $E_NON_WRITABLE_PARAMETER
-	echo "$refparam $setcmd \"$val\"" >> $set_command_tmp_file
+	echo "$refparam<delim>$setcmd \"$val\"<delim>$getcmd" >> $set_command_tmp_file
 	exit 0
 }
 
@@ -700,6 +729,56 @@ common_inform_check_obj() {
 	return $E_INVALID_PARAMETER_NAME
 }
 
+##### notif param update #####
+common_update_value_change_param() {
+	local arg="$1"
+	local inparam="$2"
+	local refparam="$3"
+	local permission="$4"
+	local getcmd="$5"
+	local setcmd="$6"
+	local type="$7"
+	local forcedinform="$8"
+	
+	local notification=""
+	common_get_parameter_notification "notification" "$refparam"
+	[ "$notification" = "0" ] && return 
+
+	local val=`$getcmd`
+	common_json_output_value_change "$refparam" "$val" "$notification" "$type" >> $NOTIF_PARAM_VALUES
+	return 0
+}
+
+common_update_value_change_obj() {
+	return 0
+}
+
+##### check value change #####
+common_check_value_change_param() {
+	local arg="$1"
+	local inparam="$2"
+	local refparam="$3"
+	local permission="$4"
+	local getcmd="$5"
+	local setcmd="$6"
+	local type="$7"
+	local forcedinform="$8"
+	
+	[ "$inparam" != "$refparam" ] && return $E_INVALID_PARAMETER_NAME
+	local notification oldvalue
+	local val=`$getcmd`
+	json_get_var oldvalue value
+	if [ "$val" != "$oldvalue" ]; then
+		json_get_var notification notification
+		common_json_output_value_change "$refparam" "$val" "$notification" "$type"
+	fi
+	exit 0
+}
+
+common_check_value_change_obj() {
+	return $E_INVALID_PARAMETER_NAME
+}
+
 ##### json output #####
 common_json_output_get_value() {
 	local parameter="$1"
@@ -759,6 +838,22 @@ common_json_output_status() {
 	json_add_string "status" "$status"
 	[ -n "$instance" ] && json_add_string "instance" "$instance"
 	[ "$easycwmp_config_changed" = "1" ] && json_add_string "config_load" "1"
+	json_close_object
+	local msg=`json_dump`
+	echo "$msg"
+}
+
+common_json_output_value_change() {
+	local parameter="$1"
+	local value="$2"
+	local notification="$3"
+	local type="$4"
+
+	json_init
+	json_add_string "parameter" "$parameter"
+	json_add_string "value" "$value"
+	json_add_string "notification" "$notification"
+	[ -n "$type" ] && json_add_string "type" "$type"
 	json_close_object
 	local msg=`json_dump`
 	echo "$msg"
