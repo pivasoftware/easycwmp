@@ -35,7 +35,7 @@ entry_execute_method_root_ManagementServer() {
 management_server_set_url() {
 	local val=$1
 	
-	local chk=`echo $val | grep "[a-zA-Z0-9_]\+://.*"`
+	local chk=`echo $val | grep "[a-zA-Z0-9_]://.*"`
 	[ "$chk" = "" ] && return $E_INVALID_PARAMETER_VALUE
 
 	$UCI_SET easycwmp.@acs[0].url=$val
