@@ -8,6 +8,7 @@
 
 prefix_list="$prefix_list $DMROOT.ManagementServer."
 entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_ManagementServer"
+entry_execute_method_list_forcedinform="$entry_execute_method_list_forcedinform  entry_execute_method_root_ManagementServer"
 
 entry_execute_method_root_ManagementServer() {
 	case "$1" in ""|"$DMROOT."|"$DMROOT.ManagementServer."*)

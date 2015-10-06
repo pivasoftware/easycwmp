@@ -8,6 +8,7 @@
 
 prefix_list="$prefix_list $DMROOT.WANDevice."
 entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_WANDevice"
+entry_execute_method_list_forcedinform="$entry_execute_method_list_forcedinform entry_execute_method_root_WANDevice"
  
 
 entry_execute_method_root_WANDevice() {

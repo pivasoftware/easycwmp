@@ -274,10 +274,12 @@ common_entry_set_notification() {
 
 common_entry_inform() {
 	local entry method="common_inform_check"
-  g_entry_param=""
+	local forced_list=${entry_execute_method_list_forcedinform:-$entry_execute_method_list}
+	
+	g_entry_param=""
 	g_entry_arg=""
-  g_entry_method="$method"
-	for entry in $entry_execute_method_list; do
+	g_entry_method="$method"
+	for entry in $forced_list; do
 		$entry "$g_entry_param"
 	done
 	return 0

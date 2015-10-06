@@ -12,6 +12,7 @@
 
 prefix_list="$prefix_list $DMROOT.DeviceInfo."
 entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_DeviceInfo"
+entry_execute_method_list_forcedinform="$entry_execute_method_list_forcedinform  entry_execute_method_root_DeviceInfo"
 
 entry_execute_method_root_DeviceInfo() {
 	case "$1" in ""|"$DMROOT."|"$DMROOT.DeviceInfo."*)
