@@ -39,7 +39,6 @@ management_server_set_url() {
 	[ "$chk" = "" ] && return $E_INVALID_PARAMETER_VALUE
 
 	$UCI_SET easycwmp.@acs[0].url=$val
-	common_easycwmp_config_load
 	return 0
 }
 
@@ -47,7 +46,6 @@ management_server_set() {
 	local cfg=$1
 	local val=$2
 	$UCI_SET $cfg="$val"
-	common_easycwmp_config_load
 	return 0
 }
 

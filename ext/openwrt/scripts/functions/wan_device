@@ -99,7 +99,6 @@ wan_device_set_wan_ppp_enable() {
 	common_set_bool "network.$iface.auto" "$val" "1" "0"
 	local e="$?"
 	[ "$e" != "0" ] && return $e
-	common_delay_service_restart_in_apply_service "network" "0"
 	return 0
 }
 
@@ -107,6 +106,5 @@ wan_device_set_wan_ppp_cfg() {
 	local cfg="$1"
 	local val="$2"
 	$UCI_SET $cfg="$val"
-	common_delay_service_restart_in_apply_service "network" "0"
 	return 0
 }

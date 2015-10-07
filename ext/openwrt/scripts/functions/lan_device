@@ -49,7 +49,6 @@ lan_device_set_wlan_enable() {
 	common_set_bool "wireless.wl0.disabled" "$val" "0" "1"
 	local e="$?"
 	[ "$e" != "0" ] && return $e
-	common_execute_command_in_apply_service "wifi"
 	return 0
 }
 
@@ -57,7 +56,6 @@ lan_device_set_wlan_cfg() {
 	local cfg="$1"
 	local val="$2"
 	$UCI_SET $cfg="$val"
-	common_execute_command_in_apply_service "wifi"
 	return 0
 }
 
@@ -86,7 +84,6 @@ lan_device_add_wlan_iface() {
 	$UCI_SET wireless.$wifi_iface.ssid=DefaultSSID
 	$UCI_SET wireless.$wifi_iface.instance=$((++instance))
 	$UCI_COMMIT
-	common_execute_command_in_apply_service "wifi"
 	echo $instance
 }
 
@@ -94,6 +91,5 @@ lan_device_delete_wlan_iface() {
 	local iface="$1"
 	$UCI_DELETE wireless.$iface
 	$UCI_COMMIT
-	common_execute_command_in_apply_service "wifi"
 	return 0
 }

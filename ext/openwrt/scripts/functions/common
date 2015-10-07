@@ -131,10 +131,6 @@ common_get_inform_deviceid()
 	echo "$msg"
 }
 
-common_easycwmp_config_load() {
-	easycwmp_config_changed="1"
-}
-
 case_param() {
 	[ -z "$1" ] && return 0
 	[ "${3/$1/}" != "$3" -o "${1/$3/}" != "$1" ] && return 0
@@ -166,6 +162,46 @@ common_set_list() {
 		$UCI_ADD_LIST $cfg="$element"
 	done
 	return 0
+}
+
+common_uci_change_packages_lookup() {
+	local ch changes
+	changes=`$UCI_CHANGES | cut -d. -f1`
+	for ch in $changes; do
+		ch=${ch//[+-]/}
+		if [ "$ch" = "easycwmp" ]; then
+			easycwmp_config_changed="1"
+			continue;
+		fi
+		if [ "${uci_change_packages//$ch/}" = "$uci_change_packages" ]; then
+			uci_change_packages="$uci_change_packages $ch"
+		fi
+	done
+}
+
+common_rec_append_uci_track_services()
+{
+	local package="$1"	
+	local service=`$UCI_GET ucitrack.@$package[0].init`
+	[ "${uci_change_services//$service/}" != "$uci_change_services" ] && return
+	uci_change_services="$uci_change_services $service"
+	local af affects=`$UCI_GET ucitrack.@$package[0].affects`
+	for af in $affects; do
+		common_rec_append_uci_track_services $af
+	done
+	
+}
+
+common_uci_track_restart_services() {
+	local package service
+	uci_change_services=""
+	for package in $uci_change_packages; do
+		common_rec_append_uci_track_services $package
+	done
+	for service in $uci_change_services; do
+		[ "$service" = "easycwmpd" ] && continue
+		/etc/init.d/$service restart
+	done
 }
 
 ##### common entries called by easycwmp.sh #####

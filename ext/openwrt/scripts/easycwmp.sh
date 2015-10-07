@@ -29,6 +29,8 @@ set_command_tmp_file="/tmp/.easycwmp_set_command_tmp"
 FUNCTION_PATH="/usr/share/easycwmp/functions"
 NOTIF_PARAM_VALUES="/tmp/.easycwmp_notif_param_value"
 easycwmp_config_changed=""
+uci_change_packages=""
+uci_change_services=""
 g_fault_code=""
 
 DMROOT="InternetGatewayDevice"
@@ -364,11 +366,12 @@ handle_action() {
 							sed -i "/$param/s/.*/$gtmp/" $NOTIF_PARAM_VALUES
 						fi
 					done < $set_command_tmp_file
+					common_uci_change_packages_lookup
 					$UCI_SET easycwmp.@acs[0].parameter_key="$__arg1"
 					common_json_output_status "1"
 				fi
 				if [ "$action" = "apply_notification" ]; then
-					common_easycwmp_config_load
+					common_uci_change_packages_lookup
 					common_json_output_status "0"
 				fi
 				$UCI_COMMIT
@@ -386,6 +389,7 @@ handle_action() {
 		return
 	fi
 	if [ "$action" = "apply_service" ]; then
+		common_uci_track_restart_services		
 		if [ -f "$apply_service_tmp_file" ]; then
 			chmod +x "$apply_service_tmp_file"
 			/bin/sh "$apply_service_tmp_file"
