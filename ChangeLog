@@ -1,6 +1,14 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.2.0 (date of 7th of October 2015)
+  - #0000091: The services to restart at the end session should be found automatically by uci change
+  - #0000086: update documentation
+  - #0000089: Add uci commit in the funcition init device info in init.d
+  - #0000090: check acs url in set parameter value does not work properly
+  - #0000088: Enhancement: cwmp inform should loop only method objects which contain forced inform params
+  - #0000087: enhancement of the ubus call notify
+
 * EasyCwmp-1.1.7 (date of 5th of October 2015)
   - #0000066: pull request on github
   - #0000065: http_digest_auth_fail_response with easycwmp
