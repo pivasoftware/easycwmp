@@ -2,6 +2,8 @@ AC_INIT([easycwmpd], [1.2.0], [mohamed.kallel@pivasoftware.com])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/easycwmp.c])
 
+AM_INIT_AUTOMAKE([subdir-objects])
+
 AC_ARG_ENABLE(jsonc, [AS_HELP_STRING([--enable-jsonc], [build with jsonc])], [
  AC_DEFINE(JSONC)
  LIBJSON_LIBS='-ljson-c'
