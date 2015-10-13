@@ -1,6 +1,9 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.2.1 (date of 13th of October 2015)
+  - #0000094: warning in 'autoreconf -i': option 'subdir-objects' is disabled
+
 * EasyCwmp-1.2.0 (date of 7th of October 2015)
   - #0000091: The services to restart at the end session should be found automatically by uci change
   - #0000086: update documentation
