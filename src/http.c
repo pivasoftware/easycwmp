@@ -4,7 +4,7 @@
  *	the Free Software Foundation, either version 2 of the License, or
  *	(at your option) any later version.
  *
- *	Copyright (C) 2012-2014 PIVA SOFTWARE (www.pivasoftware.com)
+ *	Copyright (C) 2012-2015 PIVA SOFTWARE (www.pivasoftware.com)
  *		Author: Mohamed Kallel <mohamed.kallel@pivasoftware.com>
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
  *	Copyright (C) 2011-2012 Luka Perkov <freecwmp@lukaperkov.net>
@@ -69,7 +69,7 @@ http_client_init(void)
 	if (!config->acs->ssl_verify)
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
 
-	log_message(NAME, L_NOTICE, "configured acs url %s", http_c.url);
+	log_message(NAME, L_NOTICE, "configured acs url %s\n", http_c.url);
 	return 0;
 }
 
@@ -100,10 +100,6 @@ http_get_response(void *buffer, size_t size, size_t rxed, char **msg_in)
 	free(*msg_in);
 	*msg_in = c;
 
-	DDF("+++ RECEIVED HTTP RESPONSE (PART) +++\n");
-	DDF("%.*s", size * rxed, buffer);
-	DDF("--- RECEIVED HTTP RESPONSE (PART) ---\n");
-
 	return size * rxed;
 }
 
@@ -125,11 +121,15 @@ http_send_message(char *msg_out, char **msg_in)
 		if (!http_c.header_list) return -1;
 	}
 	if (msg_out) {
+		DDF("+++ SEND HTTP REQUEST +++\n");
+		DDF("%s", msg_out);
+		DDF("--- SEND HTTP REQUEST ---\n");
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long) strlen(msg_out));
 		http_c.header_list = curl_slist_append(http_c.header_list, "SOAPAction;");
 		if (!http_c.header_list) return -1;
 	}
 	else {
+		DDF("+++ SEND EMPTY HTTP REQUEST +++\n");
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, 0);
 	}
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, http_c.header_list);
@@ -290,7 +290,7 @@ http_del_client(struct uloop_process *uproc, int ret)
 	/* child terminated ; check return code */
 	if (WIFEXITED(ret) && WEXITSTATUS(ret) == 0) {
 		DDF("+++ HTTP SERVER CONNECTION SUCCESS +++\n");
-		log_message(NAME, L_NOTICE, "acs initiated connection");
+		log_message(NAME, L_NOTICE, "acs initiated connection\n");
 		cwmp_connection_request(EVENT_CONNECTION_REQUEST);
 	} else {
 		DDF("+++ HTTP SERVER CONNECTION FAILED +++\n");

@@ -4,7 +4,7 @@
  *	the Free Software Foundation, either version 2 of the License, or
  *	(at your option) any later version.
  *
- *	Copyright (C) 2012-2014 PIVA SOFTWARE (www.pivasoftware.com)
+ *	Copyright (C) 2012-2015 PIVA SOFTWARE (www.pivasoftware.com)
  *		Author: Mohamed Kallel <mohamed.kallel@pivasoftware.com>
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
  *	Copyright (C) 2011-2012 Luka Perkov <freecwmp@lukaperkov.net>
@@ -486,7 +486,7 @@ void cwmp_download_launch(struct uloop_timeout *timeout)
 	goto out;
 
 end_fault :
-	log_message(NAME, L_NOTICE, "download error: '%s'", fault_array[code].string);
+	log_message(NAME, L_NOTICE, "download error: '%s'\n", fault_array[code].string);
 	backup_update_fault_transfer_complete(node, code);
 
 out:
@@ -529,7 +529,7 @@ struct event *cwmp_add_event(int code, char *key, int method_id, int backup)
 
 	int type = event_code_array[code].type;
 
-	log_message(NAME, L_NOTICE, "add event '%s'", event_code_array[code].code);
+	log_message(NAME, L_NOTICE, "add event '%s'\n", event_code_array[code].code);
 
 	if (type == EVENT_SINGLE) {
 		list_for_each(p, &cwmp->events) {
