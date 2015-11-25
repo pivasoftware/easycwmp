@@ -48,11 +48,10 @@ static struct uloop_timeout inform_timer = { .cb = cwmp_do_inform };
 static struct uloop_timeout periodic_inform_timer = { .cb = cwmp_periodic_inform };
 static struct uloop_timeout inform_timer_retry = { .cb = cwmp_do_inform };
 
-inline void cwmp_add_inform_timer()
+void cwmp_add_inform_timer()
 {
 	uloop_timeout_set(&inform_timer, 10);
 }
-
 
 static void cwmp_periodic_inform(struct uloop_timeout *timeout)
 {

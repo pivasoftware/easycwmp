@@ -268,7 +268,7 @@ mxml_node_t *backup_add_download(char *key, int delay, char *file_size, char *do
 	mxml_node_t *tree, *data, *b, *n;
 	char time_execute[16];
 
-	if (sprintf(time_execute,"%u",delay + time(NULL)) < 0) return NULL;
+	if (sprintf(time_execute,"%u",delay + (unsigned int)time(NULL)) < 0) return NULL;
 
 	data = mxmlFindElement(backup_tree, backup_tree, "cwmp", NULL, NULL, MXML_DESCEND);
 	if (!data) return NULL;
