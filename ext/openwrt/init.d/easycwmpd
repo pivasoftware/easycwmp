@@ -12,16 +12,16 @@ init_device_info() {
 	local val
 
 	val=`cat "/etc/device_info" | grep "DEVICE_MANUFACTURER" | cut -f 2 -d '=' | sed "s/'//g"`
-	[ -n "$val" ] && $UCI_SET easycwmp.@device[0].manufacturer=$val
+	[ -n "$val" ] && $UCI_SET easycwmp.@device[0].manufacturer="$val"
 
 	val=`cat "/etc/device_info" | grep "DEVICE_PRODUCT" | cut -f 2 -d '=' | sed "s/'//g"`
-	[ -n "$val" ] && $UCI_SET easycwmp.@device[0].product_class=$val
+	[ -n "$val" ] && $UCI_SET easycwmp.@device[0].product_class="$val"
 
 	val=`cat "/etc/device_info" | grep "DEVICE_REVISION" | cut -f 2 -d '=' | sed "s/'//g"`
-	[ -n "$val" ] && $UCI_SET easycwmp.@device[0].hardware_version=$val
+	[ -n "$val" ] && $UCI_SET easycwmp.@device[0].hardware_version="$val"
 
 	val=`cat "/etc/openwrt_version"`
-	[ -n "$val" ] && $UCI_SET easycwmp.@device[0].software_version=$val
+	[ -n "$val" ] && $UCI_SET easycwmp.@device[0].software_version="$val"
 	
 	#The same thing here for OUI and SerialNumber
 	$UCI_COMMIT easycwmp
