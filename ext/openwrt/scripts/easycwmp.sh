@@ -273,7 +273,7 @@ handle_action() {
 		else 
 			rm -f $DOWNLOAD_FILE 2> /dev/null
 			local dw_url="$__arg1"
-			[ "$__arg4" != "" -o "$__arg5" != "" ] && dw_url=`echo  "$__arg1" | sed -e "s@://@://$__arg4:$__arg5\@@g`
+			[ "$__arg4" != "" -o "$__arg5" != "" ] && dw_url=`echo "$__arg1" | sed -e "s@://@://$__arg4:$__arg5\@@g"`
 			wget -O $DOWNLOAD_FILE "$dw_url"
 			fault_code="$?"
 			if [ "$fault_code" != "0" ]; then
