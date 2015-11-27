@@ -1,6 +1,10 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.2.3 (date of 27th of November 2015)
+  - #0000099: Multiple uci errors on file /etc/init.d/easycwmpd
+  - #0000098: /usr/sbin/easycwmp: line 1: syntax error: unterminated quoted string
+
 * EasyCwmp-1.2.2 (date of 25th of November 2015)
   - #0000097: build error: undefined reference to cwmp_add_inform_timer
   - #0000073: procd
