@@ -176,7 +176,7 @@ http_server_init(void)
 
 	http_s.http_event.cb = http_new_client;
 
-	http_s.http_event.fd = usock(USOCK_TCP | USOCK_SERVER, config->local->ip, config->local->port);
+	http_s.http_event.fd = usock(USOCK_TCP | USOCK_SERVER, "0.0.0.0", config->local->port);
 	uloop_fd_add(&http_s.http_event, ULOOP_READ | ULOOP_EDGE_TRIGGER);
 
 	DDF("+++ HTTP SERVER CONFIGURATION +++\n");
