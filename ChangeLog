@@ -1,6 +1,9 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.2.5 (date of 30th of December 2015)
+  - #0000107: Support '8 DIAGNOSTICS COMPLETE' event in the command ubus call tr069 inform
+
 * EasyCwmp-1.2.4 (date of 28th of December 2015)
   - #0000104: Connection Request failed when the WAN ipaddress is changed
 
