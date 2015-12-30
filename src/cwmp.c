@@ -716,6 +716,11 @@ int cwmp_get_int_event_code(char *code)
 		!strcasecmp("6 connection request", code))
 		return EVENT_CONNECTION_REQUEST;
 
+	if (!strcasecmp("diagnostics complete", code) ||
+		!strcasecmp("diagnostics_complete", code) ||
+		!strcasecmp("8 diagnostics complete", code))
+		return EVENT_DIAGNOSTICS_COMPLETE;
+
 	return EVENT_BOOTSTRAP;
 }
 
