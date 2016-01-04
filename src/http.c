@@ -32,12 +32,19 @@
 static struct http_client http_c;
 static struct http_server http_s;
 CURL *curl;
+char *http_redirect_url = NULL;
 
 int
 http_client_init(void)
 {
-	if ((http_c.url = strdup(config->acs->url)) == NULL)
-		return -1;
+	if (http_redirect_url) {
+		if ((http_c.url = strdup(http_redirect_url)) == NULL)
+			return -1;
+	}
+	else {
+		if ((http_c.url = strdup(config->acs->url)) == NULL)
+			return -1;
+	}
 
 	DDF("+++ HTTP CLIENT CONFIGURATION +++\n");
 	DD("url: %s\n", http_c.url);
@@ -152,11 +159,26 @@ http_send_message(char *msg_out, char **msg_in)
 	long httpCode = 0;
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
 
+	if (httpCode == 302 || httpCode == 307) {
+		curl_easy_getinfo(curl, CURLINFO_REDIRECT_URL, &http_redirect_url);
+		http_client_exit();
+		if ((http_redirect_url = strdup(http_redirect_url)) == NULL)
+			return -1;
+		if (http_client_init()) {
+			D("receiving http redirect: re-initializing http client failed\n");
+			FREE(http_redirect_url);
+			return -1;
+		}
+		FREE(http_redirect_url);
+		FREE(*msg_in);
+		int redirect = http_send_message(msg_out, msg_in);
+		return redirect;
+	}
+
 	if (res || (httpCode != 200 && httpCode != 204)) {
 		log_message(NAME, L_NOTICE, "sending http message failed\n");
 		return -1;
 	}
-
 
 	if (*msg_in) {
 		DDF("+++ RECEIVED HTTP RESPONSE +++\n");
