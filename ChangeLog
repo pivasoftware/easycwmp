@@ -1,6 +1,10 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.2.7 (date of 5th of January 2016)
+  - #0000108: handling arguments with white spaces (schedule inform CommandKey as example)
+  - #0000106(Note0000358): Supporting HTTP 302, 307 status code in EasyCwmp
+
 * EasyCwmp-1.2.6 (date of 4th of January 2016)
   - #0000106: Supporting HTTP 302, 307 status code in EasyCwmp
 
