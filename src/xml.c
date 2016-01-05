@@ -1275,7 +1275,7 @@ static int xml_handle_download(mxml_node_t *body_in,
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
-			command_key = b->value.text.string;
+			command_key = xml_get_value_with_whitespace(&b, body_in);
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "CommandKey") &&
@@ -1298,7 +1298,7 @@ static int xml_handle_download(mxml_node_t *body_in,
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Username")) {
-			username = b->value.text.string;
+			username = xml_get_value_with_whitespace(&b, body_in);
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "Username") &&
@@ -1309,7 +1309,7 @@ static int xml_handle_download(mxml_node_t *body_in,
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Password")) {
-			password = b->value.text.string;
+			password = xml_get_value_with_whitespace(&b, body_in);
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "Password") &&
@@ -1422,7 +1422,7 @@ static int xml_handle_reboot(mxml_node_t *node,
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
-			command_key = b->value.text.string;
+			command_key = xml_get_value_with_whitespace(&b, node);
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "CommandKey") &&
@@ -1470,7 +1470,7 @@ static int xml_handle_schedule_inform(mxml_node_t *body_in,
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
-			command_key = b->value.text.string;
+			command_key = xml_get_value_with_whitespace(&b, body_in);
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "CommandKey") &&
