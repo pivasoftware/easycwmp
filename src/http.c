@@ -121,7 +121,7 @@ http_send_message(char *msg_out, char **msg_in)
 	if (!http_c.header_list) return -1;
 	http_c.header_list = curl_slist_append(http_c.header_list, "User-Agent: easycwmp");
 	if (!http_c.header_list) return -1;
-	http_c.header_list = curl_slist_append(http_c.header_list, "Content-Type: text/html; charset=utf-8");
+	http_c.header_list = curl_slist_append(http_c.header_list, "Content-Type: text/html; charset=\"utf-8\"");
 	if (!http_c.header_list) return -1;
 	if (config->acs->http100continue_disable) {
 		http_c.header_list = curl_slist_append(http_c.header_list, "Expect:");
@@ -161,9 +161,9 @@ http_send_message(char *msg_out, char **msg_in)
 
 	if (httpCode == 302 || httpCode == 307) {
 		curl_easy_getinfo(curl, CURLINFO_REDIRECT_URL, &http_redirect_url);
-		http_client_exit();
 		if ((http_redirect_url = strdup(http_redirect_url)) == NULL)
 			return -1;
+		http_client_exit();
 		if (http_client_init()) {
 			D("receiving http redirect: re-initializing http client failed\n");
 			FREE(http_redirect_url);
