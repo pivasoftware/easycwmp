@@ -391,8 +391,10 @@ handle_action() {
 	if [ "$action" = "apply_service" ]; then
 		common_uci_track_restart_services		
 		if [ -f "$apply_service_tmp_file" ]; then
-			chmod +x "$apply_service_tmp_file"
-			/bin/sh "$apply_service_tmp_file"
+			for rcservice in $(ls /etc/rc.d | egrep "^S"); do
+				local command=$(grep "${rcservice:3}" "$apply_service_tmp_file")
+				[ ${#command} -gt 0 ] && eval $command
+			done
 			rm -f "$apply_service_tmp_file"
 		fi
 		return
