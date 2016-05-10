@@ -130,7 +130,7 @@ static inline void xml_free_ns(void)
 	FREE(ns.xsd);
 	FREE(ns.xsi);
 	FREE(ns.cwmp);
-	for (i = 0; i < ARRAY_SIZE(ns.soap_env), ns.soap_env[i]; i++) {
+	for (i = 0; i < ARRAY_SIZE(ns.soap_env) && ns.soap_env[i]; i++) {
 		FREE(ns.soap_env[i]);
 	}
 }
@@ -193,7 +193,7 @@ mxml_node_t *xml_mxml_find_node_by_env_type(mxml_node_t *tree_in, char *bname) {
 	char *c;
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(ns.soap_env), ns.soap_env[i]; i++) {
+	for (i = 0; i < ARRAY_SIZE(ns.soap_env) && ns.soap_env[i]; i++) {
 		if (asprintf(&c, "%s:%s", ns.soap_env[i], bname) == -1)
 			return NULL;
 
