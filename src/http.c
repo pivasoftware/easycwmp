@@ -121,7 +121,7 @@ http_send_message(char *msg_out, char **msg_in)
 	if (!http_c.header_list) return -1;
 	http_c.header_list = curl_slist_append(http_c.header_list, "User-Agent: easycwmp");
 	if (!http_c.header_list) return -1;
-	http_c.header_list = curl_slist_append(http_c.header_list, "Content-Type: text/html; charset=\"utf-8\"");
+	http_c.header_list = curl_slist_append(http_c.header_list, "Content-Type: text/xml; charset=\"utf-8\"");
 	if (!http_c.header_list) return -1;
 	if (config->acs->http100continue_disable) {
 		http_c.header_list = curl_slist_append(http_c.header_list, "Expect:");
