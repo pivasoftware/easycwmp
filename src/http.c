@@ -296,7 +296,6 @@ http_end_child:
 
 done_child:
 			fclose(fp);
-			FREE(uproc);
 			DDF("--- RECEIVED HTTP REQUEST ---\n");
 			exit(status);
 		}
@@ -306,7 +305,6 @@ done_child:
 static void
 http_del_client(struct uloop_process *uproc, int ret)
 {
-	wait(0);
 	FREE(uproc);
 
 	/* child terminated ; check return code */
