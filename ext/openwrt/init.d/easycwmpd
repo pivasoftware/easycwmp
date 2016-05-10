@@ -53,5 +53,5 @@ boot() {
 
 service_triggers()
 {
-	procd_add_reload_trigger "/etc/config/easycwmp"
+	procd_add_reload_trigger easycwmp
 }
