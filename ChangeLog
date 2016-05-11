@@ -1,6 +1,9 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.3.0 (date of 11th of May 2016)
+  - #0000133: Enhancement of the data model instances browsing
+
 * EasyCwmp-1.2.8 (date of 11th of May 2016)
   - #private: fix get_white_space() issue
   - #0000120: Can EasyCwmp parse InformResponse xml message with header soapenv from ACS

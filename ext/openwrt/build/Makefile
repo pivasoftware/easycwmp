@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=easycwmp
-PKG_VERSION:=1.2.8
+PKG_VERSION:=1.3.0
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://easycwmp.org/download/
 
