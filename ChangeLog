@@ -1,6 +1,14 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.2.8 (date of 11th of May 2016)
+  - #private: fix get_white_space() issue
+  - #0000120: Can EasyCwmp parse InformResponse xml message with header soapenv from ACS
+  - #0000112: Service trigger does not work
+  - #0000115: Update Nand (wearout) on every restart
+  - #0000131: Incorrect use of comma operator in loops in xml.c
+  - #0000123: HTTP SERVER CONNECTION FAILED
+
 * EasyCwmp-1.2.7 (date of 5th of January 2016)
   - #0000108: handling arguments with white spaces (schedule inform CommandKey as example)
   - #0000106(Note0000358): Supporting HTTP 302, 307 status code in EasyCwmp
