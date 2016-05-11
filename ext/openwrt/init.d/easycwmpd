@@ -31,7 +31,7 @@ init_device_info() {
 	
 	#The same thing here for OUI and SerialNumber
 
-	[ "$change" == "1" ] && $UCI_COMMIT easycwmp
+	[ "$change" = "1" ] && $UCI_COMMIT easycwmp
 }
 
 start_service() {

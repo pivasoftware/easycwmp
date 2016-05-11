@@ -110,6 +110,8 @@ const char *xml_format_cb(mxml_node_t *node, int pos)
 
 char *xml_get_value_with_whitespace(mxml_node_t **b, mxml_node_t *body_in)
 {
+	mxml_node_t *parent = (*b)->parent;
+
 	char * value = calloc(1, sizeof(char));
 	do {
 		value = realloc(value, strlen(value) + strlen((*b)->value.text.string) + 2);
@@ -119,7 +121,8 @@ char *xml_get_value_with_whitespace(mxml_node_t **b, mxml_node_t *body_in)
 		strcat(value, (*b)->value.text.string);
 	 } while ((*b = mxmlWalkNext(*b, body_in, MXML_DESCEND)) &&
 			((*b)->value.text.whitespace == true) &&
-			((*b)->type == MXML_TEXT && (*b)->value.text.string));
+			((*b)->type == MXML_TEXT && (*b)->value.text.string) &&
+			(*b)->parent == parent);
 	return value;
 }
 
@@ -1275,17 +1278,20 @@ static int xml_handle_download(mxml_node_t *body_in,
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
+			FREE(command_key);
 			command_key = xml_get_value_with_whitespace(&b, body_in);
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "CommandKey") &&
 			!b->child) {
-			command_key = "";
+			FREE(command_key);
+			command_key = strdup("");
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "FileType")) {
+			FREE(file_type);
 			file_type = xml_get_value_with_whitespace(&b, body_in);
 		}
 		if (b && b->type == MXML_TEXT &&
@@ -1298,23 +1304,27 @@ static int xml_handle_download(mxml_node_t *body_in,
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Username")) {
+			FREE(username);
 			username = xml_get_value_with_whitespace(&b, body_in);
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "Username") &&
 			!b->child) {
-			username = "";
+			FREE(username);
+			username = strdup("");
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Password")) {
+			FREE(password);
 			password = xml_get_value_with_whitespace(&b, body_in);
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "Password") &&
 			!b->child) {
-			password = "";
+			FREE(password);
+			password = strdup("");
 		}
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
@@ -1351,6 +1361,9 @@ static int xml_handle_download(mxml_node_t *body_in,
 	n = backup_add_download(command_key, delay, file_size, download_url, file_type, username, password);
 	cwmp_add_download(command_key, delay, file_size, download_url, file_type, username, password, n);
 	FREE(file_type);
+	FREE(command_key);
+	FREE(username);
+	FREE(password);
 
 	t = mxmlNewElement(body_out, "cwmp:DownloadResponse");
 	if (!t) return -1;
@@ -1381,6 +1394,9 @@ static int xml_handle_download(mxml_node_t *body_in,
 fault_out:
 	xml_create_generic_fault_message(body_out, code);
 	FREE(file_type);
+	FREE(command_key);
+	FREE(username);
+	FREE(password);
 	return 0;
 }
 
@@ -1411,7 +1427,7 @@ static int xml_handle_reboot(mxml_node_t *node,
 				 mxml_node_t *tree_out)
 {
 	mxml_node_t *b = node, *body_out;
-	char *command_key;
+	char *command_key = NULL;
 	int code = FAULT_9002;
 
 	body_out = mxmlFindElement(tree_out, tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
@@ -1422,12 +1438,14 @@ static int xml_handle_reboot(mxml_node_t *node,
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
+			FREE(command_key);
 			command_key = xml_get_value_with_whitespace(&b, node);
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "CommandKey") &&
 			!b->child) {
-			command_key = "";
+			FREE(command_key);
+			command_key = strdup("");
 		}
 		b = mxmlWalkNext(b, node, MXML_DESCEND);
 	}
@@ -1443,11 +1461,14 @@ static int xml_handle_reboot(mxml_node_t *node,
 	backup_add_event(EVENT_M_REBOOT, command_key, 0);
 	cwmp_add_handler_end_session(ENDS_REBOOT);
 
+	FREE(command_key);
+
 	log_message(NAME, L_NOTICE, "send RebootResponse to the ACS\n");
 	return 0;
 
 fault_out:
 	xml_create_generic_fault_message(body_out, code);
+	FREE(command_key);
 	return 0;
 }
 
@@ -1470,12 +1491,14 @@ static int xml_handle_schedule_inform(mxml_node_t *body_in,
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
+			FREE(command_key);
 			command_key = xml_get_value_with_whitespace(&b, body_in);
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "CommandKey") &&
 			!b->child) {
-			command_key = "";
+			FREE(command_key);
+			command_key = strdup("");
 		}
 
 		if (b && b->type == MXML_TEXT &&
@@ -1491,18 +1514,24 @@ static int xml_handle_schedule_inform(mxml_node_t *body_in,
 	if (command_key && (delay > 0)) {
 		cwmp_add_scheduled_inform(command_key, delay);
 		b = mxmlNewElement(body_out, "cwmp:ScheduleInformResponse");
-		if (!b) return -1;
+		if (!b) goto error;
 	}
 	else {
 		code = FAULT_9003;
 		goto fault_out;
 	}
-
+	FREE(command_key);
 	log_message(NAME, L_NOTICE, "send ScheduleInformResponse to the ACS\n");
 	return 0;
+
 fault_out:
+	FREE(command_key);
 	xml_create_generic_fault_message(body_out, code);
 	return 0;
+
+error:
+	FREE(command_key);
+	return -1;
 }
 
 /* AddObject */
@@ -1573,7 +1602,7 @@ static int xml_handle_AddObject(mxml_node_t *body_in,
 	}
 
 	external_action_simple_execute("apply", "object", param_key);
-	free(param_key);
+	FREE(param_key);
 
 	t = mxmlNewElement(body_out, "cwmp:AddObjectResponse");
 	if (!t) goto error;
@@ -1597,12 +1626,14 @@ static int xml_handle_AddObject(mxml_node_t *body_in,
 
 fault_out:
 	xml_create_generic_fault_message(body_out, code);
+	FREE(param_key);
 	free(instance);
 	free(status);
 	free(fault);
 	return 0;
 
 error:
+	FREE(param_key);
 	free(instance);
 	free(status);
 	free(fault);
@@ -1677,7 +1708,7 @@ static int xml_handle_DeleteObject(mxml_node_t *body_in,
 	}
 
 	external_action_simple_execute("apply", "object", param_key);
-	free(param_key);
+	FREE(param_key);
 
 	t = mxmlNewElement(body_out, "cwmp:DeleteObjectResponse");
 	if (!t) goto error;
@@ -1694,11 +1725,13 @@ static int xml_handle_DeleteObject(mxml_node_t *body_in,
 
 fault_out:
 	xml_create_generic_fault_message(body_out, code);
+	FREE(param_key);
 	free(status);
 	free(fault);
 	return 0;
 
 error:
+	FREE(param_key);
 	free(status);
 	free(fault);
 	return -1;
