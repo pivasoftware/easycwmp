@@ -387,7 +387,9 @@ common_execute_method_obj() {
 	local permission="$2"
 	local addobj="$3"
 	local delobj="$4"
+	local browseinstances="$5"
 	"$g_entry_method""_obj" "$g_entry_arg" "$g_entry_param" "$refparam" "$permission" "$addobj" "$delobj"
+	[ "$browseinstances" != "" ] && $browseinstances
 }
 
 common_execute_method_param() {

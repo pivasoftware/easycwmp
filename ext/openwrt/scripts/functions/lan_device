@@ -13,12 +13,7 @@ entry_execute_method_root_LANDevice() {
 	case "$1" in ""|"$DMROOT."|"$DMROOT.LANDevice."*)
 		common_execute_method_obj "$DMROOT.LANDevice." "0"
 		common_execute_method_obj "$DMROOT.LANDevice.1." "0"
-		common_execute_method_obj "$DMROOT.LANDevice.1.WLANConfiguration." "1" "lan_device_add_wlan_iface"
-		local iface ifaces=`$UCI_SHOW wireless | grep "wireless\.@wifi-iface\[[0-9]\+\]=wifi-iface" | awk -F'[.=]' '{print $2}'` 
-		for iface in $ifaces; do
-			local j=`lan_device_update_instance $iface`
-			sub_entry_landevice_wlanconfig "$1" "$j" "$iface"
-		done
+		common_execute_method_obj "$DMROOT.LANDevice.1.WLANConfiguration." "1" "lan_device_add_wlan_iface" "" "lan_device_browse_instances_wlan_iface $1"
 		return 0
 		;;
 	esac
@@ -32,7 +27,22 @@ sub_entry_landevice_wlanconfig() {
 		common_execute_method_obj "$DMROOT.LANDevice.1.WLANConfiguration.$j." "1" "" "lan_device_delete_wlan_iface $iface"
 		common_execute_method_param "$DMROOT.LANDevice.1.WLANConfiguration.$j.Enable" "1" "lan_device_get_wlan_enable" "lan_device_set_wlan_enable" "xsd:boolean"
 		common_execute_method_param "$DMROOT.LANDevice.1.WLANConfiguration.$j.SSID" "1" "$UCI_GET wireless.$iface.ssid" "lan_device_set_wlan_cfg wireless.$iface.ssid"
+		return 0
 	}
+	return $E_INVALID_PARAMETER_NAME;
+}
+
+#######################################
+#     Data model browse instances     #
+#######################################
+
+lan_device_browse_instances_wlan_iface() {
+	local iface ifaces=`$UCI_SHOW wireless | grep "wireless\.@wifi-iface\[.*\]=wifi-iface" | awk -F'[.=]' '{print $2}'` 
+	for iface in $ifaces; do
+		local j=`lan_device_update_instance $iface`
+		sub_entry_landevice_wlanconfig "$1" "$j" "$iface"
+	done
+	return 0
 }
 
 #######################################
