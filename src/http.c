@@ -264,8 +264,10 @@ http_new_client(struct uloop_fd *ufd, unsigned events)
 				else if (auth_digest = strstr(buffer, "Authorization: Digest ")) {
 					if (http_digest_auth_check("GET", "/", auth_digest + strlen("Authorization: Digest "), REALM, username, password, 300) == MHD_YES)
 						auth_status = 1;
-					else
+					else {
 						auth_status = 0;
+						log_message(NAME, L_NOTICE, "authorization of acs failed\n");
+					}
 				}
 				if (buffer[0] == '\r' || buffer[0] == '\n') {
 					/* end of http request (empty line) */
