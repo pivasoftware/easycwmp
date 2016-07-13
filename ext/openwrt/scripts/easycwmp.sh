@@ -76,7 +76,7 @@ command:
   factory_reset
   reboot
   inform [parameter|device_id]
-  json_input
+  --json-input
 EOF
 }
 
@@ -183,7 +183,7 @@ case "$1" in
 			action="apply_value"
 		fi
 		;;
-	json_input)
+	--json-input)
 		action="json_input"
 		;;
 	update_value_change)

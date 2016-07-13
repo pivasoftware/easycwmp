@@ -206,7 +206,7 @@ int external_init()
 		const char *argv[4];
 		argv[i++] = "/bin/sh";
 		argv[i++] = fc_script;
-		argv[i++] = "json_input";
+		argv[i++] = "--json-input";
 		argv[i++] = NULL;
 
 		execvp(argv[0], (char **) argv);
