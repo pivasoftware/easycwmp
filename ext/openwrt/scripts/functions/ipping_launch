@@ -2,7 +2,7 @@
 # Copyright (C) 2015 PIVA Software <www.pivasoftware.com>
 # 	Author: MOHAMED Kallel <mohamed.kallel@pivasoftware.com>
 
-[ "$1" != "run" ] && return
+[ "$1" != "run" -a "$1" != "stop" ] && return
 
 UCI_GET_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state get"
 UCI_SET_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state set"
@@ -27,6 +27,7 @@ ipping_launch() {
 	min=9999999
 	max=0
 	i=0
+	
 	while [ $i -lt $cnt ]; do
 		let i++
 		res=$(ping -q -c 1 -s $dsize -W $timeout $host 2>&1)
@@ -77,4 +78,13 @@ event_dignostic() {
 	done
 }
 
-ipping_launch
+ipping_stop() {
+	local pids=`ps aux | grep ipping_launch | grep -v grep | grep -v stop | awk '{print $2}'`
+	if [ -n "$pids" ]; then
+		kill -9 $pids 2>/dev/null
+		$UCI_SET_VARSTATE easycwmp.@local[0].DiagnosticsState=None
+	fi
+}
+
+[ "$1" == "run" ] && { ipping_launch; exit 0; }
+[ "$1" == "stop" ] && ipping_stop
