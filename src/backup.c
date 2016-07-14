@@ -54,6 +54,9 @@ mxml_node_t *backup_tree_init(void)
 int backup_save_file(void) {
 	FILE *fp;
 
+	if (backup_tree == NULL)
+		return 0;
+
 	fp = fopen(BACKUP_FILE, "w");
 	if (fp!=NULL) {
 		mxmlSaveFile(backup_tree, fp, xml_format_cb);
