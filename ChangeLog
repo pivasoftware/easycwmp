@@ -1,6 +1,10 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.3.3 (date of 14th of July 2016)
+  -#0000142,n:0000489: Add libcurl error message in the syslog of easycwmp
+  -#0000149: Launch data mdel command directly with /usr/sbin/easycwmp instead of using /bin/sh
+
 * EasyCwmp-1.3.2 (date of 14th of July 2016)
   -#Merge pull request #26 from TDT-GmbH/tdt-master-log-failed-authorization
   -#0000140: easycwmp crashes with Segmentation Fault
