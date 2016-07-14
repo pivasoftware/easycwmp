@@ -111,18 +111,18 @@ easycwmpd_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
 		easycwmp_reload();
 		blobmsg_add_u32(&b, "status", 0);
 		if (asprintf(&info, "easycwmpd reloaded") == -1)
-			return -1;
+			goto error;
 	} else if (!strcmp("stop", cmd)) {
 		log_message(NAME, L_NOTICE, "triggered ubus stop\n");
 		ubus_timer.cb = ubus_easycwmpd_stop_callback;
 		uloop_timeout_set(&ubus_timer, 1000);
 		blobmsg_add_u32(&b, "status", 0);
 		if (asprintf(&info, "easycwmpd stopped") == -1)
-			return -1;
+			goto error;
 	} else {
 		blobmsg_add_u32(&b, "status", -1);
 		if (asprintf(&info, "%s command is not supported", cmd) == -1)
-			return -1;
+			goto error;
 	}
 
 	blobmsg_add_string(&b, "info", info);
@@ -131,8 +131,12 @@ easycwmpd_handle_command(struct ubus_context *ctx, struct ubus_object *obj,
 	ubus_send_reply(ctx, req, b.head);
 
 	blob_buf_free(&b);
-
 	return 0;
+
+error:
+	blob_buf_free(&b);
+	return -1;
+
 }
 
 static const struct ubus_method easycwmp_methods[] = {
