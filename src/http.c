@@ -114,6 +114,7 @@ int8_t
 http_send_message(char *msg_out, char **msg_in)
 {
 	CURLcode res;
+	char error_buf[CURL_ERROR_SIZE] = "";
 
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, msg_out);
 	http_c.header_list = NULL;
@@ -139,6 +140,9 @@ http_send_message(char *msg_out, char **msg_in)
 		DDF("+++ SEND EMPTY HTTP REQUEST +++\n");
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, 0);
 	}
+	curl_easy_setopt(curl, CURLOPT_FAILONERROR, true);
+	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error_buf);
+
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, http_c.header_list);
 
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, msg_in);
@@ -151,6 +155,9 @@ http_send_message(char *msg_out, char **msg_in)
 		curl_slist_free_all(http_c.header_list);
 		http_c.header_list = NULL;
 	}
+
+	if (error_buf[0] != '\0')
+		log_message(NAME, L_NOTICE, "LibCurl Error: %s\n", error_buf);
 
 	if (!strlen(*msg_in)) {
 		FREE(*msg_in);
