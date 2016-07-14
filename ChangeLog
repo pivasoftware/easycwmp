@@ -1,6 +1,13 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.3.2 (date of 14th of July 2016)
+  -#Merge pull request #26 from TDT-GmbH/tdt-master-log-failed-authorization
+  -#0000140: easycwmp crashes with Segmentation Fault
+  -#0000148: memory leak: should call blob_buf_free() after calling blob_buf_init()
+  -#0000147: Enhancement Add ipping_stop function to ipping_launch script
+  -#0000146: Enhancement launch of easycwmp script could be done with --json-input instead of json_input argument
+
 * EasyCwmp-1.3.1 (date of 11th of May 2016)
   - #0000134: Enhancement Add IPPingDiagnostic parameters
 

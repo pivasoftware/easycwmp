@@ -17,16 +17,18 @@ EasyCwmp is a GPLv2 open source implementation of the TR069 cwmp standard. EasyC
     libubus: minimum version [git version: a62e2f8c15a65efb1a82404d8f31e3bfc1cbe7d9, date: 2012-06-01]
     microxml: microxml is a fork of Mini-XML, it's being used to parse XML blocks passed between ACS and the client and it's published by freecwmp guys:
 		microxml source:
-		git clone git://dev.freecwmp.org/microxml/
+		git clone https://github.com/pivasoftware/microxml.git
 		microxml OpenWRT package:
-		svn co svn://svn.openwrt.org/openwrt/packages/libs/libmicroxml
+		wget http://easycwmp.org/download/libmicroxml.tar.gz
 
  
 
 4.  EasyCwmp install for OpenWRT Linux
 ======================================
 
-EasyCwmp is mainly developed and tested with OpenWRT Linux platform (especially Attitude Adjustment version).
+EasyCwmp
+========
+EasyCwmp is mainly developed and tested with OpenWRT Linux platform.
 
 Download:
 
@@ -69,6 +71,13 @@ ubus call tr069 notify
 
 If the EasyCwmp daemon receive the ubus call notify then it will check if there is a value changed of parameters with notification not equal to 0
 
+microxml
+========
+
+If you got any problem related to libmicroxml when building EasyCwmp in OpenWRT, then you can use the following libmicroxml package:
+
+cd /path/to/openwrt/package/
+wget http://easycwmp.org/download/libmicroxml.tar.gz
 
 5. EasyCwmp install for other Linux distributions:
 ==================================================
@@ -317,7 +326,7 @@ sudo ln -sf bash /bin/sh
 
 Make changes in /etc/config/easycwmp and in /usr/share/easycwmp/defaults so easycwmpd can connect to your ACS server. But before you run easycwmpd make sure that you have in another terminal running ubusd:
 
-/usr/sbin/ubusd -s /tmp/ubus.sock
+/usr/sbin/ubusd -s /var/run/ubus.sock
 
 Finally run easycwmpd as root:
 
