@@ -87,6 +87,10 @@ ifeq ($(CONFIG_EASYCWMP_SCRIPTS_FULL),y)
 	$(CP) $(PKG_BUILD_DIR)/ext/openwrt/scripts/functions $(1)/usr/share/easycwmp
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ext/openwrt/scripts/easycwmp.sh $(1)/usr/sbin/easycwmp
+	chmod +x $(1)/usr/share/easycwmp/functions/*
+else
+	$(INSTALL_DIR) $(1)/usr/share/easycwmp/functions/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ext/openwrt/scripts/functions/ipping_launch $(1)/usr/share/easycwmp/functions//ipping_launch
 endif
 endef
 
