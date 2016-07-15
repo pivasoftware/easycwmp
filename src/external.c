@@ -217,6 +217,9 @@ int external_init()
 	close(pfds_out[1]);
 	close(pfds_in[0]);
 
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+	    perror("signal");
+
 	int r = external_read_pipe(NULL);
 	return r;
 }
