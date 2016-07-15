@@ -33,9 +33,11 @@ ipping_launch() {
 		res=$(ping -q -c 1 -s $dsize -W $timeout $host 2>&1)
 		ba=`echo "$res" | grep "bad address"`
 		[ -n "$ba" ] && { $UCI_SET_VARSTATE easycwmp.@local[0].DiagnosticsState=Error_CannotResolveHostName; return; }
-		stc=`echo "$res" | grep "packets received"`
+		ba=`echo "$res" | grep "unknown host"`
+		[ -n "$ba" ] && { $UCI_SET_VARSTATE easycwmp.@local[0].DiagnosticsState=Error_CannotResolveHostName; return; }
+		stc=`echo "$res" | grep "received"`
 		[ -z "$stc" ] && { $UCI_SET_VARSTATE easycwmp.@local[0].DiagnosticsState=Error_Other; return; }
-		times=`echo "$res" | grep "round-trip"`
+		times=`echo "$res" | grep "min/avg/max"`
 		[ -z "$times" ] && continue
 		sc1=`echo $stc | awk '{print $4}'`
 		sc1=${sc1:-0}
