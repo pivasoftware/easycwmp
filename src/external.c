@@ -218,7 +218,7 @@ int external_init()
 	close(pfds_in[0]);
 
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
-	    perror("signal");
+		log_message(NAME, L_CRIT, "ignoring pipe signal failed\n");
 
 	int r = external_read_pipe(NULL);
 	return r;
@@ -260,7 +260,7 @@ int external_action_parameter_execute(char *command, char *class, char *name, ch
 int external_action_simple_execute(char *command, char *class, char *arg)
 {
 	log_message(NAME, L_NOTICE, "external: execute %s %s %s\n",
-			command, class, arg?arg:"");
+			command, class?class:"", arg?arg:"");
 
 	json_object *json_obj_out = json_object_new_object();
 	external_add_json_obj(json_obj_out, "command", command);
