@@ -266,6 +266,7 @@ configuration
 
 We won’t install easycwmp, we’ll use it from /opt/dev/easycwmp/ directory. Make sure we are located there:
 
+chmod +x /opt/dev/easycwmp/ext/openwrt/scripts/functions/*
 cd /opt/dev/easycwmp/
 
 Because we are using this setup for development we want that all our changes are visible in our git clone. Best way to do this is to use symlinks. First create the directory where scripts are located on actual device:
