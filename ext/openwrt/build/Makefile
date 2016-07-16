@@ -90,7 +90,7 @@ ifeq ($(CONFIG_EASYCWMP_SCRIPTS_FULL),y)
 	chmod +x $(1)/usr/share/easycwmp/functions/*
 else
 	$(INSTALL_DIR) $(1)/usr/share/easycwmp/functions/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ext/openwrt/scripts/functions/ipping_launch $(1)/usr/share/easycwmp/functions//ipping_launch
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ext/openwrt/scripts/functions/ipping_launch $(1)/usr/share/easycwmp/functions/ipping_launch
 endif
 endef
 
