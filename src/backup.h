@@ -13,7 +13,7 @@
 #define _EASYCWMP_BACKUP_H__
 
 #include <microxml.h>
-#define BACKUP_DIR "/etc/easycwmp"
+#define BACKUP_DIR "/tmp/easycwmp"
 #define BACKUP_FILE BACKUP_DIR"/.backup.xml"
 
 int backup_extract_transfer_complete( mxml_node_t *node, char **msg_out, int *method_id);
