@@ -268,7 +268,6 @@ configuration
 
 We won’t install easycwmp, we’ll use it from /opt/dev/easycwmp/ directory. Make sure we are located there:
 
-chmod +x /opt/dev/easycwmp/ext/openwrt/scripts/functions/*
 cd /opt/dev/easycwmp/
 
 Because we are using this setup for development we want that all our changes are visible in our git clone. Best way to do this is to use symlinks. First create the directory where scripts are located on actual device:
@@ -285,6 +284,10 @@ sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/device_info /usr/sha
 sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/lan_device /usr/share/easycwmp/functions/lan_device
 sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/management_server /usr/share/easycwmp/functions/management_server
 sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/wan_device /usr/share/easycwmp/functions/wan_device
+
+then
+
+chmod +x /opt/dev/easycwmp/ext/openwrt/scripts/functions/*
 
 Also, you can create symlink for easycwmp configuration file:
 
