@@ -32,8 +32,9 @@ EasyCwmp is mainly developed and tested with OpenWRT Linux platform.
 
 Download:
 
+Download the easycwmp-openwrt-{x}.{y}.{z}.tar.gz and then copy it to your /path/to/openwrt/package/
+
 cd /path/to/openwrt/package/
-wget http://easycwmp.org/download/easycwmp-openwrt.tar.gz
 tar -xzvf easycwmp-openwrt.tar.gz
 cd ..
 
@@ -213,7 +214,7 @@ microxml
 
 Get the sources:
 
-git clone git://dev.freecwmp.org/microxml /opt/git/microxml
+git clone https://github.com/pivasoftware/microxml.git /opt/git/microxml
 cd /opt/git/microxml/
 
 Generate configuration files:
@@ -244,8 +245,9 @@ Once the dependencies have been installed we can start compiling easycwmp.
 
 Get the sources:
 
+Download the easycwmp-{x}.{y}.{z}.tar.gz under /opt/dev/
+
 cd /opt/dev/
-wget http://easycwmp.org/download/easycwmp-{x}.{y}.{z}.tar.gz
 tar -xzvf easycwmp-{x}.{y}.{z}.tar.gz
 mv easycwmp-{x}.{y}.{z} easycwmp
 cd /opt/dev/easycwmp/
@@ -296,7 +298,7 @@ sudo ln -sf /opt/dev/easycwmp/bin/easycwmpd /usr/sbin/easycwmpd
 We need to export few variables that are used in easycwmp scripts:
 
 export UCI_CONFIG_DIR="/opt/dev/easycwmp/ext/openwrt/config/"
-export UBUS_SOCKET="/tmp/ubus.sock"
+export UBUS_SOCKET="/var/run/ubus.sock"
 
 Install few shell scripts from OpenWrt:
 
