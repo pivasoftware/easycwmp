@@ -1,9 +1,6 @@
-#
-# Copyright (C) 2012-2014 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# Copyright (C) 2012-2016 PIVA Software <www.pivasoftware.com>
+# 	Author: MOHAMED Kallel <mohamed.kallel@pivasoftware.com>
+# 	Author: ANIS ELLOUZE <anis.ellouze@pivasoftware.com>
 
 include $(TOPDIR)/rules.mk
 
@@ -82,15 +79,20 @@ define Package/easycwmp/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ext/openwrt/init.d/easycwmpd $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/etc/easycwmp
 ifeq ($(CONFIG_EASYCWMP_SCRIPTS_FULL),y)
-	$(INSTALL_DIR) $(1)/usr/share/easycwmp
+	$(INSTALL_DIR) $(1)/usr/share/easycwmp/functions/
 	$(CP) $(PKG_BUILD_DIR)/ext/openwrt/scripts/defaults $(1)/usr/share/easycwmp
-	$(CP) $(PKG_BUILD_DIR)/ext/openwrt/scripts/functions $(1)/usr/share/easycwmp
+	$(CP) $(PKG_BUILD_DIR)/ext/openwrt/scripts/functions/common/* $(1)/usr/share/easycwmp/functions/
+ifeq ($(CONFIG_EASYCWMP_DATA_MODEL_TR181),y)
+	$(CP) $(PKG_BUILD_DIR)/ext/openwrt/scripts/functions/tr181/* $(1)/usr/share/easycwmp/functions/
+else
+	$(CP) $(PKG_BUILD_DIR)/ext/openwrt/scripts/functions/tr098/* $(1)/usr/share/easycwmp/functions/
+endif
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ext/openwrt/scripts/easycwmp.sh $(1)/usr/sbin/easycwmp
 	chmod +x $(1)/usr/share/easycwmp/functions/*
 else
 	$(INSTALL_DIR) $(1)/usr/share/easycwmp/functions/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ext/openwrt/scripts/functions/ipping_launch $(1)/usr/share/easycwmp/functions/ipping_launch
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ext/openwrt/scripts/functions/common/ipping_launch $(1)/usr/share/easycwmp/functions/ipping_launch
 endif
 endef
 

@@ -5,7 +5,7 @@
 #############################
 #   Entry point functuons   #
 #############################
-
+DMROOT="InternetGatewayDevice"
 entry_method_root="entry_execute_method_root"
 entry_execute_method_list_forcedinform="$entry_method_root $entry_execute_method_list_forcedinform"
 

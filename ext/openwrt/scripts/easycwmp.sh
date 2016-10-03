@@ -33,7 +33,6 @@ uci_change_packages=""
 uci_change_services=""
 g_fault_code=""
 
-DMROOT="InternetGatewayDevice"
 prefix_list=""
 entry_execute_method_list=""
 entry_execute_method_list_forcedinform=""
@@ -204,8 +203,9 @@ if [ -z "$action" ]; then
 fi
 
 dmscripts=`ls $FUNCTION_PATH`
+. $FUNCTION_PATH/root
 for dms in $dmscripts; do
-	. $FUNCTION_PATH/$dms
+	[ "$dms" != "root" ] && . $FUNCTION_PATH/$dms
 done
 
 prefix_list="$DMROOT. $prefix_list"

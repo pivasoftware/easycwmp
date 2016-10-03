@@ -3,6 +3,20 @@ if PACKAGE_easycwmp
 config EASYCWMP_SCRIPTS_FULL
 	bool "Install all easycwmp scripts"
 	default y
+	
+if EASYCWMP_SCRIPTS_FULL
+choice
+	prompt "Selected Data Model"
+	default EASYCWMP_DATA_MODEL_TR181
+
+	config EASYCWMP_DATA_MODEL_TR181
+		bool "TR-181 Data Model"
+		
+	config EASYCWMP_DATA_MODEL_TR98
+		bool "TR-098 Data Model"
+
+endchoice
+endif
 
 config EASYCWMP_DEBUG
 	bool "Compile with debug options"

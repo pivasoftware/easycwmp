@@ -279,11 +279,13 @@ Then create symlinks for easycwmp scripts:
 
 sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/easycwmp.sh /usr/sbin/easycwmp
 sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/defaults /usr/share/easycwmp/defaults
-sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/common /usr/share/easycwmp/functions/common
-sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/device_info /usr/share/easycwmp/functions/device_info
-sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/lan_device /usr/share/easycwmp/functions/lan_device
-sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/management_server /usr/share/easycwmp/functions/management_server
-sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/wan_device /usr/share/easycwmp/functions/wan_device
+sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/common/common /usr/share/easycwmp/functions/common
+sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/common/device_info /usr/share/easycwmp/functions/device_info
+sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/common/management_server /usr/share/easycwmp/functions/management_server
+sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/common/ipping_launch /usr/share/easycwmp/functions/ipping_launch
+sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/tr181/root /usr/share/easycwmp/functions/root
+sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/tr181/ip /usr/share/easycwmp/functions/ip
+sudo ln -sf /opt/dev/easycwmp/ext/openwrt/scripts/functions/tr181/ipping_diagnostic /usr/share/easycwmp/functions/ipping_diagnostic
 
 then
 
@@ -312,23 +314,25 @@ sudo wget http://pastebin.lukaperkov.net/openwrt/20121219_lib_functions_network.
 
 If everything is configured properly when you run:
 
-bash /usr/sbin/easycwmp -–json get value InternetGatewayDevice.
+bash /usr/sbin/easycwmp -–json get value Device.
 
 You should see some output like this:
 
-{ "parameter": "InternetGatewayDevice.DeviceInfo.Manufacturer", "fault_code": "", "value": "easycwmp", "type": "xsd:string" }
-{ "parameter": "InternetGatewayDevice.DeviceInfo.ManufacturerOUI", "fault_code": "", "value": "FFFFFF", "type": "xsd:string" }
-{ "parameter": "InternetGatewayDevice.DeviceInfo.ProductClass", "fault_code": "", "value": "easycwmp", "type": "xsd:string" }
-{ "parameter": "InternetGatewayDevice.DeviceInfo.SerialNumber", "fault_code": "", "value": "FFFFFF123456", "type": "xsd:string" }
-{ "parameter": "InternetGatewayDevice.DeviceInfo.HardwareVersion", "fault_code": "", "value": "example_hw_version", "type": "xsd:string" }
-{ "parameter": "InternetGatewayDevice.DeviceInfo.SoftwareVersion", "fault_code": "", "value": "example_sw_version", "type": "xsd:string" }
-{ "parameter": "InternetGatewayDevice.DeviceInfo.UpTime", "fault_code": "", "value": "429120", "type": "xsd:string" }
+{ "parameter": "Device.DeviceInfo.Manufacturer", "fault_code": "", "value": "easycwmp", "type": "xsd:string" }
+{ "parameter": "Device.DeviceInfo.ManufacturerOUI", "fault_code": "", "value": "FFFFFF", "type": "xsd:string" }
+{ "parameter": "Device.DeviceInfo.ProductClass", "fault_code": "", "value": "easycwmp", "type": "xsd:string" }
+{ "parameter": "Device.DeviceInfo.SerialNumber", "fault_code": "", "value": "FFFFFF123456", "type": "xsd:string" }
+{ "parameter": "Device.DeviceInfo.HardwareVersion", "fault_code": "", "value": "example_hw_version", "type": "xsd:string" }
+{ "parameter": "Device.DeviceInfo.SoftwareVersion", "fault_code": "", "value": "example_sw_version", "type": "xsd:string" }
+{ "parameter": "Device.DeviceInfo.UpTime", "fault_code": "", "value": "429120", "type": "xsd:string" }
 ...
 
 Depending on your system you might need to:
 
 export PATH=$PATH:/usr/sbin:/sbin
 sudo ln -sf bash /bin/sh
+
+Please note that your system /bin/sh symbolic link should be pointed to the bash interpretor.
 
 Make changes in /etc/config/easycwmp and in /usr/share/easycwmp/defaults so easycwmpd can connect to your ACS server. But before you run easycwmpd make sure that you have in another terminal running ubusd:
 
