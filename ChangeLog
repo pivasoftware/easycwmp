@@ -1,6 +1,11 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.4.0 (date of 04th of October 2016)
+  -#0000158: source code indent and clean
+  -#0000164: Supporting TR-098 and TR-181 in easycwmp
+  -#0000154: Replace '//' by '/' in the OpenWRT Makefile
+
 * EasyCwmp-1.3.4 (date of 16th of July 2016)
   -#0000153: remove null from log message of external
   -#0000151: crash in ubuntu when launching download with invalid url 
