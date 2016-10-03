@@ -27,11 +27,9 @@ entry_execute_method_root_DeviceInfo() {
 		common_execute_method_param "$DMROOT.DeviceInfo.SoftwareVersion" "0" "$UCI_GET easycwmp.@device[0].software_version" "" "" "1"
 		common_execute_method_param "$DMROOT.DeviceInfo.UpTime" "0" "device_info_get_uptime" "" "xsd:unsignedInt"
 		common_execute_method_param "$DMROOT.DeviceInfo.DeviceLog" "0" "dmesg | tail -n1"
-		#ALZ
 		common_execute_method_obj "$DMROOT.DeviceInfo.MemoryStatus." "0"
-		common_execute_method_param "$DMROOT.DeviceInfo.MemoryStatus.Total" "0" "device_info_get_MemoryStatusTotal"
-		common_execute_method_param "$DMROOT.DeviceInfo.MemoryStatus.Free" "0" "device_info_get_MemoryStatusFree"
-		#ALZ
+		common_execute_method_param "$DMROOT.DeviceInfo.MemoryStatus.Total" "0" "device_info_get_total_memory"
+		common_execute_method_param "$DMROOT.DeviceInfo.MemoryStatus.Free" "0" "device_info_get_free_memory"
 		return 0;
 		;;
 	esac
@@ -41,30 +39,15 @@ entry_execute_method_root_DeviceInfo() {
 #######################################
 #   Data model parameters functions   #
 #######################################
-#ALZ
-device_info_get_MemoryStatusTotal(){
+
+device_info_get_total_memory() {
 		cut -d: -f 2 /proc/meminfo | head -n 1| tail -n 1 |  tr -d " kKbB"
 }
-device_info_get_MemoryStatusFree(){
+
+device_info_get_free_memory() {
 		cut -d: -f 2 /proc/meminfo | head -n 2| tail -n 1 | tr -d " kKbB" 
 }
-device_info_get_CPUUsage(){
-	local CORECOUNT=`ps -w| grep -v " 0 SW" | wc -l`
-	echo "$CPUUSAGE"
-}
-device_info_get_ProcessNumberOfEntries(){
-	local CORECOUNT=`grep -c ^processor /proc/cpuinfo`
-	echo "$CORECOUNT"
-}
 
-device_info_get_PID () {
-ps |  tail -n 1 | cut -d" " -f 1
-
-}
-process_get_PID(){
-	echo "1.0"
-}
-#ALZ
 device_info_set_provisioningcode() {
 	local val="$1"
 	$UCI_SET easycwmp.@local[0].provisioning_code="$val"

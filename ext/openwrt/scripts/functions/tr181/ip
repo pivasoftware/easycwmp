@@ -8,7 +8,7 @@
 
 #############################
 #   Entry point functions   #
-##########################
+#############################
 
 prefix_list="$prefix_list $DMROOT.IP."
 entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_IP"
@@ -75,8 +75,7 @@ sub_entry_ip_stat() {
 #######################################
 #     Data model browse instances     #
 #######################################
-res=""
-#######################################
+
 ip_get_max_instance() {
 	local max=`$UCI_SHOW network | grep "ip_int_instance" | cut -d'=' -f2 | sed 's/[^0-9]*//g' | sort -nru | head -1`
 	echo ${max:-0}
@@ -193,7 +192,7 @@ get_net_mask() {
 get_stat() {
 	local name=$(echo $1 |cut -d "." -f 2)
 	local dev=""
-	res=`ubus call network.interface.$name status`
+	local res=`ubus call network.interface.$name status`
 	if [ "$?" != 0 ]; then
 		return
 	fi
@@ -203,48 +202,48 @@ get_stat() {
 		return
 	fi
 	json_get_var dev device
-    res=`ubus call network.device status`
-    json_init
-    json_load "$res" &> /dev/null
-    json_select "$dev" &> /dev/null
-    json_select statistics &> /dev/null  
+	res=`ubus call network.device status`
+	json_init
+	json_load "$res" &> /dev/null
+	json_select "$dev" &> /dev/null
+	json_select statistics &> /dev/null  
 	json_get_vars tx_dropped rx_bytes tx_errors rx_packets rx_dropped tx_packets rx_errors tx_bytes
 }
 
 get_tx_byte_stats() {
-  	echo "$tx_bytes"
+	echo ${tx_bytes:-0}
 }
 
 get_rx_byte_stats() {
-    echo "$rx_bytes"
+	echo ${rx_bytes:-0}
 }
 
 get_rx_packet_stats() {
-    echo "$rx_packets"
+	echo ${rx_packets:-0}
 }
 
 get_tx_packet_stats() {
-    echo "$tx_packets"
+	echo ${tx_packets:-0}
 }
 
 get_rx_error_stats() {
-    echo "$rx_errors"
+	echo ${rx_errors:-0}
 }
 
 get_tx_error_stats() {
-    echo "$tx_errors"
+	echo ${tx_errors:-0}
 }
 
 
 get_rx_discard_stats() {
-    echo "$rx_dropped"
+	echo ${rx_dropped:-0}
 }
 
 get_tx_discard_stats() {
-    echo "$tx_dropped"
+	echo ${tx_dropped:-0}
 }
 #######################################
-#   ADD & DEL obj			          #
+#   ADD & DEL obj                     #
 #######################################
 
 add_ip_iface() {

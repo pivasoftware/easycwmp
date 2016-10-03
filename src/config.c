@@ -84,7 +84,7 @@ static int config_init_local(void)
 					continue;
 				}
 				
-        if (!strcmp((uci_to_option(e1))->e.name, "logging_level")) {
+				if (!strcmp((uci_to_option(e1))->e.name, "logging_level")) {
 					char *c;
 					int log_level = atoi((uci_to_option(e1))->v.string);					 
 					asprintf(&c, "%d", log_level);

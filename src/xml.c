@@ -1154,8 +1154,8 @@ out:
 /* SetParameterAttributes */
 
 static int xml_handle_set_parameter_attributes(mxml_node_t *body_in,
-						   mxml_node_t *tree_in,
-						   mxml_node_t *tree_out) {
+						mxml_node_t *tree_in,
+						mxml_node_t *tree_out) {
 
 	mxml_node_t *b = body_in, *body_out;
 	char *c, *parameter_name, *parameter_notification, *success = NULL, *fault = NULL;
@@ -1261,8 +1261,8 @@ error:
 /* Download */
 
 static int xml_handle_download(mxml_node_t *body_in,
-				   mxml_node_t *tree_in,
-				   mxml_node_t *tree_out)
+					mxml_node_t *tree_in,
+					mxml_node_t *tree_out)
 {
 	mxml_node_t *n, *t, *b = body_in, *body_out;
 	char *download_url = NULL, *file_size = NULL,
@@ -1423,8 +1423,8 @@ static int xml_handle_factory_reset(mxml_node_t *node,
  /* Reboot */
 
 static int xml_handle_reboot(mxml_node_t *node,
-				 mxml_node_t *tree_in,
-				 mxml_node_t *tree_out)
+					mxml_node_t *tree_in,
+					mxml_node_t *tree_out)
 {
 	mxml_node_t *b = node, *body_out;
 	char *command_key = NULL;
@@ -1475,8 +1475,8 @@ fault_out:
 /* ScheduleInform */
 
 static int xml_handle_schedule_inform(mxml_node_t *body_in,
-				 mxml_node_t *tree_in,
-				 mxml_node_t *tree_out)
+					mxml_node_t *tree_in,
+					mxml_node_t *tree_out)
 {
 	mxml_node_t *b = body_in, *body_out;
 	char *command_key = NULL;
@@ -1537,8 +1537,8 @@ error:
 /* AddObject */
 
 static int xml_handle_AddObject(mxml_node_t *body_in,
-		 mxml_node_t *tree_in,
-		 mxml_node_t *tree_out)
+					mxml_node_t *tree_in,
+					mxml_node_t *tree_out)
 {
 	mxml_node_t *b = body_in, *t, *body_out;
 	char *object_name = NULL, *param_key = NULL;
@@ -1643,8 +1643,8 @@ error:
 /* DeleteObject */
 
 static int xml_handle_DeleteObject(mxml_node_t *body_in,
-		 mxml_node_t *tree_in,
-		 mxml_node_t *tree_out)
+					mxml_node_t *tree_in,
+					mxml_node_t *tree_out)
 {
 	mxml_node_t *b = body_in, *t, *body_out;
 	char *object_name = NULL, *param_key = NULL;
