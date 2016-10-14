@@ -15,7 +15,7 @@ entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_
 entry_execute_method_list_forcedinform="$entry_execute_method_list_forcedinform  entry_execute_method_root_IP"
 
 entry_execute_method_root_IP() {
-	case "$1" in ""|"$DMROOT."|"$DMROOT.IP."|"$DMROOT.IP.Interface."*)
+	case "$1" in ""|"$DMROOT."|"$DMROOT.IP."*)
 		common_execute_method_obj "$DMROOT.IP." "0"
 		common_execute_method_obj "$DMROOT.IP.Interface." "1" "add_ip_iface" "" "ip_device_browse_instances $1"
 		common_execute_method_obj "$DMROOT.IP.Diagnostics." "0"
