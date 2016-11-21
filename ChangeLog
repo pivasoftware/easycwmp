@@ -1,6 +1,10 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.4.1 (date of 21th of November 2016)
+  -#0000179: [IPPing Diagnostics ] :8 DIAGNOSTICS COMPLETE event is not send when host is bad
+  -#0000166: error in the case of DMROOT.IP.Interface.
+
 * EasyCwmp-1.4.0 (date of 04th of October 2016)
   -#0000158: source code indent and clean
   -#0000164: Supporting TR-098 and TR-181 in easycwmp
