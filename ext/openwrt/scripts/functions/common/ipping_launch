@@ -32,11 +32,11 @@ ipping_launch() {
 		let i++
 		res=$(ping -q -c 1 -s $dsize -W $timeout $host 2>&1)
 		ba=`echo "$res" | grep "bad address"`
-		[ -n "$ba" ] && { $UCI_SET_VARSTATE easycwmp.@local[0].DiagnosticsState=Error_CannotResolveHostName; return; }
+		[ -n "$ba" ] && { $UCI_SET_VARSTATE easycwmp.@local[0].DiagnosticsState=Error_CannotResolveHostName; event_dignostic; return; }
 		ba=`echo "$res" | grep "unknown host"`
-		[ -n "$ba" ] && { $UCI_SET_VARSTATE easycwmp.@local[0].DiagnosticsState=Error_CannotResolveHostName; return; }
+		[ -n "$ba" ] && { $UCI_SET_VARSTATE easycwmp.@local[0].DiagnosticsState=Error_CannotResolveHostName; event_dignostic; return; }
 		stc=`echo "$res" | grep "received"`
-		[ -z "$stc" ] && { $UCI_SET_VARSTATE easycwmp.@local[0].DiagnosticsState=Error_Other; return; }
+		[ -z "$stc" ] && { $UCI_SET_VARSTATE easycwmp.@local[0].DiagnosticsState=Error_Other; event_dignostic; return; }
 		times=`echo "$res" | grep "min/avg/max"`
 		[ -z "$times" ] && continue
 		sc1=`echo $stc | awk '{print $4}'`
@@ -49,9 +49,9 @@ ipping_launch() {
 		min_time=${min_time:-0}
 		avg_time=${avg_time:-0}
 		max_time=${max_time:-0}
-		min_time=$(awk "BEGIN{print $min_time * 1000}")
-		avg_time=$(awk "BEGIN{print $avg_time * 1000}")
-		max_time=$(awk "BEGIN{print $max_time * 1000}")
+		min_time=${min_time%.*}
+		avg_time=${avg_time%.*}
+		max_time=${max_time%.*}
 		[ $min_time -lt $min ] && min=$min_time
 		[ $max_time -gt $max ] && max=$max_time
 		avg_time_sum=$((avg_time_sum+avg_time))
@@ -82,11 +82,12 @@ event_dignostic() {
 
 ipping_stop() {
 	local pids=`ps aux | grep ipping_launch | grep -v grep | grep -v stop | awk '{print $2}'`
+	[ -z "$pids" ] && pids=`ps | grep ipping_launch | grep -v grep | grep -v stop | awk '{print $2}'`
 	if [ -n "$pids" ]; then
 		kill -9 $pids 2>/dev/null
 		$UCI_SET_VARSTATE easycwmp.@local[0].DiagnosticsState=None
 	fi
 }
 
-[ "$1" == "run" ] && { ipping_launch; exit 0; }
-[ "$1" == "stop" ] && ipping_stop
+[ "$1" == "run" ] && { ipping_launch 2>/dev/null; exit 0; }
+[ "$1" == "stop" ] && ipping_stop 2>/dev/null
