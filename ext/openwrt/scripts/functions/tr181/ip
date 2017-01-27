@@ -48,7 +48,7 @@ sub_entry_ipv4_interface() {
 	case_param "$1" belongto "$DMROOT.IP.Interface.$j.IPv4Address.1." && {
 		common_execute_method_param  "$DMROOT.IP.Interface.$j.IPv4Address.1.IPAddress" "1" "ipv4address_iface_get_ip_adress $ip_int" "ipv4address_iface_set_ip_adress $ip_int"
 		common_execute_method_param  "$DMROOT.IP.Interface.$j.IPv4Address.1.AddressingType" "0" "ipv4address_iface_get_type_adress $ip_int"
-		common_execute_method_param  "$DMROOT.IP.Interface.$j.IPv4Address.1.Enable" "0" "echo 1" "" "" "1"
+		common_execute_method_param  "$DMROOT.IP.Interface.$j.IPv4Address.1.Enable" "0" "echo 1" "" "xsd:boolean"
 		common_execute_method_param "$DMROOT.IP.Interface.$j.IPv4Address.1.SubnetMask" "0" "get_net_mask $ip_int"
 		return 0
 	}
