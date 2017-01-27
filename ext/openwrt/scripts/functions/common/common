@@ -916,3 +916,34 @@ cdr2mask ()
 	[ $1 -gt 1 ] && shift $1 || shift
 	echo ${1-0}.${2-0}.${3-0}.${4-0}
 }
+ipstr2int()
+{
+	local n ip 
+	local ipint=0
+	local pw=16777216
+	ip=${1//./ }
+	for n in $ip; do
+		ipint=$((ipint+n*pw))
+		let pw/=256
+	done
+	echo $ipint
+}
+
+int2ipstr()
+{
+	local ip1 ip2 ip3 ip4 
+	local pw=16777216
+	local ipint=$1
+
+	ip1=$((ipint/pw))
+	ipint=$((ipint%pw))
+	pw=$((pw/256))
+	ip2=$((ipint/pw))
+	ipint=$((ipint%pw))
+	pw=$((pw/256))
+	ip3=$((ipint/pw))
+	ipint=$((ipint%pw))
+	pw=$((pw/256))
+	ip4=$ipint
+	echo $ip1.$ip2.$ip3.$ip4
+}
