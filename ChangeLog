@@ -1,6 +1,11 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.5.0 (date of 27th of January 2017)
+  -#0000194: Add TR-181 WiFi and DHCPv4 params and Enhancement of Download
+  -#0000178: The forced inform parameters list are not conform with the TR-181 standrad
+  -#0000180: strip double and single quotes from Device_info value. 
+
 * EasyCwmp-1.4.1 (date of 21th of November 2016)
   -#0000179: [IPPing Diagnostics ] :8 DIAGNOSTICS COMPLETE event is not send when host is bad
   -#0000166: error in the case of DMROOT.IP.Interface.
