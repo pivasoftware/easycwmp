@@ -423,6 +423,7 @@ static inline void cwmp_free_download(struct download *d)
 	free(d->key);
 	free(d->password);
 	free(d->username);
+	free(d->target_file_name);
 	free(d);
 }
 
@@ -435,8 +436,8 @@ void cwmp_download_launch(struct uloop_timeout *timeout)
 
 	d = container_of(timeout, struct download, handler_timer);
 
-	log_message(NAME, L_NOTICE, "start download url = %s, FileType = '%s', CommandKey = '%s'\n",
-			d->download_url, d->file_type, d->key);
+	log_message(NAME, L_NOTICE, "start download url = %s, FileType = '%s', CommandKey = '%s, TargetFileName = '%s'\n",
+			d->download_url, d->file_type, d->key, d->target_file_name);
 
 	if (external_init()) {
 		D("external scripts initialization failed\n");
@@ -444,7 +445,7 @@ void cwmp_download_launch(struct uloop_timeout *timeout)
 	}
 
 	start_time = mix_get_time();
-	external_action_download_execute(d->download_url, d->file_type, d->file_size, d->username, d->password);
+	external_action_download_execute(d->download_url, d->file_type, d->file_size, d->username, d->password, d->target_file_name);
 	external_action_handle(json_handle_method_status);
 	backup_remove_download(d->backup_node);
 	list_del(&d->list);
@@ -497,7 +498,7 @@ out:
 	free(fault);
 }
 
-void cwmp_add_download(char *key, int delay, char *file_size, char *download_url, char *file_type, char *username, char *password, mxml_node_t *node)
+void cwmp_add_download(char *key, int delay, char *file_size, char *download_url, char *file_type, char *username, char *password, char *target_file_name, mxml_node_t *node)
 {
 	struct download *d = NULL;
 
@@ -511,12 +512,13 @@ void cwmp_add_download(char *key, int delay, char *file_size, char *download_url
 	d->file_type = file_type ? strdup(file_type) : NULL;
 	d->username = username ? strdup(username) : NULL;
 	d->password = password ? strdup(password) : NULL;
+	d->target_file_name = target_file_name ? strdup(target_file_name) : NULL;
 	d->handler_timer.cb = cwmp_download_launch;
 	d->backup_node = node;
 	d->time_execute = time(NULL) + delay;
 	list_add_tail(&d->list, &cwmp->downloads);
-	log_message(NAME, L_NOTICE, "add download: delay = %d sec, url = %s, FileType = '%s', CommandKey = '%s'\n",
-			delay, d->download_url, d->file_type, d->key);
+	log_message(NAME, L_NOTICE, "add download: delay = %d sec, url = %s, FileType = '%s', CommandKey = '%s', TargetFileName = '%s'\n",
+			delay, d->download_url, d->file_type, d->key, d->target_file_name);
 
 	uloop_timeout_set(&d->handler_timer, SECDTOMSEC * delay);
 }

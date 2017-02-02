@@ -90,6 +90,7 @@ struct download {
 	char *file_type;
 	char *username;
 	char *password;
+	char *target_file_name;
 	time_t time_execute;
 	mxml_node_t *backup_node;
 };
@@ -136,7 +137,7 @@ static inline int rpc_get_rpc_methods(void);
 static inline int rpc_transfer_complete(mxml_node_t *node, int *method_id);
 
 void cwmp_add_scheduled_inform(char *key, int delay);
-void cwmp_add_download(char *key, int delay, char *file_size, char *download_url, char *file_type, char *username, char *password, mxml_node_t *node);
+void cwmp_add_download(char *key, int delay, char *file_size, char *download_url, char *file_type, char *username, char *password, char *target_file_name, mxml_node_t *node);
 void cwmp_download_launch(struct uloop_timeout *timeout);
 void cwmp_init(void);
 void cwmp_connection_request(int code);
