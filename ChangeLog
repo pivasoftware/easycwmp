@@ -1,6 +1,9 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.5.1 (date of 3rd of February 2017)
+  -#0000181: add log details
+
 * EasyCwmp-1.5.0 (date of 27th of January 2017)
   -#0000194: Add TR-181 WiFi and DHCPv4 params and Enhancement of Download
   -#0000178: The forced inform parameters list are not conform with the TR-181 standrad
