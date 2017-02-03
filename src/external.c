@@ -80,13 +80,13 @@ void external_free_list_parameter()
 	}
 }
 
-void external_set_param_val_resp_status(char *status)
+void external_set_param_resp_status(char *status)
 {
 	free(external_method_status);
 	external_method_status = status ? strdup(status) : NULL;
 }
 
-void external_fetch_set_param_val_resp_status(char **status)
+void external_fetch_set_param_resp_status(char **status)
 {
 	*status = external_method_status;
 	external_method_status = NULL;

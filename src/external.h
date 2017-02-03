@@ -31,8 +31,8 @@ struct external_parameter {
 	char *fault_code;
 };
 
-void external_set_param_val_resp_status (char *status);
-void external_fetch_set_param_val_resp_status (char **status);
+void external_set_param_resp_status (char *status);
+void external_fetch_set_param_resp_status (char **status);
 void external_method_resp_status (char *status, char *fault);
 void external_fetch_method_resp_status (char **status, char **fault);
 void external_add_obj_resp (char *status, char *instance, char *fault);

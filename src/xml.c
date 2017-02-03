@@ -143,6 +143,20 @@ void xml_exit(void)
 	xml_free_ns();
 }
 
+void xml_log_parameter_fault()
+{
+	struct list_head *ilist;
+	struct external_parameter *external_parameter;
+
+	list_for_each(ilist, &external_list_parameter) {
+		external_parameter = list_entry(ilist, struct external_parameter, list);
+		if (external_parameter->fault_code && external_parameter->fault_code[0]=='9') {
+			log_message(NAME, L_NOTICE, "Fault in the param: %s , Fault code: %s\n", external_parameter->name, external_parameter->fault_code);
+		}
+	}
+
+}
+
 int xml_check_duplicated_parameter(mxml_node_t *tree)
 {
 	mxml_node_t *b, *n = tree;
@@ -157,7 +171,10 @@ int xml_check_duplicated_parameter(mxml_node_t *tree)
 					b->value.text.string &&
 					b->parent->type == MXML_ELEMENT &&
 					!strcmp(b->parent->value.element.name, "Name")) {
-					if (strcmp(b->value.text.string, n->value.text.string) == 0) return 1;
+					if (strcmp(b->value.text.string, n->value.text.string) == 0) {
+						log_message(NAME, L_NOTICE, "Fault in the param: %s , Fault code: 9003 <parameter duplicated>\n", b->value.text.string);
+						return 1;
+					}
 				}
 			}
 		}
@@ -818,7 +835,7 @@ int xml_handle_set_parameter_values(mxml_node_t *body_in,
 	external_action_simple_execute("apply", "value", param_key);
 	free(param_key);
 	
-	if (external_action_handle(json_handle_set_parameter_value))
+	if (external_action_handle(json_handle_set_parameter))
 		goto fault_out;
 
 	list_for_each(ilist, &external_list_parameter) {
@@ -828,7 +845,7 @@ int xml_handle_set_parameter_values(mxml_node_t *body_in,
 			goto fault_out;
 		}
 	}
-	external_fetch_set_param_val_resp_status(&status);
+	external_fetch_set_param_resp_status(&status);
 	if(!status)
 		goto fault_out;
 
@@ -848,6 +865,7 @@ int xml_handle_set_parameter_values(mxml_node_t *body_in,
 	return 0;
 
 fault_out:
+	xml_log_parameter_fault();
 	free(parameter_value);
 	xml_create_set_parameter_value_fault_message(body_out, code);
 	free(status);
@@ -945,6 +963,7 @@ int xml_handle_get_parameter_values(mxml_node_t *body_in,
 	log_message(NAME, L_NOTICE, "send GetParameterValuesResponse to the ACS\n");
 	return 0;
 fault_out:
+	xml_log_parameter_fault();
 	xml_create_generic_fault_message(body_out, code);
 	external_free_list_parameter();
 	return 0;
@@ -1048,6 +1067,7 @@ int xml_handle_get_parameter_names(mxml_node_t *body_in,
 	log_message(NAME, L_NOTICE, "send GetParameterNamesResponse to the ACS\n");
 	return 0;
 fault_out:
+	xml_log_parameter_fault();
 	xml_create_generic_fault_message(body_out, code);
 	external_free_list_parameter();
 	return 0;
@@ -1143,6 +1163,7 @@ static int xml_handle_get_parameter_attributes(mxml_node_t *body_in,
 	log_message(NAME, L_NOTICE, "send GetParameterAttributesResponse to the ACS\n");
 	return 0;
 fault_out:
+	xml_log_parameter_fault();
 	xml_create_generic_fault_message(body_out, code);
 	external_free_list_parameter();
 	return 0;
@@ -1158,8 +1179,10 @@ static int xml_handle_set_parameter_attributes(mxml_node_t *body_in,
 						mxml_node_t *tree_out) {
 
 	mxml_node_t *b = body_in, *body_out;
-	char *c, *parameter_name, *parameter_notification, *success = NULL, *fault = NULL;
+	char *c, *parameter_name, *parameter_notification, *success = NULL;
 	uint8_t attr_notification_update = 0;
+	struct external_parameter *external_parameter;
+	struct list_head *ilist;
 	int code = FAULT_9002 ;
 
 	body_out = mxmlFindElement(tree_out, tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
@@ -1222,39 +1245,35 @@ static int xml_handle_set_parameter_attributes(mxml_node_t *body_in,
 
 	external_action_simple_execute("apply", "notification", NULL);
 
-	if (external_action_handle(json_handle_method_status))
+	if (external_action_handle(json_handle_set_parameter))
 		goto fault_out;
 
-
-	external_fetch_method_resp_status(&success, &fault);
-
-	if (fault && fault[0]=='9') {
-		code = xml_get_index_fault(fault);
-		goto fault_out;
+	list_for_each(ilist, &external_list_parameter) {
+		external_parameter = list_entry(ilist, struct external_parameter, list);
+		if (external_parameter->fault_code && external_parameter->fault_code[0]=='9') {
+			code = xml_get_index_fault(external_parameter->fault_code);
+			goto fault_out;
+		}
 	}
-
-	if(!success || success[0] == '\0') {
+	external_fetch_set_param_resp_status(&success);
+	if(!success)
 		goto fault_out;
-	}
-
 
 	b = mxmlNewElement(body_out, "cwmp:SetParameterAttributesResponse");
 	if (!b) goto error;
 
 	free(success);
-	free(fault);
 
 	log_message(NAME, L_NOTICE, "send SetParameterAttributesResponse to the ACS\n");
 	return 0;
 
 fault_out:
+	xml_log_parameter_fault();
 	xml_create_generic_fault_message(body_out, code);
 	free(success);
-	free(fault);
 	return 0;
 error:
 	free(success);
-	free(fault);
 	return -1;
 }
 
@@ -1625,6 +1644,7 @@ static int xml_handle_AddObject(mxml_node_t *body_in,
 	return 0;
 
 fault_out:
+	log_message(NAME, L_NOTICE, "Fault in the param: %s, Fault code: %s\n", object_name ? object_name : "", fault_array[code].code);
 	xml_create_generic_fault_message(body_out, code);
 	FREE(param_key);
 	free(instance);
@@ -1724,6 +1744,7 @@ static int xml_handle_DeleteObject(mxml_node_t *body_in,
 	return 0;
 
 fault_out:
+	log_message(NAME, L_NOTICE, "Fault in the param: %s, Fault code: %s\n", object_name ? object_name : "", fault_array[code].code);
 	xml_create_generic_fault_message(body_out, code);
 	FREE(param_key);
 	free(status);
@@ -1795,6 +1816,7 @@ int xml_create_set_parameter_value_fault_message(mxml_node_t *body, int code)
 		external_parameter = list_entry(external_list_parameter.next, struct external_parameter, list);
 
 		if (external_parameter->fault_code && external_parameter->fault_code[0]=='9') {
+
 			index = xml_get_index_fault(external_parameter->fault_code);
 
 			b = mxmlNewElement(n, "SetParameterValuesFault");

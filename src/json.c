@@ -54,7 +54,7 @@ int json_handle_method_status(char *line)
 	return 0;
 }
 
-int json_handle_set_parameter_value(char *line)
+int json_handle_set_parameter(char *line)
 {
 	json_object *js_obj;
 	char *param_name, *fault_code, *status, *cfg_load;
@@ -68,7 +68,7 @@ int json_handle_set_parameter_value(char *line)
 		cfg_load = json_common_get_string(js_obj, "config_load");
 		if (cfg_load && atoi(cfg_load))
 			cwmp->end_session |= ENDS_RELOAD_CONFIG;
-		external_set_param_val_resp_status(status);
+		external_set_param_resp_status(status);
 	}
 	else {
 		param_name = json_common_get_string(js_obj, "parameter");
