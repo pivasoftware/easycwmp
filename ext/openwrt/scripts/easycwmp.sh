@@ -21,7 +21,7 @@ UCI_REVERT="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} revert"
 UCI_CHANGES="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} changes"
 UCI_BATCH="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} batch"
 
-DOWNLOAD_DIR="/tmp/easycwmp_download"
+DOWNLOAD_FILE="/tmp/easycwmp_download"
 EASYCWMP_PROMPT="easycwmp>"
 set_fault_tmp_file="/tmp/.easycwmp_set_fault_tmp"
 apply_service_tmp_file="/tmp/.easycwmp_apply_service"
@@ -33,6 +33,7 @@ uci_change_packages=""
 uci_change_services=""
 g_fault_code=""
 
+DMROOT="InternetGatewayDevice"
 prefix_list=""
 entry_execute_method_list=""
 entry_execute_method_list_forcedinform=""
@@ -106,6 +107,7 @@ json_get_opt() {
 			json_get_var __arg3 file_size
 			json_get_var __arg4 user_name
 			json_get_var __arg5 password
+			json_get_var __arg6 target_file_name
 			;;
 		factory_reset|reboot)
 			action="$command"
@@ -162,6 +164,7 @@ case "$1" in
 		__arg3="$4"
 		__arg4="$5"
 		__arg5="$6"
+		__arg6="$7"
 		;;
 	factory_reset|reboot)
 		action="$1"
@@ -203,9 +206,8 @@ if [ -z "$action" ]; then
 fi
 
 dmscripts=`ls $FUNCTION_PATH`
-. $FUNCTION_PATH/root
 for dms in $dmscripts; do
-	[ "$dms" != "root" ] && . $FUNCTION_PATH/$dms
+	. $FUNCTION_PATH/$dms
 done
 
 prefix_list="$DMROOT. $prefix_list"
@@ -271,14 +273,16 @@ handle_action() {
 			let fault_code=9000+$E_DOWNLOAD_FAILURE
 			common_json_output_fault "" "$fault_code"
 		else 
-			rm -rf $DOWNLOAD_DIR 2> /dev/null
-			mkdir -p $DOWNLOAD_DIR
+			if [ "$__arg6" != "" ]
+			then
+				DOWNLOAD_FILE="$__arg6"
+			fi
+			rm -f $DOWNLOAD_FILE 2> /dev/null
 			local dw_url="$__arg1"
 			[ "$__arg4" != "" -o "$__arg5" != "" ] && dw_url=`echo "$__arg1" | sed -e "s@://@://$__arg4:$__arg5\@@g"`
-			wget -P $DOWNLOAD_DIR "$dw_url"
+			wget -O $DOWNLOAD_FILE "$dw_url"
 			fault_code="$?"
 			if [ "$fault_code" != "0" ]; then
-				rm -rf $DOWNLOAD_DIR 2> /dev/null
 				let fault_code=9000+$E_DOWNLOAD_FAILURE
 				common_json_output_fault "" "$fault_code"
 			else
@@ -289,60 +293,31 @@ handle_action() {
 	fi
 	if [ "$action" = "apply_download" ]; then
 		if [ "$__arg1" = "3 Vendor Configuration File" ]; then 
-			dwfile=`ls $DOWNLOAD_DIR`
-			if [ "$dwfile" != "" ]; then
-				dwfile="$DOWNLOAD_DIR/$dwfile"
-				if [ ${dwfile%.gz} != $dwfile ]; then
-					tar -zxf $dwfile -C $DOWNLOAD_DIR >/dev/null 2>&1
-					fault_code="$?"
-					if [ "$fault_code" = "0" ]; then
-						cp $DOWNLOAD_DIR/config/* /etc/config/
-					fi
-				elif [ ${dwfile%.bz2} != $dwfile ]; then
-					tar -jxf $dwfile -C $DOWNLOAD_DIR >/dev/null 2>&1
-					fault_code="$?"
-					if [ "$fault_code" = "0" ]; then
-						cp $DOWNLOAD_DIR/config/* /etc/config/
-					fi
-				else
-					/sbin/uci import < $dwfile
-					fault_code="$?"
-				fi
+			/sbin/uci import < $DOWNLOAD_FILE  
+			fault_code="$?"
 			if [ "$fault_code" != "0" ]; then
-					let fault_code=$E_DOWNLOAD_FAILURE+9000
+				let fault_code=$E_DOWNLOAD_FAIL_FILE_CORRUPTED+9000
 				common_json_output_fault "" "$fault_code"
 			else
 				$UCI_COMMIT
 				sync
 				reboot
 				common_json_output_status "1"
-				fi
-			else
-				let fault_code=$E_DOWNLOAD_FAILURE+9000
-				common_json_output_fault "" "$fault_code"
 			fi
 		elif [ "$__arg1" = "1 Firmware Upgrade Image" ]; then
 			local gr_backup=`grep "^/etc/easycwmp/\.backup\.xml" /etc/sysupgrade.conf`
 			[ -z $gr_backup ] && echo "/etc/easycwmp/.backup.xml" >> /etc/sysupgrade.conf
-			dwfile=`ls $DOWNLOAD_DIR`
-			if [ "$dwfile" != "" ]; then
-				dwfile="$DOWNLOAD_DIR/$dwfile"
-				/sbin/sysupgrade $dwfile
+			/sbin/sysupgrade $DOWNLOAD_FILE 
 			fault_code="$?"
 			if [ "$fault_code" != "0" ]; then
 				let fault_code=$E_DOWNLOAD_FAIL_FILE_CORRUPTED+9000
 				common_json_output_fault "" "$fault_code"
 			else
 				common_json_output_status "1"
-				fi
-			else
-				let fault_code=$E_DOWNLOAD_FAILURE+9000
-				common_json_output_fault "" "$fault_code"
 			fi
 		else
 			common_json_output_fault "" "$(($E_INVALID_ARGUMENTS+9000))"
 		fi
-		rm -rf $DOWNLOAD_DIR 2> /dev/null
 		return
 	fi
 	if [ "$action" = "factory_reset" ]; then
