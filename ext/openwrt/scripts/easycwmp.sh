@@ -296,13 +296,21 @@ handle_action() {
 					tar -zxf $dwfile -C $DOWNLOAD_DIR >/dev/null 2>&1
 					fault_code="$?"
 					if [ "$fault_code" = "0" ]; then
-						cp $DOWNLOAD_DIR/config/* /etc/config/
+						if [ -d $ $DOWNLOAD_DIR/config/ ]; then
+							cp -R $DOWNLOAD_DIR/config/* /etc/config/
+						else
+							cp -R $DOWNLOAD_DIR/* /
+						fi
 					fi
 				elif [ ${dwfile%.bz2} != $dwfile ]; then
 					tar -jxf $dwfile -C $DOWNLOAD_DIR >/dev/null 2>&1
 					fault_code="$?"
 					if [ "$fault_code" = "0" ]; then
-						cp $DOWNLOAD_DIR/config/* /etc/config/
+						if [ -d $ $DOWNLOAD_DIR/config/ ]; then
+							cp -R $DOWNLOAD_DIR/config/* /etc/config/
+						else
+							cp -R $DOWNLOAD_DIR/* /
+						fi
 					fi
 				else
 					/sbin/uci import < $dwfile
