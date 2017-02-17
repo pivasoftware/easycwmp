@@ -1,6 +1,9 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.5.2 (date of 17th of February 2017)
+  -#0000203: Support tar.gz file of luci in the apply download of config
+
 * EasyCwmp-1.5.1 (date of 3rd of February 2017)
   -#0000181: add log details
 
