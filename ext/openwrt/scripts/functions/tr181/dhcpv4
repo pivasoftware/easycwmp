@@ -11,7 +11,6 @@
 
 prefix_list="$prefix_list $DMROOT.DHCPv4."
 entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_DHCPv4"
-entry_execute_method_list_forcedinform="$entry_execute_method_list_forcedinform  entry_execute_method_root_DHCPv4"
 
 entry_execute_method_root_DHCPv4() {
 	case "$1" in ""|"$DMROOT."|"$DMROOT.DHCPv4."*)

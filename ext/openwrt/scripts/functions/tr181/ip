@@ -12,7 +12,6 @@
 
 prefix_list="$prefix_list $DMROOT.IP."
 entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_IP"
-entry_execute_method_list_forcedinform="$entry_execute_method_list_forcedinform  entry_execute_method_root_IP"
 
 entry_execute_method_root_IP() {
 	case "$1" in ""|"$DMROOT."|"$DMROOT.IP."*)
