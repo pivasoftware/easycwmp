@@ -470,6 +470,11 @@ common_get_value_inparam_isobj_check_param() {
 }
 
 common_get_value_inparam_isobj_check_obj() {
+	local arg="$1"
+	local inparam="$2"
+	local refparam="$3"
+	local permission="$4"
+
 	case "$refparam" in "$inparam"*)
 		g_fault_code=0
 		return 0
@@ -653,6 +658,10 @@ common_get_notification_inparam_isobj_check_param() {
 }
 
 common_get_notification_inparam_isobj_check_obj() {
+	local arg="$1"
+	local inparam="$2"
+	local refparam="$3"
+	local permission="$4"
 	case "$refparam" in "$inparam"*)
 		g_fault_code=0
 		return 0
