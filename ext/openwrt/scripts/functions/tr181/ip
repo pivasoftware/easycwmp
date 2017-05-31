@@ -94,8 +94,8 @@ ip_device_update_instance() {
 ip_device_browse_instances() {
 	local ip_int ip_ints=`$UCI_SHOW network |grep interface | cut -d "=" -f 1`
 	for ip_int in $ip_ints; do
-		local proto=`$UCI_GET $ip_int.proto`
-		if [ "$proto" = "static" ] || [ "$proto" = "dhcp" ]; then
+		local type=`$UCI_GET $ip_int.type`
+		if [ "$type" != "alias" ]; then
 			local j=`ip_device_update_instance $ip_int`
 			sub_entry_ip_interface  "$1" "$j" "$ip_int"
 		fi
@@ -110,23 +110,30 @@ ip_browse_stat(){
 	get_stat $2
 	sub_entry_ip_stat $1 $2
 }
+
 #######################################
-#   Data model parameters functions   #
+#   ADD & DEL obj                     #
 #######################################
 
-IP_iface_set_IP_enable() {
+add_ip_iface() {
+	local instance=`ip_get_max_instance`
+	$UCI_SET  network.ip_interface_$instance=interface
+	$UCI_SET  network.ip_interface_$instance.proto=dhcp
+	$UCI_SET  network.ip_interface_$instance.ip_int_instance=$((++instance))
+	$UCI_COMMIT
+	echo $instance
+}
 
+del_ip_iface() {
+	local iface="$1"
+	$UCI_DELETE $iface
+	$UCI_COMMIT
 	return 0
 }
 
 #######################################
-#   get max num interfaces            #
+#   GET & SET Values                  #
 #######################################
-		
-ip_Interface_get_max_interface() {
-	local max=`cat /etc/config/network |grep -i "interface" | wc -l`
-	echo $(($max+1))
-}
 
 ip_get_iface_name() {
 	local interface=`echo $1 |cut -d "." -f 2`
@@ -147,19 +154,40 @@ ip_iface_get_ip_type() {
 }
 
 ipv4address_iface_get_ip_adress() {
-	local val=`$UCI_GET $1.ipaddr`
-	echo "$val"
+	local name=$(echo $1 |cut -d "." -f 2)
+	local address=""
+	local res
+	res=`ubus call network.interface.$name status`
+	if [ "$?" = 0 ]; then
+		json_init
+		json_load "$res" >/dev/null
+		json_select "ipv4-address" >/dev/null
+		if [ "$?" = 0 ]; then
+			json_select 1 >/dev/null
+			json_get_var address address >/dev/null
+			echo "$address"
+			return
+		fi
+	fi
+	$UCI_GET $1.ipaddr
 }
 
 ipv4address_iface_set_ip_adress() {
 	$UCI_SET $1.ipaddr="$2"
-	common_delay_service_restart_in_apply_service "network" "1"
+	$UCI_SET $1.proto="static"
 	return 0
 }
 
 ipv4address_iface_get_type_adress() {
 	local val=`$UCI_GET $1.proto`
-	echo "$val"
+	case $val in
+		dhcp*|ppp*)
+			echo "DHCP"
+			;;
+		*)
+			echo "Static"
+			;;
+	esac
 }
 
 get_net_mask() {
@@ -167,21 +195,19 @@ get_net_mask() {
 	local mask=""
 	local res
 	res=`ubus call network.interface.$name status`
-	if [ "$?" != 0 ]; then
-		echo "$mask"
-		return
+	if [ "$?" = 0 ]; then
+		json_init
+		json_load "$res" >/dev/null
+		json_select "ipv4-address" >/dev/null
+		if [ "$?" = 0 ]; then
+			json_select 1 >/dev/null
+			json_get_var mask mask >/dev/null
+			mask=`cdr2mask $mask` 
+			echo "$mask"
+			return
+		fi
 	fi
-	json_init
-	json_load "$res" &> /dev/null
-	json_select "ipv4-address" &> /dev/null
-	if [ "$?" != 0 ]; then
-		echo "$mask"
-		return
-	fi
-	json_select 1
-	json_get_var mask mask
-	mask=`cdr2mask $mask` 
-	echo "$mask"
+	$UCI_GET $1.netmask
 }
 
 #######################################
@@ -240,23 +266,4 @@ get_rx_discard_stats() {
 
 get_tx_discard_stats() {
 	echo ${tx_dropped:-0}
-}
-#######################################
-#   ADD & DEL obj                     #
-#######################################
-
-add_ip_iface() {
-	local instance=`ip_get_max_instance`
-	$UCI_SET  network.ip_interface_$instance=interface
-	$UCI_SET  network.ip_interface_$instance.proto=dhcp
-	$UCI_SET  network.ip_interface_$instance.ip_int_instance=$((++instance))
-	$UCI_COMMIT
-	echo $instance
-}
-
-del_ip_iface() {
-	local iface="$1"
-	$UCI_DELETE $iface
-	$UCI_COMMIT
-	return 0
 }
