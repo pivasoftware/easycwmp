@@ -156,5 +156,9 @@ struct event *cwmp_add_event(int code, char *key, int method_id, int backup);
 long int cwmp_periodic_inform_time(void);
 void cwmp_update_value_change(void);
 void cwmp_add_inform_timer();
+void cwmp_clean(void);
+void cwmp_periodic_inform_init(void);
+int cwmp_init_deviceid(void);
+void cwmp_free_deviceid(void);
 #endif
 

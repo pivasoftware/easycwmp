@@ -10,15 +10,12 @@
  */
 
 #include <stdio.h>
-#ifdef JSONC
- #include <json-c/json.h>
-#else
- #include <json/json.h>
-#endif
+
 
 #include "json.h"
 #include "cwmp.h"
 #include "easycwmp.h"
+#include "external.h"
 
 char *json_common_get_string(json_object *js_obj, char *key )
 {

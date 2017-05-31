@@ -30,7 +30,7 @@ struct http_server
 	struct uloop_fd http_event;
 };
 
-static size_t http_get_response(void *buffer, size_t size, size_t rxed, char **msg_in);
+static size_t http_get_response(char *buffer, size_t size, size_t rxed, char **msg_in);
 
 int http_client_init(void);
 void http_client_exit(void);

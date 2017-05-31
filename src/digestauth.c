@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <time.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include "md5.h"
 #include "digestauth.h"
 #include "easycwmp.h"
