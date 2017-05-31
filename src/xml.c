@@ -148,13 +148,15 @@ void xml_log_parameter_fault()
 	struct list_head *ilist;
 	struct external_parameter *external_parameter;
 
-	list_for_each(ilist, &external_list_parameter) {
+	list_for_each_prev(ilist, &external_list_parameter) {
 		external_parameter = list_entry(ilist, struct external_parameter, list);
 		if (external_parameter->fault_code && external_parameter->fault_code[0]=='9') {
 			log_message(NAME, L_NOTICE, "Fault in the param: %s , Fault code: %s\n", external_parameter->name, external_parameter->fault_code);
 		}
+		else {
+			break;
+		}
 	}
-
 }
 
 int xml_check_duplicated_parameter(mxml_node_t *tree)
@@ -414,6 +416,23 @@ int xml_get_index_fault(char *fault_code)
 			return i;
 	}
 	return FAULT_9002;
+}
+
+int xml_check_fault_in_list_parameter(void)
+{
+	struct external_parameter *external_parameter;
+	struct list_head *ilist;
+	int code;
+
+	ilist = external_list_parameter.prev;
+	if (ilist != &external_list_parameter) {
+		external_parameter = list_entry(ilist, struct external_parameter, list);
+		if (external_parameter->fault_code && external_parameter->fault_code[0] == '9') {
+			code = xml_get_index_fault(external_parameter->fault_code);
+			return code;
+		}
+	}
+	return 0;
 }
 
 /* Inform */
@@ -838,12 +857,9 @@ int xml_handle_set_parameter_values(mxml_node_t *body_in,
 	if (external_action_handle(json_handle_set_parameter))
 		goto fault_out;
 
-	list_for_each(ilist, &external_list_parameter) {
-		external_parameter = list_entry(ilist, struct external_parameter, list);
-		if (external_parameter->fault_code && external_parameter->fault_code[0]=='9') {
-			code = FAULT_9003;
-			goto fault_out;
-		}
+	if (xml_check_fault_in_list_parameter()) {
+		code = FAULT_9003;
+		goto fault_out;
 	}
 	external_fetch_set_param_resp_status(&status);
 	if(!status)
@@ -887,7 +903,7 @@ int xml_handle_get_parameter_values(mxml_node_t *body_in,
 	mxml_node_t *n, *parameter_list, *b = body_in, *body_out, *t;
 	struct external_parameter *external_parameter;
 	char *parameter_name = NULL;
-	int counter = 0, code = FAULT_9002;
+	int counter = 0, fc, code = FAULT_9002;
 	struct list_head *ilist;
 
 	body_out = mxmlFindElement(tree_out, tree_out, "soap_env:Body",
@@ -910,21 +926,19 @@ int xml_handle_get_parameter_values(mxml_node_t *body_in,
 
 		if (parameter_name) {
 			external_action_parameter_execute("get", "value", parameter_name, NULL);
+			if (external_action_handle(json_handle_get_parameter_value))
+				goto fault_out;
+			fc = xml_check_fault_in_list_parameter();
+			if (fc) {
+				code = fc;
+				goto fault_out;
+			}
 		}
 
 		b = mxmlWalkNext(b, body_in, MXML_DESCEND);
 		parameter_name = NULL;
 	}
-	if (external_action_handle(json_handle_get_parameter_value))
-		goto fault_out;
 
-	list_for_each(ilist, &external_list_parameter) {
-		external_parameter = list_entry(ilist, struct external_parameter, list);
-		if (external_parameter->fault_code && external_parameter->fault_code[0]=='9') {
-			code =	xml_get_index_fault(external_parameter->fault_code);
-			goto fault_out;
-		}
-	}
 	n = mxmlNewElement(body_out, "cwmp:GetParameterValuesResponse");
 	if (!n) return -1;
 	parameter_list = mxmlNewElement(n, "ParameterList");
@@ -982,7 +996,7 @@ int xml_handle_get_parameter_names(mxml_node_t *body_in,
 	struct external_parameter *external_parameter;
 	char *parameter_name = NULL;
 	char *next_level = NULL;
-	int counter = 0, code = FAULT_9002;
+	int counter = 0, fc, code = FAULT_9002;
 
 	body_out = mxmlFindElement(tree_out, tree_out, "soap_env:Body",
 					NULL, NULL, MXML_DESCEND);
@@ -1020,12 +1034,11 @@ int xml_handle_get_parameter_names(mxml_node_t *body_in,
 		external_action_parameter_execute("get", "name", parameter_name, next_level);
 		if (external_action_handle(json_handle_get_parameter_name))
 			goto fault_out;
-	}
-	external_parameter = list_entry(external_list_parameter.next, struct external_parameter, list);
-
-	if (external_parameter->fault_code && external_parameter->fault_code[0]=='9') {
-		code = xml_get_index_fault(external_parameter->fault_code) ;
-		goto fault_out;
+		fc = xml_check_fault_in_list_parameter();
+		if (fc) {
+			code = fc;
+			goto fault_out;
+		}
 	}
 
 	n = mxmlNewElement(body_out, "cwmp:GetParameterNamesResponse");
@@ -1086,7 +1099,7 @@ static int xml_handle_get_parameter_attributes(mxml_node_t *body_in,
 	mxml_node_t *n, *parameter_list, *b = body_in, *body_out, *t;
 	struct external_parameter *external_parameter;
 	char *parameter_name = NULL;
-	int counter = 0, code = FAULT_9002;
+	int counter = 0, fc, code = FAULT_9002;
 	struct list_head *ilist;
 
 	body_out = mxmlFindElement(tree_out, tree_out, "soap_env:Body",
@@ -1108,20 +1121,18 @@ static int xml_handle_get_parameter_attributes(mxml_node_t *body_in,
 		}
 		if (parameter_name) {
 			external_action_parameter_execute("get", "notification", parameter_name, NULL);
+			if (external_action_handle(json_handle_get_parameter_attribute))
+				goto fault_out;
+			fc = xml_check_fault_in_list_parameter();
+			if (fc) {
+				code = fc;
+				goto fault_out;
+			}
 		}
 		b = mxmlWalkNext(b, body_in, MXML_DESCEND);
 		parameter_name = NULL;
 	}
 
-	if (external_action_handle(json_handle_get_parameter_attribute))
-		goto fault_out;
-	list_for_each(ilist, &external_list_parameter) {
-		external_parameter = list_entry(ilist, struct external_parameter, list);
-		if (external_parameter->fault_code && external_parameter->fault_code[0]=='9') {
-			code =	xml_get_index_fault(external_parameter->fault_code);
-			goto fault_out;
-		}
-	}
 	n = mxmlNewElement(body_out, "cwmp:GetParameterAttributesResponse");
 	if (!n) return -1;
 
@@ -1183,7 +1194,7 @@ static int xml_handle_set_parameter_attributes(mxml_node_t *body_in,
 	uint8_t attr_notification_update = 0;
 	struct external_parameter *external_parameter;
 	struct list_head *ilist;
-	int code = FAULT_9002 ;
+	int fc, code = FAULT_9002 ;
 
 	body_out = mxmlFindElement(tree_out, tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
 	if (!body_out) goto error;
@@ -1248,13 +1259,12 @@ static int xml_handle_set_parameter_attributes(mxml_node_t *body_in,
 	if (external_action_handle(json_handle_set_parameter))
 		goto fault_out;
 
-	list_for_each(ilist, &external_list_parameter) {
-		external_parameter = list_entry(ilist, struct external_parameter, list);
-		if (external_parameter->fault_code && external_parameter->fault_code[0]=='9') {
-			code = xml_get_index_fault(external_parameter->fault_code);
-			goto fault_out;
-		}
+	fc = xml_check_fault_in_list_parameter();
+	if (fc) {
+		code = fc;
+		goto fault_out;
 	}
+
 	external_fetch_set_param_resp_status(&success);
 	if(!success)
 		goto fault_out;

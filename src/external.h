@@ -25,6 +25,7 @@ extern struct list_head external_list_parameter;
  */
 struct external_parameter {
 	struct list_head list;
+	struct list_head listtri;
 	char *name;
 	char *data;
 	char *type;
