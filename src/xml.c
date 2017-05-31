@@ -876,6 +876,7 @@ int xml_handle_set_parameter_values(mxml_node_t *body_in,
 
 	free(status);
 	free(parameter_value);
+	external_free_list_parameter();
 
 	log_message(NAME, L_NOTICE, "send SetParameterValuesResponse to the ACS\n");
 	return 0;
@@ -940,9 +941,9 @@ int xml_handle_get_parameter_values(mxml_node_t *body_in,
 	}
 
 	n = mxmlNewElement(body_out, "cwmp:GetParameterValuesResponse");
-	if (!n) return -1;
+	if (!n) goto out;
 	parameter_list = mxmlNewElement(n, "ParameterList");
-	if (!parameter_list) return -1;
+	if (!parameter_list) goto out;
 
 	while (external_list_parameter.next != &external_list_parameter) {
 
@@ -1042,10 +1043,10 @@ int xml_handle_get_parameter_names(mxml_node_t *body_in,
 	}
 
 	n = mxmlNewElement(body_out, "cwmp:GetParameterNamesResponse");
-	if (!n) return -1;
+	if (!n) goto out;
 
 	parameter_list = mxmlNewElement(n, "ParameterList");
-	if (!parameter_list) return -1;
+	if (!parameter_list) goto out;
 
 	while (external_list_parameter.next != &external_list_parameter) {
 		external_parameter = list_entry(external_list_parameter.next, struct external_parameter, list);
@@ -1134,10 +1135,10 @@ static int xml_handle_get_parameter_attributes(mxml_node_t *body_in,
 	}
 
 	n = mxmlNewElement(body_out, "cwmp:GetParameterAttributesResponse");
-	if (!n) return -1;
+	if (!n) goto out;
 
 	parameter_list = mxmlNewElement(n, "ParameterList");
-	if (!parameter_list) return -1;
+	if (!parameter_list) goto out;
 
 	while (external_list_parameter.next != &external_list_parameter) {
 
@@ -1273,6 +1274,7 @@ static int xml_handle_set_parameter_attributes(mxml_node_t *body_in,
 	if (!b) goto error;
 
 	free(success);
+	external_free_list_parameter();
 
 	log_message(NAME, L_NOTICE, "send SetParameterAttributesResponse to the ACS\n");
 	return 0;
@@ -1281,9 +1283,11 @@ fault_out:
 	xml_log_parameter_fault();
 	xml_create_generic_fault_message(body_out, code);
 	free(success);
+	external_free_list_parameter();
 	return 0;
 error:
 	free(success);
+	external_free_list_parameter();
 	return -1;
 }
 
