@@ -33,9 +33,6 @@ static void ubus_easycwmpd_stop_callback(struct uloop_timeout *timeout)
 	uloop_end();
 }
 
-static const struct blobmsg_policy notify_policy[] = {
-};
-
 static int
 easycwmpd_handle_notify(struct ubus_context *ctx, struct ubus_object *obj,
 			struct ubus_request_data *req, const char *method,
@@ -140,7 +137,7 @@ error:
 }
 
 static const struct ubus_method easycwmp_methods[] = {
-	UBUS_METHOD("notify", easycwmpd_handle_notify, notify_policy),
+	UBUS_METHOD_NOARG("notify", easycwmpd_handle_notify),
 	UBUS_METHOD("inform", easycwmpd_handle_inform, inform_policy),
 	UBUS_METHOD("command", easycwmpd_handle_command, command_policy),
 };
