@@ -428,7 +428,7 @@ handle_action() {
 		return
 	fi
 	if [ "$action" = "apply_service" ]; then
-		common_uci_track_restart_services		
+		common_restart_services
 		if [ -f "$apply_service_tmp_file" ]; then
 			chmod +x "$apply_service_tmp_file"
 			/bin/sh "$apply_service_tmp_file"
