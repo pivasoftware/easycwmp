@@ -33,7 +33,6 @@
 #include "log.h"
 
 LIST_HEAD(external_list_parameter);
-LIST_HEAD(external_list_parameter_tri);
 char *external_method_status = NULL;
 char *external_method_instance = NULL;
 char *external_method_fault = NULL;
@@ -45,17 +44,19 @@ void external_add_list_paramameter(char *param_name, char *param_data, char *par
 	struct list_head *ilist;
 
 	if (!param_name) param_name = "";
-	list_for_each(ilist, &external_list_parameter_tri) {
-		external_parameter = list_entry(ilist, struct external_parameter, listtri);
+	list_for_each(ilist, &external_list_parameter) {
+		external_parameter = list_entry(ilist, struct external_parameter, list);
 		int cmp = strcmp(external_parameter->name, param_name);
-		if (cmp == 0 && (!external_parameter->fault_code || external_parameter->fault_code[0] == '\0')) {
-			return;
-		} else if (cmp>0) {
-			break;
+		if (cmp == 0) {
+			if (!external_parameter->fault_code || external_parameter->fault_code[0] == '\0') {
+				return;
+			}
+			else {
+				break;
+			}
 		}
 	}
 	external_parameter = calloc(1, sizeof(struct external_parameter));
-	_list_add(&external_parameter->listtri, ilist->prev, ilist);
 	list_add_tail(&external_parameter->list, &external_list_parameter);
 	external_parameter->name = strdup(param_name);
 	if (param_data) external_parameter->data = strdup(param_data);
@@ -66,7 +67,6 @@ void external_add_list_paramameter(char *param_name, char *param_data, char *par
 void external_parameter_delete(struct external_parameter *external_parameter)
 {
 	list_del(&external_parameter->list);
-	list_del(&external_parameter->listtri);
 	free(external_parameter->name);
 	free(external_parameter->data);
 	free(external_parameter->type);
