@@ -266,7 +266,7 @@ int backup_remove_transfer_complete(mxml_node_t *node)
 	return 0;
 }
 
-mxml_node_t *backup_add_download(char *key, int delay, char *file_size, char *download_url, char *file_type, char *username, char *password)
+mxml_node_t *backup_add_download(char *key, int delay, char *file_size, char *download_url, char *file_type, char *username, char *password, char *target_file_name)
 {
 	mxml_node_t *tree, *data, *b, *n;
 	char time_execute[16];
@@ -307,10 +307,14 @@ mxml_node_t *backup_add_download(char *key, int delay, char *file_size, char *do
 	if (!n) return NULL;
 	n = mxmlNewText(n, 0, file_size);
 	if (!n) return NULL;
-
 	n = mxmlNewElement(b, "time_execute");
 	if (!n) return NULL;
 	n = mxmlNewText(n, 0, time_execute);
+	if (!n) return NULL;
+
+	n = mxmlNewElement(b, "target_file_name");
+	if (!n) return NULL;
+	n = mxmlNewText(n, 0, target_file_name);
 	if (!n) return NULL;
 
 	backup_save_file();
@@ -324,7 +328,8 @@ int backup_load_download(void)
 	mxml_node_t *data, *b, *c;
 	char *download_url = NULL, *file_size = NULL,
 		*command_key = NULL, *file_type = NULL,
-		*username = NULL, *password = NULL;
+		*username = NULL, *password = NULL,
+		*target_file_name = NULL;
 
 	data = mxmlFindElement(backup_tree, backup_tree, "cwmp", NULL, NULL, MXML_DESCEND);
 	if (!data) return -1;
@@ -381,7 +386,14 @@ int backup_load_download(void)
 		else
 			file_type = strdup("");
 
-		cwmp_add_download(command_key, delay, file_size, download_url, file_type, username, password, b);
+		c = mxmlFindElement(b, b, "target_file_name",NULL, NULL, MXML_DESCEND);
+		if (!c)return -1;
+		if(c->child)
+			target_file_name = c->child->value.text.string;
+		else
+			target_file_name = "";
+
+		cwmp_add_download(command_key, delay, file_size, download_url, file_type, username, password, target_file_name, b);
 		FREE(file_type);
 	}
 	return 0;

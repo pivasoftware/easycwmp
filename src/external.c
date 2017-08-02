@@ -275,7 +275,7 @@ int external_action_simple_execute(char *command, char *class, char *arg)
 	return 0;
 }
 
-int external_action_download_execute(char *url, char *file_type, char *file_size, char *user_name, char *password)
+int external_action_download_execute(char *url, char *file_type, char *file_size, char *user_name, char *password, char *target_file_name)
 {
 	log_message(NAME, L_NOTICE, "external: execute download\n", url);
 
@@ -286,6 +286,7 @@ int external_action_download_execute(char *url, char *file_type, char *file_size
 	if (file_size) external_add_json_obj(json_obj_out, "file_size", file_size);
 	if (user_name) external_add_json_obj(json_obj_out, "user_name", user_name);
 	if (password) external_add_json_obj(json_obj_out, "password", password);
+	if (target_file_name) external_add_json_obj(json_obj_out, "target_file_name", target_file_name);
 	external_write_pipe(json_object_to_json_string(json_obj_out));
 	json_object_put(json_obj_out);
 

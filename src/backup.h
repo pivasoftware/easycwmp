@@ -33,6 +33,6 @@ mxml_node_t *backup_check_transfer_complete(void);
 mxml_node_t *backup_tree_init(void);
 mxml_node_t *backup_add_transfer_complete(char *command_key, int fault_code, char *start_time, int method_id);
 mxml_node_t *backup_add_event(int code, char *key, int method_id);
-mxml_node_t * backup_add_download(char *key, int delay, char *file_size, char *download_url, char *file_type, char *username, char *password);
+mxml_node_t * backup_add_download(char *key, int delay, char *file_size, char *download_url, char *file_type, char *username, char *password, char *target_file_name);
 int backup_update_all_complete_time_transfer_complete(void);
 #endif

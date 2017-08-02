@@ -1300,7 +1300,7 @@ static int xml_handle_download(mxml_node_t *body_in,
 	mxml_node_t *n, *t, *b = body_in, *body_out;
 	char *download_url = NULL, *file_size = NULL,
 		*command_key = NULL, *file_type = NULL, *username = NULL,
-		*password = NULL, r;
+		*password = NULL, *target_file_name = NULL, r;
 	int delay = -1, code = FAULT_9002;
 
 	body_out = mxmlFindElement(tree_out, tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
@@ -1373,6 +1373,13 @@ static int xml_handle_download(mxml_node_t *body_in,
 		if (b && b->type == MXML_TEXT &&
 			b->value.text.string &&
 			b->parent->type == MXML_ELEMENT &&
+			!strcmp(b->parent->value.element.name, "TargetFileName")) {
+			FREE(target_file_name);
+			target_file_name = xml_get_value_with_whitespace(&b, body_in);
+		}
+		if (b && b->type == MXML_TEXT &&
+			b->value.text.string &&
+			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "DelaySeconds")) {
 			delay = atoi(b->value.text.string);
 		}
@@ -1391,8 +1398,8 @@ static int xml_handle_download(mxml_node_t *body_in,
 		code = FAULT_9004;
 		goto fault_out;
 	}
-	n = backup_add_download(command_key, delay, file_size, download_url, file_type, username, password);
-	cwmp_add_download(command_key, delay, file_size, download_url, file_type, username, password, n);
+	n = backup_add_download(command_key, delay, file_size, download_url, file_type, username, password, target_file_name);
+	cwmp_add_download(command_key, delay, file_size, download_url, file_type, username, password, target_file_name, n);
 	FREE(file_type);
 	FREE(command_key);
 	FREE(username);

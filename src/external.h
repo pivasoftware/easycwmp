@@ -39,7 +39,7 @@ void external_add_obj_resp (char *status, char *instance, char *fault);
 void external_fetch_add_obj_resp (char **status, char **instance, char **fault);
 int external_action_parameter_execute(char *command, char *class, char *name, char *arg);
 int external_action_simple_execute(char *command, char *class, char *arg);
-int external_action_download_execute(char *url, char *file_type, char *file_size, char *user_name, char *password);
+int external_action_download_execute(char *url, char *file_type, char *file_size, char *user_name, char *password, char *target_file_name);
 int external_action_handle (int (*json_handle)(char *));
 int external_init();
 void external_exit();
