@@ -130,6 +130,7 @@ const char *xml_format_cb(mxml_node_t *node, int pos);
 char *xml_get_value_with_whitespace(mxml_node_t **b, mxml_node_t *body_in);
 mxml_node_t *xml_create_generic_fault_message(mxml_node_t *body, int code);
 int xml_add_cwmpid(mxml_node_t *tree);
-
+int xml_parse_transfer_complete_response_message(char *msg_in);
+int xml_create_set_parameter_value_fault_message(mxml_node_t *body, int code);
 #endif
 

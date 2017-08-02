@@ -1,6 +1,20 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.5.3 (date of 01st of June 2017)
+  -#0000235: remove the tri of parameters when getting them from external pipe
+  -#0000233: fix warning issues in the build with the last OpenWRT SDK version
+  -#0000225: get ip address should use also ubus command in the Device.IP. script
+  -#0000210: external_free_list_parameter() is missing in the set notification in xml.c
+  -#0000211: Use UBUS_METHOD_NOARG instead of UBUS_METHOD for easycwmpd_handle_notify
+  -#0000222: remove forced inform from IP, DHCPv4 and WiFi
+  -#0000226: Some functions are missing input arguments in the common script
+  -#0000227: Use ubus call uci commit to restart services in the script
+  -#0000234: Enhancement of Fault handlers in EasyCwmp core
+
+* EasyCwmp-1.5.2 (date of 17th of February 2017)
+  -#0000203: Support tar.gz file of luci in the apply download of config
+
 * EasyCwmp-1.5.1 (date of 3rd of February 2017)
   -#0000181: add log details
 

@@ -9,7 +9,7 @@
  *		Author: Anis Ellouze <anis.ellouze@pivasoftware.com>
  */
 #include <unistd.h>
-
+#include <sys/stat.h>
 #include "backup.h"
 #include "config.h"
 #include "xml.h"

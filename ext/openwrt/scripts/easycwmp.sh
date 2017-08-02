@@ -293,8 +293,33 @@ handle_action() {
 	fi
 	if [ "$action" = "apply_download" ]; then
 		if [ "$__arg1" = "3 Vendor Configuration File" ]; then 
-			/sbin/uci import < $DOWNLOAD_FILE  
-			fault_code="$?"
+			dwfile=`ls $DOWNLOAD_DIR`
+			if [ "$dwfile" != "" ]; then
+				dwfile="$DOWNLOAD_DIR/$dwfile"
+				if [ ${dwfile%.gz} != $dwfile ]; then
+					tar -zxf $dwfile -C $DOWNLOAD_DIR >/dev/null 2>&1
+					fault_code="$?"
+					if [ "$fault_code" = "0" ]; then
+						if [ -d $ $DOWNLOAD_DIR/config/ ]; then
+							cp -R $DOWNLOAD_DIR/config/* /etc/config/
+						else
+							cp -R $DOWNLOAD_DIR/* /
+						fi
+					fi
+				elif [ ${dwfile%.bz2} != $dwfile ]; then
+					tar -jxf $dwfile -C $DOWNLOAD_DIR >/dev/null 2>&1
+					fault_code="$?"
+					if [ "$fault_code" = "0" ]; then
+						if [ -d $ $DOWNLOAD_DIR/config/ ]; then
+							cp -R $DOWNLOAD_DIR/config/* /etc/config/
+						else
+							cp -R $DOWNLOAD_DIR/* /
+						fi
+					fi
+				else
+					/sbin/uci import < $dwfile
+					fault_code="$?"
+				fi
 			if [ "$fault_code" != "0" ]; then
 				let fault_code=$E_DOWNLOAD_FAIL_FILE_CORRUPTED+9000
 				common_json_output_fault "" "$fault_code"
@@ -395,7 +420,7 @@ handle_action() {
 		return
 	fi
 	if [ "$action" = "apply_service" ]; then
-		common_uci_track_restart_services		
+		common_restart_services
 		if [ -f "$apply_service_tmp_file" ]; then
 			chmod +x "$apply_service_tmp_file"
 			/bin/sh "$apply_service_tmp_file"

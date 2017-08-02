@@ -32,6 +32,10 @@
 #include "cwmp.h"
 #include "ubus.h"
 #include "log.h"
+#include "external.h"
+#include "backup.h"
+#include "http.h"
+#include "xml.h"
 
 static void easycwmp_do_reload(struct uloop_timeout *timeout);
 static void easycwmp_do_notify(struct uloop_timeout *timeout);

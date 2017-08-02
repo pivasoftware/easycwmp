@@ -95,7 +95,7 @@ http_client_exit(void)
 }
 
 static size_t
-http_get_response(void *buffer, size_t size, size_t rxed, char **msg_in)
+http_get_response(char *buffer, size_t size, size_t rxed, char **msg_in)
 {
 	char *c;
 

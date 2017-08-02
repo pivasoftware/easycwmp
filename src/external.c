@@ -48,13 +48,16 @@ void external_add_list_paramameter(char *param_name, char *param_data, char *par
 		external_parameter = list_entry(ilist, struct external_parameter, list);
 		int cmp = strcmp(external_parameter->name, param_name);
 		if (cmp == 0) {
-			return;
-		} else if (cmp>0) {
-			break;
+			if (!external_parameter->fault_code || external_parameter->fault_code[0] == '\0') {
+				return;
+			}
+			else {
+				break;
+			}
 		}
 	}
 	external_parameter = calloc(1, sizeof(struct external_parameter));
-	_list_add(&external_parameter->list, ilist->prev, ilist);
+	list_add_tail(&external_parameter->list, &external_list_parameter);
 	external_parameter->name = strdup(param_name);
 	if (param_data) external_parameter->data = strdup(param_data);
 	if (param_type) external_parameter->type = strdup(param_type);

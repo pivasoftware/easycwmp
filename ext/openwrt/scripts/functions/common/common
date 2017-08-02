@@ -192,16 +192,23 @@ common_rec_append_uci_track_services()
 	
 }
 
-common_uci_track_restart_services() {
+common_restart_services() {
 	local package service
-	uci_change_services=""
-	for package in $uci_change_packages; do
-		common_rec_append_uci_track_services $package
-	done
-	for service in $uci_change_services; do
-		[ "$service" = "easycwmpd" ] && continue
-		/etc/init.d/$service restart
-	done
+	if [ -f /etc/config/ucitrack ]; then
+		uci_change_services=""
+		for package in $uci_change_packages; do
+			common_rec_append_uci_track_services $package
+		done
+		for service in $uci_change_services; do
+			[ "$service" = "easycwmpd" ] && continue
+			/etc/init.d/$service restart
+		done
+	else
+		for package in $uci_change_packages; do
+			[ "$package" = "easycwmp" ] && continue
+			ubus call uci commit "{\"config\": \"$package\"}"
+		done
+	fi
 }
 
 ##### common entries called by easycwmp.sh #####
@@ -463,6 +470,11 @@ common_get_value_inparam_isobj_check_param() {
 }
 
 common_get_value_inparam_isobj_check_obj() {
+	local arg="$1"
+	local inparam="$2"
+	local refparam="$3"
+	local permission="$4"
+
 	case "$refparam" in "$inparam"*)
 		g_fault_code=0
 		return 0
@@ -646,6 +658,10 @@ common_get_notification_inparam_isobj_check_param() {
 }
 
 common_get_notification_inparam_isobj_check_obj() {
+	local arg="$1"
+	local inparam="$2"
+	local refparam="$3"
+	local permission="$4"
 	case "$refparam" in "$inparam"*)
 		g_fault_code=0
 		return 0
