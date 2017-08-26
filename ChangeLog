@@ -1,6 +1,9 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.6.0 (date of 25th of August 2017)
+  -#0000288: Make the easycwmp backup configurable and possible to save backup in easycwmp config
+
 * EasyCwmp-1.5.3 (date of 01st of June 2017)
   -#0000235: remove the tri of parameters when getting them from external pipe
   -#0000233: fix warning issues in the build with the last OpenWRT SDK version
