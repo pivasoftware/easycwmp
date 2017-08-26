@@ -23,6 +23,14 @@ void config_load(void);
 int config_remove_event(char *event);
 int config_check_acs_url(void);
 
+#ifdef BACKUP_DATA_IN_CONFIG
+int easycwmp_uci_init(void);
+int easycwmp_uci_fini(void);
+char *easycwmp_uci_get_value(char *package, char *section, char *option);
+char *easycwmp_uci_set_value(char *package, char *section, char *option, char *value);
+int easycwmp_uci_commit(void);
+#endif
+
 struct acs {
 	char *url;
 	char *username;

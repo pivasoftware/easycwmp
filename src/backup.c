@@ -10,6 +10,7 @@
  */
 #include <unistd.h>
 #include <sys/stat.h>
+#include <uci.h>
 #include "backup.h"
 #include "config.h"
 #include "xml.h"
@@ -19,8 +20,31 @@
 
 mxml_node_t *backup_tree = NULL;
 
+void str_replace_newline_byspace(char *str)
+{
+	while(*str)
+	{
+		if(*str == '\n' || *str == '\r')
+			*str = ' ';
+		str++;
+	}
+}
+
 void backup_init(void)
 {
+#ifdef BACKUP_DATA_IN_CONFIG
+	char *val;
+	easycwmp_uci_init();
+	easycwmp_uci_set_value("easycwmp", "backup", NULL, "backup");
+	easycwmp_uci_commit();
+	val = easycwmp_uci_get_value("easycwmp", "backup","data");
+	if(val[0]=='\0') {
+		easycwmp_uci_fini();
+		return;
+	}
+	backup_tree = mxmlLoadString(NULL, val, MXML_NO_CALLBACK);
+	easycwmp_uci_fini();
+#else
 	FILE *fp;
 
 	if (access(BACKUP_DIR, F_OK) == -1 ) {
@@ -34,6 +58,7 @@ void backup_init(void)
 		backup_tree = mxmlLoadFile(NULL, fp, MXML_NO_CALLBACK);
 		fclose(fp);
 	}
+#endif
 	backup_load_download();
 	backup_load_event();
 	backup_update_all_complete_time_transfer_complete();
@@ -48,22 +73,47 @@ mxml_node_t *backup_tree_init(void)
 	xml = mxmlNewElement(backup_tree, "cwmp");
 	if (!xml) return NULL;
 	return xml;
-
 }
 
 int backup_save_file(void) {
+#ifdef BACKUP_DATA_IN_CONFIG
+	char *val;
+	int len;
+	if (backup_tree == NULL)
+		return 0;
+	easycwmp_uci_init();
+	val = mxmlSaveAllocString(backup_tree, MXML_NO_CALLBACK);
+	len = strlen(val);
+	if (len > 0 && val[len - 1] == '\n')
+		val[len - 1]= '\0';
+	str_replace_newline_byspace(val);
+	easycwmp_uci_set_value("easycwmp", "backup", "data", val);
+	easycwmp_uci_commit();
+	easycwmp_uci_fini();
+	free(val);
+	return 0;
+#else
 	FILE *fp;
+	char *val;
+	int len;
 
 	if (backup_tree == NULL)
 		return 0;
 
 	fp = fopen(BACKUP_FILE, "w");
 	if (fp!=NULL) {
-		mxmlSaveFile(backup_tree, fp, xml_format_cb);
+		val = mxmlSaveAllocString(backup_tree, MXML_NO_CALLBACK);
+		len = strlen(val);
+		if (len > 0 && val[len - 1] == '\n')
+			val[len - 1]= '\0';
+		str_replace_newline_byspace(val);
+		fprintf(fp, "%s", val);
 		fclose(fp);
+		free(val);
 		return 0;
 	}
 	return -1;
+#endif
 }
 
 void backup_add_acsurl(char *acs_url)
@@ -177,7 +227,7 @@ int backup_update_all_complete_time_transfer_complete(void)
 	while (n = mxmlFindElement(n, backup_tree, "transfer_complete", NULL, NULL, MXML_DESCEND)) {
 		b = mxmlFindElement(n, n, "complete_time", NULL, NULL, MXML_DESCEND);
 		if (!b) return -1;
-		if (b->child && b->child->type == MXML_TEXT) {
+		if (b->child && b->child->type == MXML_TEXT && b->child->value.text.string) {
 			if (strcmp(b->child->value.text.string, UNKNOWN_TIME) != 0) continue;
 			mxmlDelete(b->child);
 			b = mxmlNewText(b, 0, mix_get_time());
@@ -198,6 +248,7 @@ mxml_node_t *backup_check_transfer_complete(void)
 int backup_extract_transfer_complete( mxml_node_t *node, char **msg_out, int *method_id)
 {
 	mxml_node_t *tree_m, *b, *n;
+	char *val;
 
 	tree_m = mxmlLoadString(NULL, CWMP_TRANSFER_COMPLETE_MESSAGE, MXML_NO_CALLBACK);
 	if (!tree_m) goto error;
@@ -208,8 +259,12 @@ int backup_extract_transfer_complete( mxml_node_t *node, char **msg_out, int *me
 	if (!b) goto error;
 	n = mxmlFindElement(tree_m, tree_m, "CommandKey", NULL, NULL, MXML_DESCEND);
 	if (!n) goto error;
-	if (b->child)
-		n = mxmlNewText(n, 0, b->child->value.text.string);
+	if (b->child && b->child->type == MXML_TEXT && b->child->value.text.string) {
+		b = b->child;
+		val = xml_get_value_with_whitespace(&b, b->parent);
+		n = mxmlNewText(n, 0, val);
+		FREE(val);
+	}
 	else
 		n = mxmlNewText(n, 0, "");
 	if (!n) goto error;
@@ -226,7 +281,8 @@ int backup_extract_transfer_complete( mxml_node_t *node, char **msg_out, int *me
 	if (b->child && b->child->type == MXML_TEXT && b->child->value.text.string) {
 		n = mxmlFindElement(tree_m, tree_m, "FaultString", NULL, NULL, MXML_DESCEND);
 		if (!n) goto error;
-		char *c = xml_get_value_with_whitespace(&(b->child),b->child->parent);
+		b = b->child;
+		char *c = xml_get_value_with_whitespace(&b, b->parent);
 		n = mxmlNewText(n, 0, c);
 		free(c);
 		if (!n) goto error;
@@ -249,7 +305,6 @@ int backup_extract_transfer_complete( mxml_node_t *node, char **msg_out, int *me
 	b = mxmlFindElement(node, node, "method_id", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 	*method_id = atoi(b->child->value.text.string);
-
 
 	*msg_out = mxmlSaveAllocString(tree_m, xml_format_cb);
 	mxmlDelete(tree_m);
@@ -324,67 +379,86 @@ int backup_load_download(void)
 	mxml_node_t *data, *b, *c;
 	char *download_url = NULL, *file_size = NULL,
 		*command_key = NULL, *file_type = NULL,
-		*username = NULL, *password = NULL;
+		*username = NULL, *password = NULL, *val = NULL;
 
 	data = mxmlFindElement(backup_tree, backup_tree, "cwmp", NULL, NULL, MXML_DESCEND);
 	if (!data) return -1;
 	b = data;
 
 	while (b = mxmlFindElement(b, data, "download", NULL, NULL, MXML_DESCEND)) {
-
 		c = mxmlFindElement(b, b, "command_key",NULL, NULL, MXML_DESCEND);
 		if (!c) return -1;
-		if(c->child)
-			command_key = c->child->value.text.string;
+		if (c->child && c->child->type == MXML_TEXT && c->child->value.text.string) {
+			c = c->child;
+			val = xml_get_value_with_whitespace(&c, c->parent);
+			command_key = val;
+		}
 		else
-			command_key = "";
+			command_key = strdup("");
 
 		c = mxmlFindElement(b, b, "url",NULL, NULL, MXML_DESCEND);
-		if (!c) return -1;
+		if (!c) goto error;
 		if(c->child)
 			download_url = c->child->value.text.string;
 		else
 			download_url = "";
 
 		c = mxmlFindElement(b, b, "username",NULL, NULL, MXML_DESCEND);
-		if (!c) return -1;
-		if(c->child)
-			username = c->child->value.text.string;
+		if (!c) goto error;
+		if (c->child && c->child->type == MXML_TEXT && c->child->value.text.string) {
+			c = c->child;
+			val = xml_get_value_with_whitespace(&c, c->parent);
+			username = val;
+		}
 		else
-			username = "";
+			username = strdup("");
 
 		c = mxmlFindElement(b, b, "password",NULL, NULL, MXML_DESCEND);
-		if (!c) return -1;
-		if(c->child)
-			password = c->child->value.text.string;
+		if (!c) goto error;
+		if (c->child && c->child->type == MXML_TEXT && c->child->value.text.string) {
+			c = c->child;
+			val = xml_get_value_with_whitespace(&c, c->parent);
+			password = val;
+		}
 		else
-			password = "";
+			password = strdup("");
 
 		c = mxmlFindElement(b, b, "file_size",NULL, NULL, MXML_DESCEND);
-		if (!c) return -1;
+		if (!c) goto error;
 		if(c->child)
 			file_size = c->child->value.text.string;
 		else
 			file_size = "";
 
 		c = mxmlFindElement(b, b, "time_execute",NULL, NULL, MXML_DESCEND);
-		if (!c) return -1;
+		if (!c) goto error;
 		if(c->child) {
 			sscanf(c->child->value.text.string, "%u", &t);
 			delay = t - time(NULL);
 		}
 
 		c = mxmlFindElement(b, b, "file_type",NULL, NULL, MXML_DESCEND);
-		if (!c)return -1;
-		if(c->child)
-			file_type = xml_get_value_with_whitespace(&(c->child),c->child->parent);
+		if (!c) goto error;
+		if (c->child && c->child->type == MXML_TEXT && c->child->value.text.string) {
+			c = c->child;
+			file_type = xml_get_value_with_whitespace(&c, c->parent);
+		}
 		else
 			file_type = strdup("");
 
 		cwmp_add_download(command_key, delay, file_size, download_url, file_type, username, password, b);
+		FREE(command_key);
+		FREE(username);
+		FREE(password);
 		FREE(file_type);
 	}
 	return 0;
+error:
+	FREE(command_key);
+	FREE(username);
+	FREE(password);
+	FREE(file_type);
+	return -1;
 }
 
 int backup_remove_download(mxml_node_t *node)
@@ -393,6 +467,7 @@ int backup_remove_download(mxml_node_t *node)
 	backup_save_file();
 	return 0;
 }
+
 mxml_node_t *backup_add_event(int code, char *key, int method_id)
 {
 	mxml_node_t *b = backup_tree, *n, *data;
@@ -453,8 +528,10 @@ int backup_load_event(void)
 		event_num = c->child->value.text.string;
 
 		c = mxmlFindElement(b, b, "event_key", NULL, NULL, MXML_DESCEND);
-		if(c && c->child && c->child->type == MXML_TEXT)
-			key = c->child->value.text.string;
+		if (c && c->child && c->child->type == MXML_TEXT && c->child->value.text.string) {
+			c = c->child;
+			key = xml_get_value_with_whitespace(&c, c->parent);
+		}
 		else
 			key = NULL;
 
@@ -467,6 +544,7 @@ int backup_load_event(void)
 				e->backup_node = b;
 			cwmp_add_inform_timer();
 		}
+		FREE(key);
 	}
 	return 0;
 }

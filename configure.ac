@@ -15,6 +15,7 @@ AC_ARG_ENABLE(jsonc, [AS_HELP_STRING([--enable-jsonc], [build with jsonc])], [
 
 AC_ARG_ENABLE(debug, [AS_HELP_STRING([--enable-debug], [enable debugging messages])], AC_DEFINE(DEBUG),)
 AC_ARG_ENABLE(devel, [AS_HELP_STRING([--enable-devel], [enable development messages])], AC_DEFINE(DEVEL),)
+AC_ARG_ENABLE(backupdatainconfig, [AS_HELP_STRING([--enable-backupdatainconfig], [enable backup data saved in the config])], AC_DEFINE(BACKUP_DATA_IN_CONFIG),)
 
 # checks for programs
 AC_PROG_CC

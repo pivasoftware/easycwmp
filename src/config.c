@@ -23,6 +23,9 @@
 static bool first_run = true;
 static struct uci_context *uci_ctx;
 static struct uci_package *uci_easycwmp;
+#ifdef BACKUP_DATA_IN_CONFIG
+static struct uci_context *easycwmp_uci_ctx = NULL;
+#endif
 
 struct core_config *config;
 
@@ -313,3 +316,152 @@ error:
 	exit(EXIT_FAILURE);
 }
 
+#ifdef BACKUP_DATA_IN_CONFIG
+int easycwmp_uci_init(void)
+{
+	easycwmp_uci_ctx = uci_alloc_context();
+	if (!easycwmp_uci_ctx) {
+		return -1;
+	}
+	return 0;
+}
+
+int easycwmp_uci_fini(void)
+{
+	if (easycwmp_uci_ctx) {
+		uci_free_context(easycwmp_uci_ctx);
+	}
+	return 0;
+}
+
+static bool easycwmp_uci_validate_section(const char *str)
+{
+	if (!*str)
+		return false;
+
+	for (; *str; str++) {
+		unsigned char c = *str;
+
+		if (isalnum(c) || c == '_')
+			continue;
+
+		return false;
+	}
+	return true;
+}
+
+int easycwmp_uci_init_ptr(struct uci_context *ctx, struct uci_ptr *ptr, char *package, char *section, char *option, char *value)
+{
+	char *last = NULL;
+	char *tmp;
+
+	memset(ptr, 0, sizeof(struct uci_ptr));
+
+	/* value */
+	if (value) {
+		ptr->value = value;
+	}
+	ptr->package = package;
+	if (!ptr->package)
+		goto error;
+
+	ptr->section = section;
+	if (!ptr->section) {
+		ptr->target = UCI_TYPE_PACKAGE;
+		goto lastval;
+	}
+
+	ptr->option = option;
+	if (!ptr->option) {
+		ptr->target = UCI_TYPE_SECTION;
+		goto lastval;
+	} else {
+		ptr->target = UCI_TYPE_OPTION;
+	}
+
+lastval:
+	if (ptr->section && !easycwmp_uci_validate_section(ptr->section))
+		ptr->flags |= UCI_LOOKUP_EXTENDED;
+
+	return 0;
+
+error:
+	return -1;
+}
+
+char *easycwmp_uci_get_value(char *package, char *section, char *option)
+{
+	struct uci_ptr ptr;
+	char *val = "";
+
+	if (!section || !option)
+		return val;
+
+	if (easycwmp_uci_init_ptr(easycwmp_uci_ctx, &ptr, package, section, option, NULL)) {
+		return val;
+	}
+	if (uci_lookup_ptr(easycwmp_uci_ctx, &ptr, NULL, true) != UCI_OK) {
+		return val;
+	}
+
+	if (!ptr.o)
+		return val;
+
+	if (ptr.o->v.string)
+		return ptr.o->v.string;
+	else
+		return val;
+}
+
+char *easycwmp_uci_set_value(char *package, char *section, char *option, char *value)
+{
+	struct uci_ptr ptr;
+	int ret = UCI_OK;
+
+	if (!section)
+		return "";
+
+	if (easycwmp_uci_init_ptr(easycwmp_uci_ctx, &ptr, package, section, option, value)) {
+		return "";
+	}
+	if (uci_lookup_ptr(easycwmp_uci_ctx, &ptr, NULL, true) != UCI_OK) {
+		return "";
+	}
+
+	uci_set(easycwmp_uci_ctx, &ptr);
+
+	if (ret == UCI_OK)
+		ret = uci_save(easycwmp_uci_ctx, ptr.p);
+
+	if (ptr.o && ptr.o->v.string)
+		return ptr.o->v.string;
+
+	return "";
+}
+
+int easycwmp_uci_commit(void)
+{
+	struct uci_element *e;
+	struct uci_context *ctx;
+	struct uci_ptr ptr;
+
+	ctx = uci_alloc_context();
+	if (!ctx) {
+		return -1;
+	}
+
+	uci_foreach_element(&easycwmp_uci_ctx->root, e) {
+		if (easycwmp_uci_init_ptr(ctx, &ptr, e->name, NULL, NULL, NULL)) {
+			return -1;
+		}
+		if (uci_lookup_ptr(ctx, &ptr, NULL, true) != UCI_OK) {
+			return -1;
+		}
+		uci_commit(ctx, &ptr.p, false);
+	}
+
+	uci_free_context(ctx);
+
+	return 0;
+}
+#endif

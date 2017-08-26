@@ -62,6 +62,11 @@ CONFIGURE_ARGS += \
 	--enable-devel
 endif
 
+ifeq ($(CONFIG_EASYCWMP_BACKUP_DATA_CONFIG),y)
+CONFIGURE_ARGS += \
+	--enable-backupdatainconfig
+endif
+
 CONFIGURE_ARGS += \
 	--enable-jsonc=1
 
@@ -77,7 +82,9 @@ define Package/easycwmp/install
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/ext/openwrt/config/easycwmp $(1)/etc/config
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ext/openwrt/init.d/easycwmpd $(1)/etc/init.d
+ifeq ($(EASYCWMP_BACKUP_DATA_FILE),y)
 	$(INSTALL_DIR) $(1)/etc/easycwmp
+endif
 ifeq ($(CONFIG_EASYCWMP_SCRIPTS_FULL),y)
 	$(INSTALL_DIR) $(1)/usr/share/easycwmp/functions/
 	$(CP) $(PKG_BUILD_DIR)/ext/openwrt/scripts/defaults $(1)/usr/share/easycwmp

@@ -18,6 +18,18 @@ choice
 endchoice
 endif
 
+choice
+	prompt "Save Backup Data"
+	default EASYCWMP_BACKUP_DATA_FILE
+
+	config EASYCWMP_BACKUP_DATA_FILE
+		bool "/etc/easycwmp/.backup.xml"
+		
+	config EASYCWMP_BACKUP_DATA_CONFIG
+		bool "easycwmp config"
+
+endchoice
+
 config EASYCWMP_DEBUG
 	bool "Compile with debug options"
 	default n
