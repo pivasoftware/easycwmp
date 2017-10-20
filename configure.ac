@@ -56,7 +56,7 @@ AC_ARG_WITH([libubus-include-path],
 AC_SUBST([LIBUBUS_CFLAGS])
 
 AC_ARG_WITH([libubus-lib-path],
-  [AS_HELP_STRING([--with-libubus-lib-path], [location of the libubus library])], [LIBUBOX_LDFLAGS="-L$withval"])
+  [AS_HELP_STRING([--with-libubus-lib-path], [location of the libubus library])], [LIBUBUS_LDFLAGS="-L$withval"])
 AC_SUBST([LIBUBUS_LDFLAGS])
 
 LIBUBUS_LIBS='-lubus'
