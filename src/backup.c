@@ -42,7 +42,7 @@ void backup_init(void)
 		easycwmp_uci_fini();
 		return;
 	}
-	backup_tree = mxmlLoadString(NULL, val, MXML_NO_CALLBACK);
+	backup_tree = mxmlLoadString(NULL, val, MXML_OPAQUE_CALLBACK);
 	easycwmp_uci_fini();
 #else
 	FILE *fp;
@@ -55,7 +55,7 @@ void backup_init(void)
 	}
 	fp = fopen(BACKUP_FILE, "r");
 	if (fp!=NULL) {
-		backup_tree = mxmlLoadFile(NULL, fp, MXML_NO_CALLBACK);
+		backup_tree = mxmlLoadFile(NULL, fp, MXML_OPAQUE_CALLBACK);
 		fclose(fp);
 	}
 #endif
@@ -68,7 +68,7 @@ mxml_node_t *backup_tree_init(void)
 {
 	mxml_node_t *xml;
 
-	backup_tree = mxmlLoadString(NULL, "<backup_file/>", MXML_NO_CALLBACK);
+	backup_tree = mxmlLoadString(NULL, "<backup_file/>", MXML_OPAQUE_CALLBACK);
 	if (!backup_tree) return NULL;
 	xml = mxmlNewElement(backup_tree, "cwmp");
 	if (!xml) return NULL;
@@ -124,7 +124,7 @@ void backup_add_acsurl(char *acs_url)
 	mxmlDelete(backup_tree);
 	b = backup_tree_init();
 	data = mxmlNewElement(b, "acs_url");
-	data = mxmlNewText(data, 0, acs_url);
+	data = mxmlNewOpaque(data, acs_url);
 	backup_save_file();
 	cwmp_add_event(EVENT_BOOTSTRAP, NULL, 0, EVENT_BACKUP);
 	cwmp_add_inform_timer();
@@ -135,8 +135,8 @@ void backup_check_acs_url(void)
 	mxml_node_t *b;
 
 	b = mxmlFindElement(backup_tree, backup_tree, "acs_url", NULL, NULL, MXML_DESCEND);
-	if (!b || (b->child && b->child->type == MXML_TEXT && b->child->value.text.string &&
-		strcmp(config->acs->url, b->child->value.text.string) != 0)) {
+	if (!b || (b->child && b->child->type == MXML_OPAQUE && b->child->value.opaque &&
+		strcmp(config->acs->url, b->child->value.opaque) != 0)) {
 		backup_add_acsurl(config->acs->url);
 	}
 }
@@ -153,28 +153,28 @@ mxml_node_t *backup_add_transfer_complete(char *command_key, int fault_code, cha
 	if (!m) return NULL;
 	b = mxmlNewElement(m, "command_key");
 	if (!b) return NULL;
-	b = mxmlNewText(b, 0, command_key);
+	b = mxmlNewOpaque(b, command_key);
 	if (!b) return NULL;
 	b = mxmlNewElement(m, "fault_code");
 	if (!b) return NULL;
-	b = mxmlNewText(b, 0, fault_array[fault_code].code);
+	b = mxmlNewOpaque(b, fault_array[fault_code].code);
 	if (!b) return NULL;
 	b = mxmlNewElement(m, "fault_string");
 	if (!b) return NULL;
-	b = mxmlNewText(b, 0, fault_array[fault_code].string);
+	b = mxmlNewOpaque(b, fault_array[fault_code].string);
 	if (!b) return NULL;
 	b = mxmlNewElement(m, "start_time");
 	if (!b) return NULL;
-	b = mxmlNewText(b, 0, start_time);
+	b = mxmlNewOpaque(b, start_time);
 	if (!b) return NULL;
 	b = mxmlNewElement(m, "complete_time");
 	if (!b) return NULL;
-	b = mxmlNewText(b, 0, UNKNOWN_TIME);
+	b = mxmlNewOpaque(b, UNKNOWN_TIME);
 	if (!b) return NULL;
 	b = mxmlNewElement(m, "method_id");
 	if (!b) return NULL;
 	sprintf(c, "%d", method_id);
-	b = mxmlNewText(b, 0, c);
+	b = mxmlNewOpaque(b, c);
 	if (!b) return NULL;
 
 	backup_save_file();
@@ -187,18 +187,18 @@ int backup_update_fault_transfer_complete(mxml_node_t *node, int fault_code)
 
 	b = mxmlFindElement(node, node, "fault_code", NULL, NULL, MXML_DESCEND);
 	if (!b) return -1;
-	if (b->child && b->child->type == MXML_TEXT) {
+	if (b->child && b->child->type == MXML_OPAQUE) {
 		mxmlDelete(b->child);
 	}
-	b = mxmlNewText(b, 0, fault_array[fault_code].code);
+	b = mxmlNewOpaque(b, fault_array[fault_code].code);
 	if (!b) return -1;
 
 	b = mxmlFindElement(node, node, "fault_string", NULL, NULL, MXML_DESCEND);
 	if (!b) return -1;
-	if (b->child && b->child->type == MXML_TEXT) {
+	if (b->child && b->child->type == MXML_OPAQUE) {
 		mxmlDelete(b->child);
 	}
-	b = mxmlNewText(b, 0, fault_array[fault_code].string);
+	b = mxmlNewOpaque(b, fault_array[fault_code].string);
 	if (!b) return -1;
 
 	backup_save_file();
@@ -211,10 +211,10 @@ int backup_update_complete_time_transfer_complete(mxml_node_t *node)
 
 	b = mxmlFindElement(node, node, "complete_time", NULL, NULL, MXML_DESCEND);
 	if (!b) return -1;
-	if (b->child && b->child->type == MXML_TEXT) {
+	if (b->child && b->child->type == MXML_OPAQUE) {
 		mxmlDelete(b->child);
 	}
-	b = mxmlNewText(b, 0, mix_get_time());
+	b = mxmlNewOpaque(b, mix_get_time());
 	if (!b) return -1;
 
 	backup_save_file();
@@ -227,10 +227,10 @@ int backup_update_all_complete_time_transfer_complete(void)
 	while (n = mxmlFindElement(n, backup_tree, "transfer_complete", NULL, NULL, MXML_DESCEND)) {
 		b = mxmlFindElement(n, n, "complete_time", NULL, NULL, MXML_DESCEND);
 		if (!b) return -1;
-		if (b->child && b->child->type == MXML_TEXT && b->child->value.text.string) {
-			if (strcmp(b->child->value.text.string, UNKNOWN_TIME) != 0) continue;
+		if (b->child && b->child->type == MXML_OPAQUE && b->child->value.opaque) {
+			if (strcmp(b->child->value.opaque, UNKNOWN_TIME) != 0) continue;
 			mxmlDelete(b->child);
-			b = mxmlNewText(b, 0, mix_get_time());
+			b = mxmlNewOpaque(b, mix_get_time());
 			if (!b) return -1;
 		}
 	}
@@ -250,7 +250,7 @@ int backup_extract_transfer_complete( mxml_node_t *node, char **msg_out, int *me
 	mxml_node_t *tree_m, *b, *n;
 	char *val;
 
-	tree_m = mxmlLoadString(NULL, CWMP_TRANSFER_COMPLETE_MESSAGE, MXML_NO_CALLBACK);
+	tree_m = mxmlLoadString(NULL, CWMP_TRANSFER_COMPLETE_MESSAGE, MXML_OPAQUE_CALLBACK);
 	if (!tree_m) goto error;
 
 	if(xml_add_cwmpid(tree_m)) goto error;
@@ -259,31 +259,31 @@ int backup_extract_transfer_complete( mxml_node_t *node, char **msg_out, int *me
 	if (!b) goto error;
 	n = mxmlFindElement(tree_m, tree_m, "CommandKey", NULL, NULL, MXML_DESCEND);
 	if (!n) goto error;
-	if (b->child && b->child->type == MXML_TEXT && b->child->value.text.string) {
+	if (b->child && b->child->type == MXML_OPAQUE && b->child->value.opaque) {
 		b = b->child;
 		val = xml_get_value_with_whitespace(&b, b->parent);
-		n = mxmlNewText(n, 0, val);
+		n = mxmlNewOpaque(n, val);
 		FREE(val);
 	}
 	else
-		n = mxmlNewText(n, 0, "");
+		n = mxmlNewOpaque(n, "");
 	if (!n) goto error;
 
 	b = mxmlFindElement(node, node, "fault_code", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 	n = mxmlFindElement(tree_m, tree_m, "FaultCode", NULL, NULL, MXML_DESCEND);
 	if (!n) goto error;
-	n = mxmlNewText(n, 0, b->child->value.text.string);
+	n = mxmlNewOpaque(n, b->child->value.opaque);
 	if (!n) goto error;
 
 	b = mxmlFindElement(node, node, "fault_string", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
-	if (b->child && b->child->type == MXML_TEXT && b->child->value.text.string) {
+	if (b->child && b->child->type == MXML_OPAQUE && b->child->value.opaque) {
 		n = mxmlFindElement(tree_m, tree_m, "FaultString", NULL, NULL, MXML_DESCEND);
 		if (!n) goto error;
 		b = b->child;
 		char *c = xml_get_value_with_whitespace(&b, b->parent);
-		n = mxmlNewText(n, 0, c);
+		n = mxmlNewOpaque(n, c);
 		free(c);
 		if (!n) goto error;
 	}
@@ -292,19 +292,19 @@ int backup_extract_transfer_complete( mxml_node_t *node, char **msg_out, int *me
 	if (!b) goto error;
 	n = mxmlFindElement(tree_m, tree_m, "StartTime", NULL, NULL, MXML_DESCEND);
 	if (!n) goto error;
-	n = mxmlNewText(n, 0, b->child->value.text.string);
+	n = mxmlNewOpaque(n, b->child->value.opaque);
 	if (!n) goto error;
 
 	b = mxmlFindElement(node, node, "complete_time", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 	n = mxmlFindElement(tree_m, tree_m, "CompleteTime", NULL, NULL, MXML_DESCEND);
 	if (!n) goto error;
-	n = mxmlNewText(n, 0,  b->child->value.text.string);
+	n = mxmlNewOpaque(n,  b->child->value.opaque);
 	if (!n) goto error;
 
 	b = mxmlFindElement(node, node, "method_id", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
-	*method_id = atoi(b->child->value.text.string);
+	*method_id = atoi(b->child->value.opaque);
 
 	*msg_out = mxmlSaveAllocString(tree_m, xml_format_cb);
 	mxmlDelete(tree_m);
@@ -335,37 +335,37 @@ mxml_node_t *backup_add_download(char *key, int delay, char *file_size, char *do
 
 	n = mxmlNewElement(b, "command_key");
 	if (!n) return NULL;
-	n = mxmlNewText(n, 0, key);
+	n = mxmlNewOpaque(n, key);
 	if (!n) return NULL;
 
 	n = mxmlNewElement(b, "file_type");
 	if (!n) return NULL;
-	n = mxmlNewText(n, 0, file_type);
+	n = mxmlNewOpaque(n, file_type);
 	if (!n) return NULL;
 
 	n = mxmlNewElement(b, "url");
 	if (!n) return NULL;
-	n = mxmlNewText(n, 0, download_url);
+	n = mxmlNewOpaque(n, download_url);
 	if (!n) return NULL;
 
 	n = mxmlNewElement(b, "username");
 	if (!n) return NULL;
-	n = mxmlNewText(n, 0, username);
+	n = mxmlNewOpaque(n, username);
 	if (!n) return NULL;
 
 	n = mxmlNewElement(b, "password");
 	if (!n) return NULL;
-	n = mxmlNewText(n, 0, password);
+	n = mxmlNewOpaque(n, password);
 	if (!n) return NULL;
 
 	n = mxmlNewElement(b, "file_size");
 	if (!n) return NULL;
-	n = mxmlNewText(n, 0, file_size);
+	n = mxmlNewOpaque(n, file_size);
 	if (!n) return NULL;
 
 	n = mxmlNewElement(b, "time_execute");
 	if (!n) return NULL;
-	n = mxmlNewText(n, 0, time_execute);
+	n = mxmlNewOpaque(n, time_execute);
 	if (!n) return NULL;
 
 	backup_save_file();
@@ -388,7 +388,7 @@ int backup_load_download(void)
 	while (b = mxmlFindElement(b, data, "download", NULL, NULL, MXML_DESCEND)) {
 		c = mxmlFindElement(b, b, "command_key",NULL, NULL, MXML_DESCEND);
 		if (!c) return -1;
-		if (c->child && c->child->type == MXML_TEXT && c->child->value.text.string) {
+		if (c->child && c->child->type == MXML_OPAQUE && c->child->value.opaque) {
 			c = c->child;
 			val = xml_get_value_with_whitespace(&c, c->parent);
 			command_key = val;
@@ -399,13 +399,13 @@ int backup_load_download(void)
 		c = mxmlFindElement(b, b, "url",NULL, NULL, MXML_DESCEND);
 		if (!c) goto error;
 		if(c->child)
-			download_url = c->child->value.text.string;
+			download_url = c->child->value.opaque;
 		else
 			download_url = "";
 
 		c = mxmlFindElement(b, b, "username",NULL, NULL, MXML_DESCEND);
 		if (!c) goto error;
-		if (c->child && c->child->type == MXML_TEXT && c->child->value.text.string) {
+		if (c->child && c->child->type == MXML_OPAQUE && c->child->value.opaque) {
 			c = c->child;
 			val = xml_get_value_with_whitespace(&c, c->parent);
 			username = val;
@@ -415,7 +415,7 @@ int backup_load_download(void)
 
 		c = mxmlFindElement(b, b, "password",NULL, NULL, MXML_DESCEND);
 		if (!c) goto error;
-		if (c->child && c->child->type == MXML_TEXT && c->child->value.text.string) {
+		if (c->child && c->child->type == MXML_OPAQUE && c->child->value.opaque) {
 			c = c->child;
 			val = xml_get_value_with_whitespace(&c, c->parent);
 			password = val;
@@ -426,20 +426,20 @@ int backup_load_download(void)
 		c = mxmlFindElement(b, b, "file_size",NULL, NULL, MXML_DESCEND);
 		if (!c) goto error;
 		if(c->child)
-			file_size = c->child->value.text.string;
+			file_size = c->child->value.opaque;
 		else
 			file_size = "";
 
 		c = mxmlFindElement(b, b, "time_execute",NULL, NULL, MXML_DESCEND);
 		if (!c) goto error;
 		if(c->child) {
-			sscanf(c->child->value.text.string, "%u", &t);
+			sscanf(c->child->value.opaque, "%u", &t);
 			delay = t - time(NULL);
 		}
 
 		c = mxmlFindElement(b, b, "file_type",NULL, NULL, MXML_DESCEND);
 		if (!c) goto error;
-		if (c->child && c->child->type == MXML_TEXT && c->child->value.text.string) {
+		if (c->child && c->child->type == MXML_OPAQUE && c->child->value.opaque) {
 			c = c->child;
 			file_type = xml_get_value_with_whitespace(&c, c->parent);
 		}
@@ -481,13 +481,13 @@ mxml_node_t *backup_add_event(int code, char *key, int method_id)
 	if (asprintf(&e, "%d", code) == -1) goto error;
 	b = mxmlNewElement(n, "event_number");
 	if (!b) goto error;
-	b = mxmlNewText(b, 0, e);
+	b = mxmlNewOpaque(b, e);
 	if (!b) goto error;
 
 	if(key) {
 		b = mxmlNewElement(n, "event_key");
 		if (!b) goto error;
-		b = mxmlNewText(b, 0, key);
+		b = mxmlNewOpaque(b, key);
 		if (!b) goto error;
 	}
 
@@ -495,7 +495,7 @@ mxml_node_t *backup_add_event(int code, char *key, int method_id)
 		if (asprintf(&c, "%d", method_id) == -1) goto error;
 		b = mxmlNewElement(n, "event_method_id");
 		if (!b) goto error;
-		b = mxmlNewText(b, 0, c);
+		b = mxmlNewOpaque(b, c);
 		if (!b) goto error;
 	}
 
@@ -524,11 +524,11 @@ int backup_load_event(void)
 	b = data;
 	while (b = mxmlFindElement(b, data, "event", NULL, NULL, MXML_DESCEND)) {
 		c = mxmlFindElement(b, b, "event_number",NULL, NULL, MXML_DESCEND);
-		if (!c || !c->child || c->child->type != MXML_TEXT) return -1;
-		event_num = c->child->value.text.string;
+		if (!c || !c->child || c->child->type != MXML_OPAQUE) return -1;
+		event_num = c->child->value.opaque;
 
 		c = mxmlFindElement(b, b, "event_key", NULL, NULL, MXML_DESCEND);
-		if (c && c->child && c->child->type == MXML_TEXT && c->child->value.text.string) {
+		if (c && c->child && c->child->type == MXML_OPAQUE && c->child->value.opaque) {
 			c = c->child;
 			key = xml_get_value_with_whitespace(&c, c->parent);
 		}
@@ -536,8 +536,8 @@ int backup_load_event(void)
 			key = NULL;
 
 		c = mxmlFindElement(b, b, "event_method_id", NULL, NULL, MXML_DESCEND);
-		if(c && c->child && c->child->type == MXML_TEXT)
-			method_id = atoi(c->child->value.text.string);
+		if(c && c->child && c->child->type == MXML_OPAQUE)
+			method_id = atoi(c->child->value.opaque);
 
 		if(event_num) {
 			if (e = cwmp_add_event(atoi(event_num), key, method_id, EVENT_NO_BACKUP))

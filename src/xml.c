@@ -78,6 +78,34 @@ const struct rpc_method rpc_methods[] = {
 	{ "ScheduleInform", xml_handle_schedule_inform },
 };
 
+mxml_node_t *				/* O - Element node or NULL */
+mxmlFindElementOpaque(mxml_node_t *node,	/* I - Current node */
+						mxml_node_t *top,	/* I - Top node */
+						const char *text,	/* I - Element text, if NULL return NULL */
+						int descend)		/* I - Descend into tree - MXML_DESCEND, MXML_NO_DESCEND, or MXML_DESCEND_FIRST */
+{
+	if (!node || !top || !text)
+		return (NULL);
+
+	node = mxmlWalkNext(node, top, descend);
+
+	while (node != NULL)
+	{
+		if (node->type == MXML_OPAQUE &&
+			node->value.opaque &&
+			(!text || !strcmp(node->value.opaque, text)))
+		{
+			return (node);
+		}
+
+		if (descend == MXML_DESCEND)
+			node = mxmlWalkNext(node, top, MXML_DESCEND);
+		else
+			node = node->next;
+	}
+	return (NULL);
+}
+
 const char *xml_format_cb(mxml_node_t *node, int pos)
 {
 	mxml_node_t *b = node;
@@ -110,19 +138,7 @@ const char *xml_format_cb(mxml_node_t *node, int pos)
 
 char *xml_get_value_with_whitespace(mxml_node_t **b, mxml_node_t *body_in)
 {
-	mxml_node_t *parent = (*b)->parent;
-
-	char * value = calloc(1, sizeof(char));
-	do {
-		value = realloc(value, strlen(value) + strlen((*b)->value.text.string) + 2);
-		if (value[0] != '\0')
-			strcat(value, " ");
-
-		strcat(value, (*b)->value.text.string);
-	 } while ((*b = mxmlWalkNext(*b, body_in, MXML_DESCEND)) &&
-			((*b)->value.text.whitespace == true) &&
-			((*b)->type == MXML_TEXT && (*b)->value.text.string) &&
-			(*b)->parent == parent);
+	char * value = strdup((*b)->value.opaque);
 	return value;
 }
 
@@ -163,18 +179,18 @@ int xml_check_duplicated_parameter(mxml_node_t *tree)
 {
 	mxml_node_t *b, *n = tree;
 	while (n) {
-		if (n && n->type == MXML_TEXT &&
-			n->value.text.string &&
+		if (n && n->type == MXML_OPAQUE &&
+			n->value.opaque &&
 			n->parent->type == MXML_ELEMENT &&
 			!strcmp(n->parent->value.element.name, "Name")) {
 			b = n;
 			while (b = mxmlWalkNext(b, tree, MXML_DESCEND)) {
-				if (b && b->type == MXML_TEXT &&
-					b->value.text.string &&
+				if (b && b->type == MXML_OPAQUE &&
+					b->value.opaque &&
 					b->parent->type == MXML_ELEMENT &&
 					!strcmp(b->parent->value.element.name, "Name")) {
-					if (strcmp(b->value.text.string, n->value.text.string) == 0) {
-						log_message(NAME, L_NOTICE, "Fault in the param: %s , Fault code: 9003 <parameter duplicated>\n", b->value.text.string);
+					if (strcmp(b->value.opaque, n->value.opaque) == 0) {
+						log_message(NAME, L_NOTICE, "Fault in the param: %s , Fault code: 9003 <parameter duplicated>\n", b->value.opaque);
 						return 1;
 					}
 				}
@@ -283,8 +299,8 @@ static void xml_get_hold_request(mxml_node_t *tree)
 	if (b) {
 		b = mxmlWalkNext(b, tree, MXML_DESCEND_FIRST);
 
-		if(b->value.text.string)
-			cwmp->hold_requests = (atoi(b->value.text.string)) ? true : false;
+		if(b->value.opaque)
+			cwmp->hold_requests = (atoi(b->value.opaque)) ? true : false;
 	}
 
 	if (asprintf(&c, "%s:%s", ns.cwmp, "HoldRequests") == -1)
@@ -294,8 +310,8 @@ static void xml_get_hold_request(mxml_node_t *tree)
 	if (b) {
 		b = mxmlWalkNext(b, tree, MXML_DESCEND_FIRST);
 
-		if(b->value.text.string)
-			cwmp->hold_requests = (atoi(b->value.text.string)) ? true : false;
+		if(b->value.opaque)
+			cwmp->hold_requests = (atoi(b->value.opaque)) ? true : false;
 	}
 }
 
@@ -306,10 +322,10 @@ int xml_handle_message(char *msg_in, char **msg_out)
 	int i, code = FAULT_9002;
 	char *c;
 
-	tree_out = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_NO_CALLBACK);
+	tree_out = mxmlLoadString(NULL, CWMP_RESPONSE_MESSAGE, MXML_OPAQUE_CALLBACK);
 	if (!tree_out) goto error;
 
-	tree_in = mxmlLoadString(NULL, msg_in, MXML_NO_CALLBACK);
+	tree_in = mxmlLoadString(NULL, msg_in, MXML_OPAQUE_CALLBACK);
 	if (!tree_in) goto error;
 
 	if(xml_recreate_namespace(tree_in)) {
@@ -326,13 +342,13 @@ int xml_handle_message(char *msg_in, char **msg_out)
 	if (!b) goto find_method;
 
 	b = mxmlWalkNext(b, tree_in, MXML_DESCEND_FIRST);
-	if (!b || !b->value.text.string) goto find_method;
-	c = strdup(b->value.text.string);
+	if (!b || !b->value.opaque) goto find_method;
+	c = strdup(b->value.opaque);
 
 	b = mxmlFindElement(tree_out, tree_out, "cwmp:ID", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 
-	b = mxmlNewText(b, 0, c);
+	b = mxmlNewOpaque(b, c);
 	FREE(c);
 	if (!b) goto error;
 
@@ -456,14 +472,14 @@ static int xml_prepare_events_inform(mxml_node_t *tree)
 		b2 = mxmlNewElement (node, "EventCode");
 		if (!b2) goto error;
 
-		b2 = mxmlNewText(b2, 0, event_code_array[event->code].code);
+		b2 = mxmlNewOpaque(b2, event_code_array[event->code].code);
 		if (!b2) goto error;
 
 		b2 = mxmlNewElement (node, "CommandKey");
 		if (!b2) goto error;
 
 		if (event->key) {
-			b2 = mxmlNewText(b2, 0, event->key);
+			b2 = mxmlNewOpaque(b2, event->key);
 			if (!b2) goto error;
 		}
 
@@ -496,7 +512,7 @@ static int xml_prepare_notifications_inform(mxml_node_t *parameter_list, int *co
 	list_for_each(p, &cwmp->notifications) {
 		notification = list_entry(p, struct notification, list);
 
-		b = mxmlFindElementText(parameter_list, parameter_list, notification->parameter, MXML_DESCEND);
+		b = mxmlFindElementOpaque(parameter_list, parameter_list, notification->parameter, MXML_DESCEND);
 		if (b) continue;
 		
 		n = mxmlNewElement(parameter_list, "ParameterValueStruct");
@@ -505,7 +521,7 @@ static int xml_prepare_notifications_inform(mxml_node_t *parameter_list, int *co
 		b = mxmlNewElement(n, "Name");
 		if (!b) goto error;
 
-		b = mxmlNewText(b, 0, notification->parameter);
+		b = mxmlNewOpaque(b, notification->parameter);
 		if (!b) goto error;
 
 		b = b->parent->parent;
@@ -514,7 +530,7 @@ static int xml_prepare_notifications_inform(mxml_node_t *parameter_list, int *co
 
 		mxmlElementSetAttr(b, "xsi:type", notification->type);
 
-		b = mxmlNewText(b, 0, notification->value);
+		b = mxmlNewOpaque(b, notification->value);
 		if (!b) goto error;
 
 		(*counter)++;
@@ -533,7 +549,7 @@ int xml_prepare_inform_message(char **msg_out)
 	char *c;
 	int counter = 0;
 
-	tree = mxmlLoadString(NULL, CWMP_INFORM_MESSAGE, MXML_NO_CALLBACK);
+	tree = mxmlLoadString(NULL, CWMP_INFORM_MESSAGE, MXML_OPAQUE_CALLBACK);
 	if (!tree) goto error;
 
 	if(xml_add_cwmpid(tree)) goto error;
@@ -547,25 +563,25 @@ int xml_prepare_inform_message(char **msg_out)
 	b = mxmlFindElement(tree, tree, "Manufacturer", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 
-	b = mxmlNewText(b, 0, cwmp->deviceid.manufacturer);
+	b = mxmlNewOpaque(b, cwmp->deviceid.manufacturer);
 	if (!b) goto error;
 
 	b = mxmlFindElement(tree, tree, "OUI", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 
-	b = mxmlNewText(b, 0, cwmp->deviceid.oui);
+	b = mxmlNewOpaque(b, cwmp->deviceid.oui);
 	if (!b) goto error;
 
 	b = mxmlFindElement(tree, tree, "ProductClass", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 
-	b = mxmlNewText(b, 0, cwmp->deviceid.product_class);
+	b = mxmlNewOpaque(b, cwmp->deviceid.product_class);
 	if (!b) goto error;
 
 	b = mxmlFindElement(tree, tree, "SerialNumber", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 
-	b = mxmlNewText(b, 0, cwmp->deviceid.serial_number);
+	b = mxmlNewOpaque(b, cwmp->deviceid.serial_number);
 	if (!b) goto error;
    
 	if (xml_prepare_events_inform(tree))
@@ -574,7 +590,7 @@ int xml_prepare_inform_message(char **msg_out)
 	b = mxmlFindElement(tree, tree, "CurrentTime", NULL, NULL, MXML_DESCEND);
 	if (!b) goto error;
 
-	b = mxmlNewText(b, 0, mix_get_time());
+	b = mxmlNewOpaque(b, mix_get_time());
 	if (!b) goto error;
 
 	external_action_simple_execute("inform", "parameter", NULL);
@@ -594,14 +610,14 @@ int xml_prepare_inform_message(char **msg_out)
 		b = mxmlNewElement(n, "Name");
 		if (!b) goto error;
 
-		b = mxmlNewText(b, 0, external_parameter->name);
+		b = mxmlNewOpaque(b, external_parameter->name);
 		if (!b) goto error;
 
 		b = mxmlNewElement(n, "Value");
 		if (!b) goto error;
 
 		mxmlElementSetAttr(b, "xsi:type", external_parameter->type);
-		b = mxmlNewText(b, 0, external_parameter->data ? external_parameter->data : "");
+		b = mxmlNewOpaque(b, external_parameter->data ? external_parameter->data : "");
 		if (!b) goto error;
 
 		counter++;
@@ -635,13 +651,13 @@ int xml_parse_inform_response_message(char *msg_in)
 	char *c;
 	int fault = 0;
 
-	tree = mxmlLoadString(NULL, msg_in, MXML_NO_CALLBACK);
+	tree = mxmlLoadString(NULL, msg_in, MXML_OPAQUE_CALLBACK);
 	if (!tree) goto error;
 	if(xml_recreate_namespace(tree)) goto error;
 
 	b = xml_mxml_find_node_by_env_type(tree, "Fault");
 	if (b) {
-		b = mxmlFindElementText(b, b, "8005", MXML_DESCEND);
+		b = mxmlFindElementOpaque(b, b, "8005", MXML_DESCEND);
 		if (b) {
 			fault = FAULT_ACS_8005;
 			goto out;
@@ -654,7 +670,7 @@ int xml_parse_inform_response_message(char *msg_in)
 	if (!b) goto error;
 
 	b = mxmlWalkNext(b, tree, MXML_DESCEND_FIRST);
-	if (!b || !b->value.text.string)
+	if (!b || !b->value.opaque)
 		goto error;
 
 
@@ -672,7 +688,7 @@ int xml_prepare_get_rpc_methods_message(char **msg_out)
 {
 	mxml_node_t *tree;
 
-	tree = mxmlLoadString(NULL, CWMP_GET_RPC_METHOD_MESSAGE, MXML_NO_CALLBACK);
+	tree = mxmlLoadString(NULL, CWMP_GET_RPC_METHOD_MESSAGE, MXML_OPAQUE_CALLBACK);
 	if (!tree) return -1;
 
 	if(xml_add_cwmpid(tree)) return -1;
@@ -689,13 +705,13 @@ int xml_parse_get_rpc_methods_response_message(char *msg_in)
 	char *c;
 	int fault = 0;
 
-	tree = mxmlLoadString(NULL, msg_in, MXML_NO_CALLBACK);
+	tree = mxmlLoadString(NULL, msg_in, MXML_OPAQUE_CALLBACK);
 	if (!tree) goto error;
 	if(xml_recreate_namespace(tree)) goto error;
 
 	b = xml_mxml_find_node_by_env_type(tree, "Fault");
 	if (b) {
-		b = mxmlFindElementText(b, b, "8005", MXML_DESCEND);
+		b = mxmlFindElementOpaque(b, b, "8005", MXML_DESCEND);
 		if (b) {
 			fault = FAULT_ACS_8005;
 			goto out;
@@ -722,13 +738,13 @@ int xml_parse_transfer_complete_response_message(char *msg_in)
 	char *c;
 	int fault = 0;
 
-	tree = mxmlLoadString(NULL, msg_in, MXML_NO_CALLBACK);
+	tree = mxmlLoadString(NULL, msg_in, MXML_OPAQUE_CALLBACK);
 	if (!tree) goto error;
 	if(xml_recreate_namespace(tree)) goto error;
 
 	b = xml_mxml_find_node_by_env_type(tree, "Fault");
 	if (b) {
-		b = mxmlFindElementText(b, b, "8005", MXML_DESCEND);
+		b = mxmlFindElementOpaque(b, b, "8005", MXML_DESCEND);
 		if (b) {
 			fault = FAULT_ACS_8005;
 			goto out;
@@ -769,7 +785,7 @@ static int xml_handle_get_rpc_methods(mxml_node_t *body_in,
 			b2 = mxmlNewElement(method_list, "string");
 			if (!b2) return -1;
 
-			b2 = mxmlNewText(b2, 0, rpc_methods[i].name);
+			b2 = mxmlNewOpaque(b2, rpc_methods[i].name);
 			if (!b2) return -1;
 		}
 		char *attr_value;
@@ -803,19 +819,19 @@ int xml_handle_set_parameter_values(mxml_node_t *body_in,
 		goto fault_out;
 	}
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Name")) {
-			parameter_name = b->value.text.string;
+			parameter_name = b->value.opaque;
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "Name") &&
 			!b->child) {
 			parameter_name = "";
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Value")) {
 			free(parameter_value);
@@ -829,8 +845,8 @@ int xml_handle_set_parameter_values(mxml_node_t *body_in,
 			parameter_value = strdup("");
 		}
 
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "ParameterKey")) {
 			free(param_key);
@@ -871,7 +887,7 @@ int xml_handle_set_parameter_values(mxml_node_t *body_in,
 	b = mxmlNewElement(b, "Status");
 	if (!b) goto error;
 
-	b = mxmlNewText(b, 0, status);
+	b = mxmlNewOpaque(b, status);
 	if (!b) goto error;
 
 	free(status);
@@ -912,11 +928,11 @@ int xml_handle_get_parameter_values(mxml_node_t *body_in,
 	if (!body_out) return -1;
 
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "string")) {
-			parameter_name = b->value.text.string;
+			parameter_name = b->value.opaque;
 		}
 
 		if (b && b->type == MXML_ELEMENT &&
@@ -955,14 +971,14 @@ int xml_handle_get_parameter_values(mxml_node_t *body_in,
 		t = mxmlNewElement(n, "Name");
 		if (!t) goto out;
 
-		t = mxmlNewText(t, 0, external_parameter->name);
+		t = mxmlNewOpaque(t, external_parameter->name);
 		if (!t) goto out;
 
 		t = mxmlNewElement(n, "Value");
 		if (!t) goto out;
 
 		mxmlElementSetAttr(t, "xsi:type", external_parameter->type);
-		t = mxmlNewText(t, 0, external_parameter->data ? external_parameter->data : "");
+		t = mxmlNewOpaque(t, external_parameter->data ? external_parameter->data : "");
 		if (!t) goto out;
 
 		counter++;
@@ -1003,11 +1019,11 @@ int xml_handle_get_parameter_names(mxml_node_t *body_in,
 					NULL, NULL, MXML_DESCEND);
 	if (!body_out) return -1;
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "ParameterPath")) {
-			parameter_name = b->value.text.string;
+			parameter_name = b->value.opaque;
 		}
 
 		if (b && b->type == MXML_ELEMENT &&
@@ -1016,11 +1032,11 @@ int xml_handle_get_parameter_names(mxml_node_t *body_in,
 			parameter_name = "";
 		}
 
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "NextLevel")) {
-			next_level = b->value.text.string;
+			next_level = b->value.opaque;
 		}
 
 		if (b && b->type == MXML_ELEMENT &&
@@ -1057,13 +1073,13 @@ int xml_handle_get_parameter_names(mxml_node_t *body_in,
 		t = mxmlNewElement(n, "Name");
 		if (!t) goto out;
 
-		t = mxmlNewText(t, 0, external_parameter->name);
+		t = mxmlNewOpaque(t, external_parameter->name);
 		if (!t) goto out;
 
 		t = mxmlNewElement(n, "Writable");
 		if (!t) goto out;
 
-		t = mxmlNewText(t, 0, external_parameter->data);
+		t = mxmlNewOpaque(t, external_parameter->data);
 		if (!t) goto out;
 
 		counter++;
@@ -1108,11 +1124,11 @@ static int xml_handle_get_parameter_attributes(mxml_node_t *body_in,
 	if (!body_out) return -1;
 
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "string")) {
-			parameter_name = b->value.text.string;
+			parameter_name = b->value.opaque;
 		}
 
 		if (b && b->type == MXML_ELEMENT &&
@@ -1150,12 +1166,12 @@ static int xml_handle_get_parameter_attributes(mxml_node_t *body_in,
 		t = mxmlNewElement(n, "Name");
 		if (!t) goto out;
 
-		t = mxmlNewText(t, 0, external_parameter->name);
+		t = mxmlNewOpaque(t, external_parameter->name);
 		if (!t) goto out;
 
 		t = mxmlNewElement(n, "Notification");
 		if (!t) goto out;
-		t = mxmlNewText(t, 0, external_parameter->data ? external_parameter->data : "");
+		t = mxmlNewOpaque(t, external_parameter->data ? external_parameter->data : "");
 		if (!t) goto out;
 
 		t = mxmlNewElement(n, "AccessList");
@@ -1207,11 +1223,11 @@ static int xml_handle_set_parameter_attributes(mxml_node_t *body_in,
 			parameter_name = NULL;
 			parameter_notification = NULL;
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Name")) {
-			parameter_name = b->value.text.string;
+			parameter_name = b->value.opaque;
 		}
 
 		if (b && b->type == MXML_ELEMENT &&
@@ -1220,24 +1236,24 @@ static int xml_handle_set_parameter_attributes(mxml_node_t *body_in,
 			parameter_name = "";
 		}
 
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "NotificationChange")) {
-			if (strcasecmp(b->value.text.string, "true") == 0) {
+			if (strcasecmp(b->value.opaque, "true") == 0) {
 				attr_notification_update = 1;
-			} else if (strcasecmp(b->value.text.string, "false") == 0) {
+			} else if (strcasecmp(b->value.opaque, "false") == 0) {
 				attr_notification_update = 0;
 			} else {
-				attr_notification_update = (uint8_t) atoi(b->value.text.string);
+				attr_notification_update = (uint8_t) atoi(b->value.opaque);
 			}
 		}
 
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Notification")) {
-			parameter_notification = b->value.text.string;
+			parameter_notification = b->value.opaque;
 		}
 
 		if (b && b->type == MXML_ELEMENT &&
@@ -1307,8 +1323,8 @@ static int xml_handle_download(mxml_node_t *body_in,
 	if (!body_out) return -1;
 
 	while (b != NULL) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
 			FREE(command_key);
@@ -1320,21 +1336,21 @@ static int xml_handle_download(mxml_node_t *body_in,
 			FREE(command_key);
 			command_key = strdup("");
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "FileType")) {
 			FREE(file_type);
 			file_type = xml_get_value_with_whitespace(&b, body_in);
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "URL")) {
-			download_url = b->value.text.string;
+			download_url = b->value.opaque;
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Username")) {
 			FREE(username);
@@ -1346,8 +1362,8 @@ static int xml_handle_download(mxml_node_t *body_in,
 			FREE(username);
 			username = strdup("");
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "Password")) {
 			FREE(password);
@@ -1359,22 +1375,22 @@ static int xml_handle_download(mxml_node_t *body_in,
 			FREE(password);
 			password = strdup("");
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "FileSize")) {
-			file_size = b->value.text.string;
+			file_size = b->value.opaque;
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "FileSize") &&
 			!b->child) {
 			file_size = "0";
 		}
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "DelaySeconds")) {
-			delay = atoi(b->value.text.string);
+			delay = atoi(b->value.opaque);
 		}
 		b = mxmlWalkNext(b, body_in, MXML_DESCEND);
 	}
@@ -1407,18 +1423,18 @@ static int xml_handle_download(mxml_node_t *body_in,
 	b = mxmlNewElement(t, "StartTime");
 	if (!b) return -1;
 
-	b = mxmlNewText(b, 0, UNKNOWN_TIME);
+	b = mxmlNewOpaque(b, UNKNOWN_TIME);
 	if (!b) return -1;
 
 	b = mxmlFindElement(t, tree_out, "Status", NULL, NULL, MXML_DESCEND);
 	if (!b) return -1;
 
-	b = mxmlNewText(b, 0, "1");
+	b = mxmlNewOpaque(b, "1");
 
 	b = mxmlNewElement(t, "CompleteTime");
 	if (!b) return -1;
 
-	b = mxmlNewText(b, 0, UNKNOWN_TIME);
+	b = mxmlNewOpaque(b, UNKNOWN_TIME);
 	if (!b) return -1;
 
 	log_message(NAME, L_NOTICE, "send DownloadResponse to the ACS\n");
@@ -1467,8 +1483,8 @@ static int xml_handle_reboot(mxml_node_t *node,
 	if (!body_out) return -1;
 
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
 			FREE(command_key);
@@ -1520,8 +1536,8 @@ static int xml_handle_schedule_inform(mxml_node_t *body_in,
 	if (!body_out) return -1;
 
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "CommandKey")) {
 			FREE(command_key);
@@ -1534,11 +1550,11 @@ static int xml_handle_schedule_inform(mxml_node_t *body_in,
 			command_key = strdup("");
 		}
 
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "DelaySeconds")) {
-			delay_seconds = b->value.text.string;
+			delay_seconds = b->value.opaque;
 		}
 		b = mxmlWalkNext(b, body_in, MXML_DESCEND);
 	}
@@ -1582,11 +1598,11 @@ static int xml_handle_AddObject(mxml_node_t *body_in,
 	if (!body_out) return -1;
 
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "ObjectName")) {
-			object_name = b->value.text.string;
+			object_name = b->value.opaque;
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "ObjectName") &&
@@ -1594,8 +1610,8 @@ static int xml_handle_AddObject(mxml_node_t *body_in,
 			object_name = "";
 		}
 
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "ParameterKey")) {
 			free(param_key);
@@ -1642,12 +1658,12 @@ static int xml_handle_AddObject(mxml_node_t *body_in,
 
 	b = mxmlNewElement(t, "InstanceNumber");
 	if (!b) goto error;
-	b = mxmlNewText(b, 0, instance);
+	b = mxmlNewOpaque(b, instance);
 	if (!b) goto error;
 
 	b = mxmlNewElement(t, "Status");
 	if (!b) goto error;
-	b = mxmlNewText(b, 0, status);
+	b = mxmlNewOpaque(b, status);
 	if (!b) goto error;
 
 	free(instance);
@@ -1689,11 +1705,11 @@ static int xml_handle_DeleteObject(mxml_node_t *body_in,
 	if (!body_out) return -1;
 
 	while (b) {
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "ObjectName")) {
-			object_name = b->value.text.string;
+			object_name = b->value.opaque;
 		}
 		if (b && b->type == MXML_ELEMENT &&
 			!strcmp(b->value.element.name, "ObjectName") &&
@@ -1701,8 +1717,8 @@ static int xml_handle_DeleteObject(mxml_node_t *body_in,
 			object_name = "";
 		}
 
-		if (b && b->type == MXML_TEXT &&
-			b->value.text.string &&
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
 			b->parent->type == MXML_ELEMENT &&
 			!strcmp(b->parent->value.element.name, "ParameterKey")) {
 			free(param_key);
@@ -1749,7 +1765,7 @@ static int xml_handle_DeleteObject(mxml_node_t *body_in,
 
 	b = mxmlNewElement(t, "Status");
 	if (!b) goto error;
-	b = mxmlNewText(b, 0, status);
+	b = mxmlNewOpaque(b, status);
 	if (!b) goto error;
 	free(status);
 	free(fault);
@@ -1784,13 +1800,13 @@ mxml_node_t *xml_create_generic_fault_message(mxml_node_t *body, int code)
 	t = mxmlNewElement(b, "faultcode");
 	if (!t) return NULL;
 
-	u = mxmlNewText(t, 0, fault_array[code].type);
+	u = mxmlNewOpaque(t, fault_array[code].type);
 	if (!u) return NULL;
 
 	t = mxmlNewElement(b, "faultstring");
 	if (!t) return NULL;
 
-	u = mxmlNewText(t, 0, "CWMP fault");
+	u = mxmlNewOpaque(t, "CWMP fault");
 	if (!u) return NULL;
 
 	b = mxmlNewElement(b, "detail");
@@ -1802,13 +1818,13 @@ mxml_node_t *xml_create_generic_fault_message(mxml_node_t *body, int code)
 	t = mxmlNewElement(b, "FaultCode");
 	if (!t) return NULL;
 
-	u = mxmlNewText(t, 0, fault_array[code].code);
+	u = mxmlNewOpaque(t, fault_array[code].code);
 	if (!u) return NULL;
 
 	t = mxmlNewElement(b, "FaultString");
 	if (!t) return NULL;
 
-	u = mxmlNewText(t, 0, fault_array[code].string);
+	u = mxmlNewOpaque(t, fault_array[code].string);
 	if (!u) return NULL;
 
 	log_message(NAME, L_NOTICE, "send Fault: %s: '%s'\n", fault_array[code].code, fault_array[code].string);
@@ -1838,17 +1854,17 @@ int xml_create_set_parameter_value_fault_message(mxml_node_t *body, int code)
 
 			t = mxmlNewElement(b, "ParameterName");
 			if (!t) return -1;
-			t = mxmlNewText(t, 0, external_parameter->name);
+			t = mxmlNewOpaque(t, external_parameter->name);
 			if (!t) return -1;
 
 			t = mxmlNewElement(b, "FaultCode");
 			if (!t) return -1;
-			t = mxmlNewText(t, 0, external_parameter->fault_code);
+			t = mxmlNewOpaque(t, external_parameter->fault_code);
 			if (!t) return -1;
 
 			t = mxmlNewElement(b, "FaultString");
 			if (!t) return -1;
-			t = mxmlNewText(t, 0, fault_array[index].string);
+			t = mxmlNewOpaque(t, fault_array[index].string);
 			if (!t) return -1;
 		}
 		external_parameter_delete(external_parameter);
@@ -1864,7 +1880,7 @@ int xml_add_cwmpid(mxml_node_t *tree)
 	b = mxmlFindElement(tree, tree, "cwmp:ID", NULL, NULL, MXML_DESCEND);
 	if (!b) return -1;
 	sprintf(buf, "%u", ++id);
-	b = mxmlNewText(b, 0, buf);
+	b = mxmlNewOpaque(b, buf);
 	if (!b) return -1;
 	return 0;
 }
