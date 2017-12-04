@@ -1,6 +1,9 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.6.1 (date of 04th of December 2017)
+  -#0000305: do not replace multispace by 1 space in the xml tag values
+
 * EasyCwmp-1.6.0 (date of 25th of August 2017)
   -#0000288: Make the easycwmp backup configurable and possible to save backup in easycwmp config
 
