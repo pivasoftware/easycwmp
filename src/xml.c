@@ -1411,8 +1411,6 @@ static int xml_handle_download(mxml_node_t *body_in,
 	cwmp_add_download(command_key, delay, file_size, download_url, file_type, username, password, n);
 	FREE(file_type);
 	FREE(command_key);
-	FREE(username);
-	FREE(password);
 
 	t = mxmlNewElement(body_out, "cwmp:DownloadResponse");
 	if (!t) return -1;
@@ -1444,8 +1442,6 @@ fault_out:
 	xml_create_generic_fault_message(body_out, code);
 	FREE(file_type);
 	FREE(command_key);
-	FREE(username);
-	FREE(password);
 	return 0;
 }
 
