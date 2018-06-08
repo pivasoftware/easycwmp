@@ -1,6 +1,10 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.6.2 (date of 08th of June 2018)
+  -#0000332: array out of index in src/time.c
+  -#0000333: Interoperability issue with Pace ACS. Parse infrom response fails
+
 * EasyCwmp-1.6.1 (date of 04th of December 2017)
   -#0000305: do not replace multispace by 1 space in the xml tag values
 
