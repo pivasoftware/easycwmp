@@ -16,7 +16,7 @@
 
 #include "easycwmp.h"
 
-char local_time[26] = {0};
+static char local_time[32] = {0};
 
 char * mix_get_time(void)
 {
