@@ -51,9 +51,11 @@ void easycwmp_notify(void);
 
 #define TRACE(MESSAGE,args...) { \
   const char *A[] = {MESSAGE}; \
-  printf("TRACE: %s %s %d\n",__FUNCTION__,__FILE__,__LINE__); fflush(stdout);\
+  printf("(TRACE: %s %s %d)  ",__FUNCTION__,__FILE__,__LINE__); \
   if(sizeof(A) > 0) \
 	printf(*A,##args); \
+  printf("%s\n", " "); \
+  fflush(stdout); \
 }
 
 #endif

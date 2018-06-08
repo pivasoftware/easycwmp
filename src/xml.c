@@ -249,38 +249,48 @@ static int xml_recreate_namespace(mxml_node_t *tree)
 	char *c;
 	int i;
 
-	do {
-		xml_free_ns();
+	xml_free_ns();
 
-		for (i = 0; cwmp_urls[i] != NULL; i++) {
-			cwmp_urn = cwmp_urls[i];
-			c = (char *) mxmlElementGetAttrName(b, cwmp_urn);
-			if (c && *(c + 5) == ':') {
-				ns.cwmp = strdup((c + 6));
-				break;
+	do {
+		if (ns.cwmp == NULL) {
+			for (i = 0; cwmp_urls[i] != NULL; i++) {
+				cwmp_urn = cwmp_urls[i];
+				c = (char *) mxmlElementGetAttrName(b, cwmp_urn);
+				if (c && *(c + 5) == ':') {
+					ns.cwmp = strdup((c + 6));
+					break;
+				}
 			}
 		}
-		if (!ns.cwmp) continue;
 
-		if (xml_mxml_get_attrname_array(b, soap_env_url, ns.soap_env, ARRAY_SIZE(ns.soap_env)))
-			return -1;
-
-		c = (char *) mxmlElementGetAttrName(b, soap_enc_url);
-		if (c && (*(c + 5) == ':')) {
-			ns.soap_enc = strdup((c + 6));
+		if (ns.soap_env[0] == NULL) {
+			xml_mxml_get_attrname_array(b, soap_env_url, ns.soap_env, ARRAY_SIZE(ns.soap_env));
 		}
 
-		c = (char *) mxmlElementGetAttrName(b, xsd_url);
-		if (c && (*(c + 5) == ':')) {
-			ns.xsd = strdup((c + 6));
+		if (ns.soap_enc  == NULL) {
+			c = (char *) mxmlElementGetAttrName(b, soap_enc_url);
+			if (c && (*(c + 5) == ':')) {
+				ns.soap_enc = strdup((c + 6));
+			}
 		}
 
-		c = (char *) mxmlElementGetAttrName(b, xsi_url);
-		if (c && (*(c + 5) == ':')) {
-			ns.xsi = strdup((c + 6));
+		if (ns.xsd == NULL) {
+			c = (char *) mxmlElementGetAttrName(b, xsd_url);
+			if (c && (*(c + 5) == ':')) {
+				ns.xsd = strdup((c + 6));
+			}
 		}
-		return 0;
+
+		if (ns.xsi == NULL) {
+			c = (char *) mxmlElementGetAttrName(b, xsi_url);
+			if (c && (*(c + 5) == ':')) {
+				ns.xsi = strdup((c + 6));
+			}
+		}
 	} while (b = mxmlWalkNext(b, tree, MXML_DESCEND));
+
+	if ((ns.soap_env[0] != NULL ) && (ns.cwmp != NULL))
+		return 0;
 
 	return -1;
 }
