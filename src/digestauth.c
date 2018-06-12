@@ -54,6 +54,7 @@ void http_digest_init_nonce_priv_key(void) {
 	for(i = 0; i < (sizeof(NONCE_PRIV_KEY) - 1); i++) {
 		NONCE_PRIV_KEY[i] = possible[NONCE_PRIV_KEY[i] % (sizeof(STRING_POSSIBLE) - 1)];
 	}
+	close(dev_random);
 }
 
 static time_t MHD_monotonic_time(void)
