@@ -241,8 +241,10 @@ void cwmp_add_handler_end_session(int handler)
 	cwmp->end_session |= handler;
 }
 
-static void cwmp_handle_end_session()
+static void cwmp_handle_end_session(void)
 {
+	external_action_simple_execute("apply", "service", NULL);
+	external_action_handle(NULL);
 	if (cwmp->end_session & ENDS_FACTORY_RESET) {
 		log_message(NAME, L_NOTICE, "end session: factory reset\n");
 		external_action_simple_execute("factory_reset", NULL, NULL);
@@ -260,8 +262,6 @@ static void cwmp_handle_end_session()
 		config_load();
 	}
 	cwmp->end_session = 0;
-	external_action_simple_execute("apply", "service", NULL);
-	external_action_handle(NULL);
 }
 
 int cwmp_inform(void)
