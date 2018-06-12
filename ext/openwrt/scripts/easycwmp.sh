@@ -296,7 +296,7 @@ handle_action() {
 					tar -zxf $dwfile -C $DOWNLOAD_DIR >/dev/null 2>&1
 					fault_code="$?"
 					if [ "$fault_code" = "0" ]; then
-						if [ -d $ $DOWNLOAD_DIR/config/ ]; then
+						if [ -d $DOWNLOAD_DIR/config/ ]; then
 							cp -R $DOWNLOAD_DIR/config/* /etc/config/
 						else
 							cp -R $DOWNLOAD_DIR/* /
@@ -306,7 +306,7 @@ handle_action() {
 					tar -jxf $dwfile -C $DOWNLOAD_DIR >/dev/null 2>&1
 					fault_code="$?"
 					if [ "$fault_code" = "0" ]; then
-						if [ -d $ $DOWNLOAD_DIR/config/ ]; then
+						if [ -d $DOWNLOAD_DIR/config/ ]; then
 							cp -R $DOWNLOAD_DIR/config/* /etc/config/
 						else
 							cp -R $DOWNLOAD_DIR/* /
@@ -316,14 +316,14 @@ handle_action() {
 					/sbin/uci import < $dwfile
 					fault_code="$?"
 				fi
-			if [ "$fault_code" != "0" ]; then
-					let fault_code=$E_DOWNLOAD_FAILURE+9000
-				common_json_output_fault "" "$fault_code"
-			else
-				$UCI_COMMIT
-				sync
-				reboot
-				common_json_output_status "1"
+				if [ "$fault_code" != "0" ]; then
+						let fault_code=$E_DOWNLOAD_FAILURE+9000
+					common_json_output_fault "" "$fault_code"
+				else
+					$UCI_COMMIT
+					sync
+					reboot
+					common_json_output_status "1"
 				fi
 			else
 				let fault_code=$E_DOWNLOAD_FAILURE+9000
@@ -336,12 +336,12 @@ handle_action() {
 			if [ "$dwfile" != "" ]; then
 				dwfile="$DOWNLOAD_DIR/$dwfile"
 				/sbin/sysupgrade $dwfile
-			fault_code="$?"
-			if [ "$fault_code" != "0" ]; then
-				let fault_code=$E_DOWNLOAD_FAIL_FILE_CORRUPTED+9000
-				common_json_output_fault "" "$fault_code"
-			else
-				common_json_output_status "1"
+				fault_code="$?"
+				if [ "$fault_code" != "0" ]; then
+					let fault_code=$E_DOWNLOAD_FAIL_FILE_CORRUPTED+9000
+					common_json_output_fault "" "$fault_code"
+				else
+					common_json_output_status "1"
 				fi
 			else
 				let fault_code=$E_DOWNLOAD_FAILURE+9000
