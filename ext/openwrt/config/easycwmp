@@ -8,6 +8,8 @@ config local
 	option username easycwmp
 	option password easycwmp
 	option provisioning_code ''
+#basic authentication = 'Basic', Digest authentication = 'Digest', Default value = 'Digest'
+	option authentication 'Digest'
 #Logging levels: Critic=0, Warning=1, Notice=2, Info=3, Debug=4
 	option logging_level '3'
 

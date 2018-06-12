@@ -52,6 +52,7 @@ static int config_init_local(void)
 			config_free_local();
 
 			config->local->logging_level = DEFAULT_LOGGING_LEVEL;
+			config->local->cr_auth_type = DEFAULT_CR_AUTH_TYPE;
 			uci_foreach_element(&s->options, e1) {
 				if (!strcmp((uci_to_option(e1))->e.name, "interface")) {
 					config->local->interface = strdup(uci_to_option(e1)->v.string);
@@ -91,10 +92,21 @@ static int config_init_local(void)
 					char *c;
 					int log_level = atoi((uci_to_option(e1))->v.string);					 
 					asprintf(&c, "%d", log_level);
-					if (!strcmp(c, uci_to_option(e1)->v.string)) 
+					if (strcmp(c, uci_to_option(e1)->v.string) == 0) 
 						config->local->logging_level = log_level;						
 					free(c);
 					DD("easycwmp.@local[0].logging_level=%d\n", config->local->logging_level);
+					continue;
+				}
+				
+				if (!strcmp((uci_to_option(e1))->e.name, "authentication")) {
+					if (strcasecmp((uci_to_option(e1))->v.string, "Basic") == 0)
+						config->local->cr_auth_type = AUTH_BASIC;
+					else
+						config->local->cr_auth_type = AUTH_DIGEST;				 
+
+					DD("easycwmp.@local[0].authentication=%s\n",
+						(config->local->cr_auth_type == AUTH_BASIC) ? "Basic" : "Digest");
 					continue;
 				}
 			}

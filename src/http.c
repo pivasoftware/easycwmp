@@ -26,6 +26,7 @@
 #include "config.h"
 #include "cwmp.h"
 #include "easycwmp.h"
+#include "basicauth.h"
 #include "digestauth.h"
 #include "log.h"
 
@@ -225,6 +226,7 @@ http_new_client(struct uloop_fd *ufd, unsigned events)
 	int status;
 	struct timeval t;
 
+	int cr_auth_type = config->local->cr_auth_type;
 	t.tv_sec = 60;
 	t.tv_usec = 0;
 
@@ -255,7 +257,7 @@ http_new_client(struct uloop_fd *ufd, unsigned events)
 			/* child */
 			FILE *fp;
 			char buffer[BUFSIZ];
-			char *auth_digest;
+			char *auth_digest, *auth_basic;
 			int8_t auth_status = 0;
 			
 			fp = fdopen(client, "r+");
@@ -268,8 +270,16 @@ http_new_client(struct uloop_fd *ufd, unsigned events)
 					// if we dont have username or password configured proceed with connecting to ACS
 					auth_status = 1;
 				}
-				else if (auth_digest = strstr(buffer, "Authorization: Digest ")) {
+				else if ((cr_auth_type == AUTH_DIGEST) && (auth_digest = strstr(buffer, "Authorization: Digest "))) {
 					if (http_digest_auth_check("GET", "/", auth_digest + strlen("Authorization: Digest "), REALM, username, password, 300) == MHD_YES)
+						auth_status = 1;
+					else {
+						auth_status = 0;
+						log_message(NAME, L_NOTICE, "Connection Request authorization failed\n");
+					}
+				}
+				else if ((cr_auth_type == AUTH_BASIC) && (auth_basic = strstr(buffer, "Authorization: Basic "))) {
+					if (http_basic_auth_check(buffer ,username, password) == MHD_YES)
 						auth_status = 1;
 					else {
 						auth_status = 0;
@@ -292,12 +302,18 @@ http_end_child:
 				status = 0;
 				fputs("HTTP/1.1 200 OK\r\n", fp);
 				fputs("Content-Length: 0\r\n", fp);
+				fputs("Connection: close\r\n", fp);
 			} else {
 				status = EACCES;
 				fputs("HTTP/1.1 401 Unauthorized\r\n", fp);
 				fputs("Content-Length: 0\r\n", fp);
 				fputs("Connection: close\r\n", fp);
-				http_digest_auth_fail_response(fp, "GET", "/", REALM, OPAQUE);
+				if (cr_auth_type == AUTH_BASIC) {
+					http_basic_auth_fail_response(fp, REALM);
+				}
+				else {
+					http_digest_auth_fail_response(fp, "GET", "/", REALM, OPAQUE);
+				}
 				fputs("\r\n", fp);
 			}
 			fputs("\r\n", fp);

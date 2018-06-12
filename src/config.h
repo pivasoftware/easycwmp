@@ -52,12 +52,21 @@ struct local {
 	char *password;
 	char *ubus_socket;
 	int logging_level;
+	int cr_auth_type;
 };
 
 struct core_config {
 	struct acs *acs;
 	struct local *local;
 };
+
+enum auth_type_enum {
+	AUTH_BASIC,
+	AUTH_DIGEST
+};
+
+#define DEFAULT_CR_AUTH_TYPE AUTH_DIGEST;
+
 
 extern struct core_config *config;
 

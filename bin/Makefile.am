@@ -26,7 +26,11 @@ easycwmpd_SOURCES =		\
 	../src/ubus.h		\
 	../src/ubus.c		\
 	../src/xml.h		\
-	../src/xml.c
+	../src/xml.c       	\
+	../src/base64.h		\
+	../src/base64.c		\
+	../src/basicauth.h  	\
+	../src/basicauth.c
 
 easycwmpd_CFLAGS =		\
 	$(AM_CFLAGS)		\
