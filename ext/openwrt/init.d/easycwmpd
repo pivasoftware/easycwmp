@@ -13,15 +13,15 @@ init_device_info() {
 	local val oval
 	local change=0
 
-	val=`cat "/etc/device_info" | grep "DEVICE_MANUFACTURER" | cut -f 2 -d '=' | sed "s/['\"]//g"`
+	val=`cat "/etc/device_info" | grep "DEVICE_MANUFACTURER" | cut -f 2 -d '=' | sed -e "s/['\"]//g" -e "s'[]:@/?#[!$&()*+,;=]'_'g"`
 	oval=`$UCI_GET easycwmp.@device[0].manufacturer`
 	[ -n "$val" -a "$val" != "$oval" ] && { $UCI_SET easycwmp.@device[0].manufacturer="$val"; change=1; }
 
-	val=`cat "/etc/device_info" | grep "DEVICE_PRODUCT" | cut -f 2 -d '=' | sed "s/['\"]//g"`
+	val=`cat "/etc/device_info" | grep "DEVICE_PRODUCT" | cut -f 2 -d '=' | sed -e "s/['\"]//g" -e "s'[]:@/?#[!$&()*+,;=]'_'g"`
 	oval=`$UCI_GET easycwmp.@device[0].product_class`
 	[ -n "$val" -a "$val" != "$oval" ] && { $UCI_SET easycwmp.@device[0].product_class="$val"; change=1; }
 
-	val=`cat "/etc/device_info" | grep "DEVICE_REVISION" | cut -f 2 -d '=' | sed "s/['\"]//g"`
+	val=`cat "/etc/device_info" | grep "DEVICE_REVISION" | cut -f 2 -d '=' | sed -e "s/['\"]//g" -e "s'[]:@/?#[!$&()*+,;=]'_'g"`
 	oval=`$UCI_GET easycwmp.@device[0].hardware_version`
 	[ -n "$val" -a "$val" != "$oval" ] && { $UCI_SET easycwmp.@device[0].hardware_version="$val"; change=1; }
 

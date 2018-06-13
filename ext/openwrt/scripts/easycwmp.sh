@@ -317,7 +317,7 @@ handle_action() {
 					fault_code="$?"
 				fi
 				if [ "$fault_code" != "0" ]; then
-						let fault_code=$E_DOWNLOAD_FAILURE+9000
+					let fault_code=$E_DOWNLOAD_FAILURE+9000
 					common_json_output_fault "" "$fault_code"
 				else
 					$UCI_COMMIT
