@@ -292,35 +292,18 @@ handle_action() {
 			dwfile=`ls $DOWNLOAD_DIR`
 			if [ "$dwfile" != "" ]; then
 				dwfile="$DOWNLOAD_DIR/$dwfile"
-				if [ ${dwfile%.gz} != $dwfile ]; then
-					tar -zxf $dwfile -C $DOWNLOAD_DIR >/dev/null 2>&1
+				if [ ${dwfile%.gz} != $dwfile -o ${dwfile%.bz2} != $dwfile ]; then
+					sysupgrade --restore-backup $dwfile
 					fault_code="$?"
-					if [ "$fault_code" = "0" ]; then
-						if [ -d $DOWNLOAD_DIR/config/ ]; then
-							cp -R $DOWNLOAD_DIR/config/* /etc/config/
-						else
-							cp -R $DOWNLOAD_DIR/* /
-						fi
-					fi
-				elif [ ${dwfile%.bz2} != $dwfile ]; then
-					tar -jxf $dwfile -C $DOWNLOAD_DIR >/dev/null 2>&1
-					fault_code="$?"
-					if [ "$fault_code" = "0" ]; then
-						if [ -d $DOWNLOAD_DIR/config/ ]; then
-							cp -R $DOWNLOAD_DIR/config/* /etc/config/
-						else
-							cp -R $DOWNLOAD_DIR/* /
-						fi
-					fi
 				else
 					/sbin/uci import < $dwfile
 					fault_code="$?"
+					[ "$fault_code" = "0" ] && $UCI_COMMIT
 				fi
 				if [ "$fault_code" != "0" ]; then
-					let fault_code=$E_DOWNLOAD_FAILURE+9000
+					let fault_code=$E_DOWNLOAD_FAIL_FILE_CORRUPTED+9000
 					common_json_output_fault "" "$fault_code"
 				else
-					$UCI_COMMIT
 					sync
 					reboot
 					common_json_output_status "1"
