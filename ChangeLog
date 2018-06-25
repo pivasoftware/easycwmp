@@ -1,6 +1,16 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.7.0 (date of 25th of June 2018)
+  -#0000336: fork child error when making many Connection Requests
+  -#0000312: Remove gz/bz files in the download config before make the folder copy
+  -#0000337: wrong name reference LIBUBOX_LDFLAGS in configure.ac
+  -#0000302: Does not filter illegal characters in DEVICE_PRODUCT, interacts badly with some ACSes
+  -#0000303: Typos and ident fixes for the easycwmp action script for openwrt
+  -#0000295: Should execute apply service before Reboot in the cwmp_handle_end_session()
+  -#0000289: dev_rand(/dev/urandom) is not closed in the function http_digest_init_nonce_priv_key()
+  -#0000335: Add basic authentication for connection request
+
 * EasyCwmp-1.6.2 (date of 08th of June 2018)
   -#0000332: array out of index in src/time.c
   -#0000333: Interoperability issue with Pace ACS. Parse infrom response fails
