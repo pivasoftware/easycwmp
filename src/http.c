@@ -206,7 +206,7 @@ http_server_init(void)
 
 	http_s.http_event.cb = http_new_client;
 
-	http_s.http_event.fd = usock(USOCK_TCP | USOCK_SERVER, "0.0.0.0", config->local->port);
+	http_s.http_event.fd = usock(USOCK_TCP | USOCK_SERVER | USOCK_NOCLOEXEC | USOCK_NONBLOCK, "0.0.0.0", config->local->port);
 	uloop_fd_add(&http_s.http_event, ULOOP_READ | ULOOP_EDGE_TRIGGER);
 
 	DDF("+++ HTTP SERVER CONFIGURATION +++\n");
@@ -223,88 +223,80 @@ http_server_init(void)
 static void
 http_new_client(struct uloop_fd *ufd, unsigned events)
 {
-	int status;
 	struct timeval t;
-
 	int cr_auth_type = config->local->cr_auth_type;
+	char buffer[BUFSIZ];
+	char *auth_digest, *auth_basic;
+	int8_t auth_status = 0;
+	FILE *fp;
+	int cnt = 0;
+
 	t.tv_sec = 60;
 	t.tv_usec = 0;
 
 	for (;;) {
-		int client = accept(ufd->fd, NULL, NULL);
-
+		int client = -1, last_client = -1;
+		while ((last_client = accept(ufd->fd, NULL, NULL)) > 0) {
+			if (client > 0)
+				close(client);
+			client = last_client;
+		}
 		/* set one minute timeout */
 		if (setsockopt(ufd->fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&t, sizeof t)) {
 			DD("setsockopt() failed\n");
 		}
-
-		if (client == -1)
+		if (client <= 0) {
 			break;
-
-		struct uloop_process *uproc = calloc(1, sizeof(*uproc));
-		if (!uproc || (uproc->pid = fork()) == -1) {
-			FREE(uproc);
+		}
+		fp = fdopen(client, "r+");
+		if (fp == NULL) {
 			close(client);
+			continue;
 		}
 
-		if (uproc->pid != 0) {
-			/* parent */
-			/* register an event handler for when the child terminates */
-			uproc->cb = http_del_client;
-			uloop_process_add(uproc);
-			close(client);
-		} else {
-			/* child */
-			FILE *fp;
-			char buffer[BUFSIZ];
-			char *auth_digest, *auth_basic;
-			int8_t auth_status = 0;
-			
-			fp = fdopen(client, "r+");
-
-			DDF("+++ RECEIVED HTTP REQUEST +++\n");
-			while (fgets(buffer, sizeof(buffer), fp)) {
-				char *username = config->local->username;
-				char *password = config->local->password;
-				if (!username || !password) {
-					// if we dont have username or password configured proceed with connecting to ACS
+		DDF("+++ RECEIVED HTTP REQUEST +++\n");
+		*buffer = '\0';
+		while (fgets(buffer, sizeof(buffer), fp)) {
+			char *username = config->local->username;
+			char *password = config->local->password;
+			if (!username || !password) {
+				// if we dont have username or password configured proceed with connecting to ACS
+				auth_status = 1;
+			}
+			else if ((cr_auth_type == AUTH_DIGEST) && (auth_digest = strstr(buffer, "Authorization: Digest "))) {
+				if (http_digest_auth_check("GET", "/", auth_digest + strlen("Authorization: Digest "), REALM, username, password, 300) == MHD_YES)
 					auth_status = 1;
-				}
-				else if ((cr_auth_type == AUTH_DIGEST) && (auth_digest = strstr(buffer, "Authorization: Digest "))) {
-					if (http_digest_auth_check("GET", "/", auth_digest + strlen("Authorization: Digest "), REALM, username, password, 300) == MHD_YES)
-						auth_status = 1;
-					else {
-						auth_status = 0;
-						log_message(NAME, L_NOTICE, "Connection Request authorization failed\n");
-					}
-				}
-				else if ((cr_auth_type == AUTH_BASIC) && (auth_basic = strstr(buffer, "Authorization: Basic "))) {
-					if (http_basic_auth_check(buffer ,username, password) == MHD_YES)
-						auth_status = 1;
-					else {
-						auth_status = 0;
-						log_message(NAME, L_NOTICE, "Connection Request authorization failed\n");
-					}
-				}
-				if (buffer[0] == '\r' || buffer[0] == '\n') {
-					/* end of http request (empty line) */
-					goto http_end_child;
+				else {
+					auth_status = 0;
+					log_message(NAME, L_NOTICE, "Connection Request authorization failed\n");
 				}
 			}
-error_child:
-			/* here we are because of an error, e.g. timeout */
-			status = ETIMEDOUT|ENOMEM;
-			goto done_child;
+			else if ((cr_auth_type == AUTH_BASIC) && (auth_basic = strstr(buffer, "Authorization: Basic "))) {
+				if (http_basic_auth_check(buffer ,username, password) == MHD_YES)
+					auth_status = 1;
+				else {
+					auth_status = 0;
+					log_message(NAME, L_NOTICE, "Connection Request authorization failed\n");
+				}
+			}
+			if (buffer[0] == '\r' || buffer[0] == '\n') {
+				/* end of http request (empty line) */
+				goto http_end;
+			}
+		}
 
-http_end_child:
+http_end:
+		if (*buffer) {
 			fflush(fp);
 			if (auth_status) {
-				status = 0;
 				fputs("HTTP/1.1 200 OK\r\n", fp);
 				fputs("Content-Length: 0\r\n", fp);
 				fputs("Connection: close\r\n", fp);
-			} else {
-				status = EACCES;
+				DDF("+++ HTTP SERVER CONNECTION SUCCESS +++\n");
+				log_message(NAME, L_NOTICE, "ACS initiated connection\n");
+				cwmp_connection_request(EVENT_CONNECTION_REQUEST);
+			}
+			else {
 				fputs("HTTP/1.1 401 Unauthorized\r\n", fp);
 				fputs("Content-Length: 0\r\n", fp);
 				fputs("Connection: close\r\n", fp);
@@ -317,28 +309,14 @@ http_end_child:
 				fputs("\r\n", fp);
 			}
 			fputs("\r\n", fp);
-			goto done_child;
-
-done_child:
-			fclose(fp);
-			DDF("--- RECEIVED HTTP REQUEST ---\n");
-			exit(status);
 		}
+		else {
+			fputs("HTTP/1.1 409 Conflict\r\nConnection: close\r\n\r\n", fp);
+		}
+		fflush(fp);
+		fclose(fp);
+		close(client);
+		DDF("--- RECEIVED HTTP REQUEST ---\n");
+		break;
 	}
 }
-
-static void
-http_del_client(struct uloop_process *uproc, int ret)
-{
-	FREE(uproc);
-
-	/* child terminated ; check return code */
-	if (WIFEXITED(ret) && WEXITSTATUS(ret) == 0) {
-		DDF("+++ HTTP SERVER CONNECTION SUCCESS +++\n");
-		log_message(NAME, L_NOTICE, "acs initiated connection\n");
-		cwmp_connection_request(EVENT_CONNECTION_REQUEST);
-	} else {
-		DDF("+++ HTTP SERVER CONNECTION FAILED +++\n");
-	}
-}
-
