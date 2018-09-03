@@ -1,6 +1,9 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.8.0 (date of 03th of september 2018)
+  -#0000355: Easycwmp: add method upload
+
 * EasyCwmp-1.7.0 (date of 25th of June 2018)
   -#0000336: fork child error when making many Connection Requests
   -#0000312: Remove gz/bz files in the download config before make the folder copy
