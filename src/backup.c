@@ -60,6 +60,7 @@ void backup_init(void)
 	}
 #endif
 	backup_load_download();
+	backup_load_upload();
 	backup_load_event();
 	backup_update_all_complete_time_transfer_complete();
 }
@@ -372,6 +373,52 @@ mxml_node_t *backup_add_download(char *key, int delay, char *file_size, char *do
 	return b;
 }
 
+mxml_node_t *backup_add_upload(char *key, int delay, char *upload_url, char *file_type, char *username, char *password)
+{
+	mxml_node_t *tree, *data, *b, *n;
+	char time_execute[16];
+
+	if (sprintf(time_execute,"%u",delay + (unsigned int)time(NULL)) < 0) return NULL;
+
+	data = mxmlFindElement(backup_tree, backup_tree, "cwmp", NULL, NULL, MXML_DESCEND);
+	if (!data) return NULL;
+	b = mxmlNewElement(data, "upload");
+	if (!b) return NULL;
+
+	n = mxmlNewElement(b, "command_key");
+	if (!n) return NULL;
+	n = mxmlNewOpaque(n, key);
+	if (!n) return NULL;
+
+	n = mxmlNewElement(b, "file_type");
+	if (!n) return NULL;
+	n = mxmlNewOpaque(n, file_type);
+	if (!n) return NULL;
+
+	n = mxmlNewElement(b, "url");
+	if (!n) return NULL;
+	n = mxmlNewOpaque(n, upload_url);
+	if (!n) return NULL;
+
+	n = mxmlNewElement(b, "username");
+	if (!n) return NULL;
+	n = mxmlNewOpaque(n, username);
+	if (!n) return NULL;
+
+	n = mxmlNewElement(b, "password");
+	if (!n) return NULL;
+	n = mxmlNewOpaque(n, password);
+	if (!n) return NULL;
+
+	n = mxmlNewElement(b, "time_execute");
+	if (!n) return NULL;
+	n = mxmlNewOpaque(n, time_execute);
+	if (!n) return NULL;
+
+	backup_save_file();
+	return b;
+}
+
 int backup_load_download(void)
 {
 	int delay = 0;
@@ -461,7 +508,96 @@ error:
 	return -1;
 }
 
+int backup_load_upload(void)
+{
+	int delay = 0;
+	unsigned int t;
+	mxml_node_t *data, *b, *c;
+	char *upload_url = NULL,
+		*command_key = NULL, *file_type = NULL,
+		*username = NULL, *password = NULL, *val = NULL;
+
+	data = mxmlFindElement(backup_tree, backup_tree, "cwmp", NULL, NULL, MXML_DESCEND);
+	if (!data) return -1;
+	b = data;
+
+	while (b = mxmlFindElement(b, data, "upload", NULL, NULL, MXML_DESCEND)) {
+		c = mxmlFindElement(b, b, "command_key",NULL, NULL, MXML_DESCEND);
+		if (!c) return -1;
+		if (c->child && c->child->type == MXML_OPAQUE && c->child->value.opaque) {
+			c = c->child;
+			val = xml_get_value_with_whitespace(&c, c->parent);
+			command_key = val;
+		}
+		else
+			command_key = strdup("");
+
+		c = mxmlFindElement(b, b, "url",NULL, NULL, MXML_DESCEND);
+		if (!c) goto error;
+		if(c->child)
+			upload_url = c->child->value.opaque;
+		else
+			upload_url = "";
+
+		c = mxmlFindElement(b, b, "username",NULL, NULL, MXML_DESCEND);
+		if (!c) goto error;
+		if (c->child && c->child->type == MXML_OPAQUE && c->child->value.opaque) {
+			c = c->child;
+			val = xml_get_value_with_whitespace(&c, c->parent);
+			username = val;
+		}
+		else
+			username = strdup("");
+
+		c = mxmlFindElement(b, b, "password",NULL, NULL, MXML_DESCEND);
+		if (!c) goto error;
+		if (c->child && c->child->type == MXML_OPAQUE && c->child->value.opaque) {
+			c = c->child;
+			val = xml_get_value_with_whitespace(&c, c->parent);
+			password = val;
+		}
+		else
+			password = strdup("");
+
+		c = mxmlFindElement(b, b, "time_execute",NULL, NULL, MXML_DESCEND);
+		if (!c) goto error;
+		if(c->child) {
+			sscanf(c->child->value.opaque, "%u", &t);
+			delay = t - time(NULL);
+		}
+
+		c = mxmlFindElement(b, b, "file_type",NULL, NULL, MXML_DESCEND);
+		if (!c) goto error;
+		if (c->child && c->child->type == MXML_OPAQUE && c->child->value.opaque) {
+			c = c->child;
+			file_type = xml_get_value_with_whitespace(&c, c->parent);
+		}
+		else
+			file_type = strdup("");
+
+		cwmp_add_upload(command_key, delay, upload_url, file_type, username, password, b);
+		FREE(command_key);
+		FREE(username);
+		FREE(password);
+		FREE(file_type);
+	}
+	return 0;
+error:
+	FREE(command_key);
+	FREE(username);
+	FREE(password);
+	FREE(file_type);
+	return -1;
+}
+
 int backup_remove_download(mxml_node_t *node)
+{
+	mxmlDelete(node);
+	backup_save_file();
+	return 0;
+}
+
+int backup_remove_upload(mxml_node_t *node)
 {
 	mxmlDelete(node);
 	backup_save_file();

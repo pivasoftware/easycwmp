@@ -293,6 +293,7 @@ int main (int argc, char **argv)
 	INIT_LIST_HEAD(&cwmp->events);
 	INIT_LIST_HEAD(&cwmp->notifications);
 	INIT_LIST_HEAD(&cwmp->downloads);
+	INIT_LIST_HEAD(&cwmp->uploads);
 	INIT_LIST_HEAD(&cwmp->scheduled_informs);
 	uloop_init();
 	backup_init();

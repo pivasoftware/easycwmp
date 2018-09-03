@@ -39,7 +39,8 @@ struct event_code event_code_array[] = {
 	[EVENT_AUTONOMOUS_TRANSFER_COMPLETE] = {"10 AUTONOMOUS TRANSFER COMPLETE", EVENT_SINGLE, EVENT_REMOVE_AFTER_TRANSFER_COMPLETE},
 	[EVENT_M_REBOOT] = {"M Reboot", EVENT_MULTIPLE, EVENT_REMOVE_AFTER_INFORM},
 	[EVENT_M_SCHEDULEINFORM] = {"M ScheduleInform", EVENT_MULTIPLE, EVENT_REMOVE_AFTER_INFORM},
-	[EVENT_M_DOWNLOAD] = {"M Download", EVENT_MULTIPLE, EVENT_REMOVE_AFTER_TRANSFER_COMPLETE}
+	[EVENT_M_DOWNLOAD] = {"M Download", EVENT_MULTIPLE, EVENT_REMOVE_AFTER_TRANSFER_COMPLETE},
+	[EVENT_M_UPLOAD] = {"M Upload", EVENT_MULTIPLE, EVENT_REMOVE_AFTER_TRANSFER_COMPLETE}
 };
 
 struct cwmp_internal *cwmp;
@@ -373,7 +374,6 @@ int cwmp_handle_messages(void)
 	}
 	FREE(msg_in);
 	FREE(msg_out);
-
 	return 0;
 
 error:
@@ -419,6 +419,16 @@ static inline void cwmp_free_download(struct download *d)
 {
 	free(d->download_url);
 	free(d->file_size);
+	free(d->file_type);
+	free(d->key);
+	free(d->password);
+	free(d->username);
+	free(d);
+}
+
+static inline void cwmp_free_upload(struct upload *d)
+{
+	free(d->upload_url);
 	free(d->file_type);
 	free(d->key);
 	free(d->password);
@@ -497,6 +507,67 @@ out:
 	free(fault);
 }
 
+void cwmp_upload_launch(struct uloop_timeout *timeout)
+{
+	struct upload *d;
+	char *start_time = NULL, *status = NULL, *fault = NULL;
+	mxml_node_t *node;
+	int code = FAULT_0;
+
+	d = container_of(timeout, struct upload, handler_timer);
+
+	log_message(NAME, L_NOTICE, "start upload url = %s, FileType = '%s', CommandKey = '%s'\n",
+			d->upload_url, d->file_type, d->key);
+
+	if (external_init()) {
+		D("external scripts initialization failed\n");
+		return;
+	}
+
+	start_time = mix_get_time();
+	external_action_upload_execute(d->upload_url, d->file_type, d->username, d->password);
+	external_action_handle(json_handle_method_status);
+	backup_remove_upload(d->backup_node);
+	list_del(&d->list);
+	cwmp->upload_count--;
+	node = backup_add_transfer_complete(d->key, code, start_time, ++cwmp->method_id);
+	if(!node) {
+		external_exit();
+		cwmp_free_upload(d);
+		return;
+	}
+	cwmp_add_event(EVENT_TRANSFER_COMPLETE, NULL, 0, EVENT_BACKUP);
+	cwmp_add_event(EVENT_M_UPLOAD, d->key, cwmp->method_id, EVENT_BACKUP);
+
+	external_fetch_method_resp_status(&status, &fault);
+	if (fault && fault[0]=='9') {
+		code = xml_get_index_fault(fault);
+		goto end_fault ;
+	}
+	if(!status || status[0] == '\0') {
+		code = FAULT_9002;
+		goto end_fault;
+	}
+
+out:
+	backup_update_complete_time_transfer_complete(node);
+	cwmp_add_inform_timer();
+	external_exit();
+	cwmp_free_upload(d);
+	free(status);
+	free(fault);
+	return;
+
+end_fault :
+	log_message(NAME, L_NOTICE, "upload error: '%s'\n", fault_array[code].string);
+	backup_update_fault_transfer_complete(node, code);
+	cwmp_add_inform_timer();
+	external_exit();
+	cwmp_free_upload(d);
+	free(status);
+	free(fault);
+}
+
 void cwmp_add_download(char *key, int delay, char *file_size, char *download_url, char *file_type, char *username, char *password, mxml_node_t *node)
 {
 	struct download *d = NULL;
@@ -517,6 +588,29 @@ void cwmp_add_download(char *key, int delay, char *file_size, char *download_url
 	list_add_tail(&d->list, &cwmp->downloads);
 	log_message(NAME, L_NOTICE, "add download: delay = %d sec, url = %s, FileType = '%s', CommandKey = '%s'\n",
 			delay, d->download_url, d->file_type, d->key);
+
+	uloop_timeout_set(&d->handler_timer, SECDTOMSEC * delay);
+}
+
+void cwmp_add_upload(char *key, int delay, char *upload_url, char *file_type, char *username, char *password, mxml_node_t *node)
+{
+	struct upload *d = NULL;
+
+	cwmp->upload_count++;
+	d = calloc(1, sizeof(*d));
+	if (!d) return;
+
+	d->key = key ? strdup(key) : NULL;
+	d->upload_url = upload_url ? strdup(upload_url) : NULL;
+	d->file_type = file_type ? strdup(file_type) : NULL;
+	d->username = username ? strdup(username) : NULL;
+	d->password = password ? strdup(password) : NULL;
+	d->handler_timer.cb = cwmp_upload_launch;
+	d->backup_node = node;
+	d->time_execute = time(NULL) + delay;
+	list_add_tail(&d->list, &cwmp->uploads);
+	log_message(NAME, L_NOTICE, "add upload: delay = %d sec, url = %s, FileType = '%s', CommandKey = '%s'\n",
+			delay, d->upload_url, d->file_type, d->key);
 
 	uloop_timeout_set(&d->handler_timer, SECDTOMSEC * delay);
 }
@@ -669,6 +763,7 @@ void cwmp_update_value_change(void) {
 void cwmp_clean(void)
 {
 	struct download *d;
+	struct upload *u;
 	struct scheduled_inform *s;
 	cwmp_clear_event_list();
 	cwmp_clear_notifications();
@@ -678,6 +773,12 @@ void cwmp_clean(void)
 		uloop_timeout_cancel(&d->handler_timer);
 		cwmp_free_download(d);
 	}
+	while (cwmp->uploads.next != &cwmp->uploads){
+		u = list_entry(cwmp->uploads.next, struct upload, list);
+		list_del(&u->list);
+		uloop_timeout_cancel(&u->handler_timer);
+		cwmp_free_upload(u);
+	}
 	while (cwmp->scheduled_informs.next != &cwmp->scheduled_informs){
 		s = list_entry(cwmp->scheduled_informs.next, struct scheduled_inform, list);
 		list_del(&s->list);
@@ -686,6 +787,7 @@ void cwmp_clean(void)
 		free(s);
 	}
 	cwmp->download_count = 0;
+	cwmp->upload_count = 0;
 	cwmp->end_session = 0;
 	cwmp->retry_count = 0;
 	cwmp->hold_requests = false;

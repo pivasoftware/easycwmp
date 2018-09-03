@@ -73,6 +73,7 @@ const struct rpc_method rpc_methods[] = {
 	{ "AddObject", xml_handle_AddObject },
 	{ "DeleteObject", xml_handle_DeleteObject },
 	{ "Download", xml_handle_download },
+	{ "Upload", xml_handle_upload },
 	{ "Reboot", xml_handle_reboot },
 	{ "FactoryReset", xml_handle_factory_reset },
 	{ "ScheduleInform", xml_handle_schedule_inform },
@@ -1458,6 +1459,141 @@ fault_out:
 	FREE(password);
 	return 0;
 }
+
+
+/* upload */
+
+static int xml_handle_upload(mxml_node_t *body_in,
+					mxml_node_t *tree_in,
+					mxml_node_t *tree_out)
+{
+	mxml_node_t *n, *t, *b = body_in, *body_out;
+	char *upload_url = NULL,
+		*command_key = NULL, *file_type = NULL, *username = NULL,
+		*password = NULL, r;
+	int delay = -1, code = FAULT_9002;
+
+	body_out = mxmlFindElement(tree_out, tree_out, "soap_env:Body", NULL, NULL, MXML_DESCEND);
+	if (!body_out) {
+		printf("!body_out) \n" );
+		return -1;
+	}
+
+	while (b != NULL) {
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
+			b->parent->type == MXML_ELEMENT &&
+			!strcmp(b->parent->value.element.name, "CommandKey")) {
+			FREE(command_key);
+			command_key = xml_get_value_with_whitespace(&b, body_in);
+		}
+		if (b && b->type == MXML_ELEMENT &&
+			!strcmp(b->value.element.name, "CommandKey") &&
+			!b->child) {
+			FREE(command_key);
+			command_key = strdup("");
+		}
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
+			b->parent->type == MXML_ELEMENT &&
+			!strcmp(b->parent->value.element.name, "FileType")) {
+			FREE(file_type);
+			file_type = xml_get_value_with_whitespace(&b, body_in);
+		}
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
+			b->parent->type == MXML_ELEMENT &&
+			!strcmp(b->parent->value.element.name, "URL")) {
+			upload_url = b->value.opaque;
+		}
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
+			b->parent->type == MXML_ELEMENT &&
+			!strcmp(b->parent->value.element.name, "Username")) {
+			FREE(username);
+			username = xml_get_value_with_whitespace(&b, body_in);
+		}
+		if (b && b->type == MXML_ELEMENT &&
+			!strcmp(b->value.element.name, "Username") &&
+			!b->child) {
+			FREE(username);
+			username = strdup("");
+		}
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
+			b->parent->type == MXML_ELEMENT &&
+			!strcmp(b->parent->value.element.name, "Password")) {
+			FREE(password);
+			password = xml_get_value_with_whitespace(&b, body_in);
+		}
+		if (b && b->type == MXML_ELEMENT &&
+			!strcmp(b->value.element.name, "Password") &&
+			!b->child) {
+			FREE(password);
+			password = strdup("");
+		}
+		if (b && b->type == MXML_OPAQUE &&
+			b->value.opaque &&
+			b->parent->type == MXML_ELEMENT &&
+			!strcmp(b->parent->value.element.name, "DelaySeconds")) {
+			delay = atoi(b->value.opaque);
+		}
+		b = mxmlWalkNext(b, body_in, MXML_DESCEND);
+	}
+	if (!upload_url || !command_key || !file_type || !username || !password || delay < 0) {
+		code = FAULT_9003;
+		goto fault_out;
+	}
+	if (sscanf(upload_url,"%*[a-zA-Z_0-9]://%c",&r) < 1 ||
+		sscanf(upload_url,"%*[^:]://%*[^:]:%*[^@]@%c",&r) == 1) {
+		code = FAULT_9003;
+		goto fault_out;
+	}
+	if (cwmp->upload_count >= MAX_UPLOAD) {
+		code = FAULT_9004;
+		goto fault_out;
+	}
+	n = backup_add_upload(command_key, delay, upload_url, file_type, username, password);
+	cwmp_add_upload(command_key, delay, upload_url, file_type, username, password, n);
+	FREE(file_type);
+	FREE(command_key);
+	FREE(username);
+	FREE(password);
+
+	t = mxmlNewElement(body_out, "cwmp:UploadResponse");
+	if (!t) return -1;
+
+	b = mxmlNewElement(t, "Status");
+	if (!b) return -1;
+
+	b = mxmlNewElement(t, "StartTime");
+	if (!b) return -1;
+
+	b = mxmlNewOpaque(b, UNKNOWN_TIME);
+	if (!b) return -1;
+
+	b = mxmlFindElement(t, tree_out, "Status", NULL, NULL, MXML_DESCEND);
+	if (!b) return -1;
+
+	b = mxmlNewOpaque(b, "1");
+
+	b = mxmlNewElement(t, "CompleteTime");
+	if (!b) return -1;
+
+	b = mxmlNewOpaque(b, UNKNOWN_TIME);
+	if (!b) return -1;
+
+	return 0;
+
+fault_out:
+	xml_create_generic_fault_message(body_out, code);
+	FREE(file_type);
+	FREE(command_key);
+	FREE(username);
+	FREE(password);
+	return 0;
+}
+
 
 /* FactoryReset */
 

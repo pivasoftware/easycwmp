@@ -292,6 +292,21 @@ int external_action_download_execute(char *url, char *file_type, char *file_size
 	return 0;
 }
 
+int external_action_upload_execute(char *url, char *file_type, char *user_name, char *password)
+{
+	log_message(NAME, L_NOTICE, "external: execute upload\n", url);
+
+	json_object *json_obj_out = json_object_new_object();
+	external_add_json_obj(json_obj_out, "command", "upload");
+	external_add_json_obj(json_obj_out, "url", url);
+	external_add_json_obj(json_obj_out, "file_type", file_type);
+	if (user_name) external_add_json_obj(json_obj_out, "user_name", user_name);
+	if (password) external_add_json_obj(json_obj_out, "password", password);
+	external_write_pipe(json_object_to_json_string(json_obj_out));
+	json_object_put(json_obj_out);
+
+	return 0;
+}
 
 int external_action_handle (int (*json_handle)(char *))
 {

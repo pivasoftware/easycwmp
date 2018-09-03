@@ -17,6 +17,7 @@
 #include <microxml.h>
 
 #define MAX_DOWNLOAD 10
+#define MAX_UPLOAD 10
 #define FAULT_ACS_8005 8005
 
 enum END_SESSION {
@@ -56,6 +57,7 @@ enum {
 	EVENT_M_REBOOT,
 	EVENT_M_SCHEDULEINFORM,
 	EVENT_M_DOWNLOAD,
+	EVENT_M_UPLOAD,
 	__EVENT_MAX
 };
 
@@ -94,6 +96,18 @@ struct download {
 	mxml_node_t *backup_node;
 };
 
+struct upload {
+	struct uloop_timeout handler_timer ;
+	struct list_head list;
+	char *key;
+	char *upload_url;
+	char *file_type;
+	char *username;
+	char *password;
+	time_t time_execute;
+	mxml_node_t *backup_node;
+};
+
 struct notification {
 
 	struct list_head list;
@@ -114,10 +128,12 @@ struct cwmp_internal {
 	struct list_head events;
 	struct list_head notifications;
 	struct list_head downloads;
+	struct list_head uploads;
 	struct list_head scheduled_informs;
 	struct deviceid deviceid;
 	int retry_count;
 	int download_count;
+	int upload_count;
 	int end_session;
 	int method_id;
 	bool get_rpc_methods;
@@ -137,7 +153,9 @@ static inline int rpc_transfer_complete(mxml_node_t *node, int *method_id);
 
 void cwmp_add_scheduled_inform(char *key, int delay);
 void cwmp_add_download(char *key, int delay, char *file_size, char *download_url, char *file_type, char *username, char *password, mxml_node_t *node);
+void cwmp_add_upload(char *key, int delay, char *upload_url, char *file_type, char *username, char *password, mxml_node_t *node);
 void cwmp_download_launch(struct uloop_timeout *timeout);
+void cwmp_upload_launch(struct uloop_timeout *timeout);
 void cwmp_init(void);
 void cwmp_connection_request(int code);
 void cwmp_remove_event(int remove_policy, int method_id);

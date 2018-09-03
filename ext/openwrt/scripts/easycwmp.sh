@@ -72,6 +72,7 @@ command:
   add [object]
   delete [object]
   download
+  upload
   factory_reset
   reboot
   inform [parameter|device_id]
@@ -106,6 +107,13 @@ json_get_opt() {
 			json_get_var __arg3 file_size
 			json_get_var __arg4 user_name
 			json_get_var __arg5 password
+			;;
+		upload)
+			action="upload"
+			json_get_var __arg1 url
+			json_get_var __arg2 file_type
+			json_get_var __arg3 user_name
+			json_get_var __arg4 password
 			;;
 		factory_reset|reboot)
 			action="$command"
@@ -162,6 +170,13 @@ case "$1" in
 		__arg3="$4"
 		__arg4="$5"
 		__arg5="$6"
+		;;
+	upload)
+		action="upload"
+		__arg1="$2"
+		__arg2="$3"
+		__arg3="$4"
+		__arg4="$5"
 		;;
 	factory_reset|reboot)
 		action="$1"
@@ -287,6 +302,53 @@ handle_action() {
 		fi
 		return
 	fi
+
+	if [ "$action" = "upload" ]; then 
+
+		local up_url="$__arg1"
+		SERIAL_NUMBER=`$UCI_GET easycwmp.@device[0].serial_number`
+
+		[ "$__arg3" != "" -o "$__arg4" != "" ] && up_url=`echo "$__arg1" | sed -e "s@://@://$__arg3:$__arg4\@@g"`
+
+		case "$__arg2" in
+		*"Vendor Log File"*)
+			logread > "/tmp/log$SERIAL_NUMBER.log"
+			if [ "$__arg3" != "" ]; then
+				curl --user $__arg3:$__arg4 --connect-timeout 30 --upload-file /tmp/log$SERIAL_NUMBER.log $up_url
+			else
+				curl -T --connect-timeout 30 "/tmp/log$SERIAL_NUMBER.log" "$up_url"
+			fi
+			
+			
+			fault_code="$?"
+		rm -f "/tmp/log$SERIAL_NUMBER.log"
+		;;
+		*"Vendor Configuration File"*)
+			
+			sysupgrade --create-backup "/tmp/config$SERIAL_NUMBER.tar.gz"
+			if [ "$__arg3" != "" ]; then
+				curl --user $__arg3:$__arg4 --connect-timeout 30 --upload-file /tmp/config$SERIAL_NUMBER.tar.gz $up_url
+			else
+				curl -T --connect-timeout 30 "/tmp/config$SERIAL_NUMBER.tar.gz" "$up_url"
+			fi	
+			fault_code="$?"
+		rm -f "/tmp/config$SERIAL_NUMBER.tar.gz"
+		;;
+		*)
+			common_json_output_fault "" "$(($E_INVALID_ARGUMENTS+9000))"
+			return
+		;;
+		esac
+		
+		if [ "$fault_code" != "0" ]; then
+			let fault_code=9000+$E_UPLOAD_FAILURE
+			common_json_output_fault "" "$fault_code"
+		else
+			common_json_output_status "1"
+		fi
+		return
+	fi
+		
 	if [ "$action" = "apply_download" ]; then
 		if [ "$__arg1" = "3 Vendor Configuration File" ]; then 
 			dwfile=`ls $DOWNLOAD_DIR`

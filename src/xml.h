@@ -101,6 +101,10 @@ static int xml_handle_download(mxml_node_t *body_in,
 					mxml_node_t *tree_in,
 					mxml_node_t *tree_out);
 
+static int xml_handle_upload(mxml_node_t *body_in,
+					mxml_node_t *tree_in,
+					mxml_node_t *tree_out);
+
 static int xml_handle_factory_reset(mxml_node_t *body_in,
 					mxml_node_t *tree_in,
 					mxml_node_t *tree_out);
