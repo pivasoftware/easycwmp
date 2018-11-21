@@ -491,7 +491,6 @@ void cwmp_download_launch(struct uloop_timeout *timeout)
 		code = FAULT_9002;
 		goto end_fault;
 	}
-	if (status[0] == '1') exit(EXIT_SUCCESS);
 	goto out;
 
 end_fault :
