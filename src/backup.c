@@ -174,7 +174,7 @@ mxml_node_t *backup_add_transfer_complete(char *command_key, int fault_code, cha
 	if (!b) return NULL;
 	b = mxmlNewElement(m, "method_id");
 	if (!b) return NULL;
-	sprintf(c, "%d", method_id);
+	snprintf(c, sizeof(c), "%d", method_id);
 	b = mxmlNewOpaque(b, c);
 	if (!b) return NULL;
 
@@ -327,7 +327,7 @@ mxml_node_t *backup_add_download(char *key, int delay, char *file_size, char *do
 	mxml_node_t *tree, *data, *b, *n;
 	char time_execute[16];
 
-	if (sprintf(time_execute,"%u",delay + (unsigned int)time(NULL)) < 0) return NULL;
+	if (snprintf(time_execute,sizeof(time_execute),"%u",delay + (unsigned int)time(NULL)) < 0) return NULL;
 
 	data = mxmlFindElement(backup_tree, backup_tree, "cwmp", NULL, NULL, MXML_DESCEND);
 	if (!data) return NULL;
@@ -378,7 +378,7 @@ mxml_node_t *backup_add_upload(char *key, int delay, char *upload_url, char *fil
 	mxml_node_t *tree, *data, *b, *n;
 	char time_execute[16];
 
-	if (sprintf(time_execute,"%u",delay + (unsigned int)time(NULL)) < 0) return NULL;
+	if (snprintf(time_execute,sizeof(time_execute),"%u",delay + (unsigned int)time(NULL)) < 0) return NULL;
 
 	data = mxmlFindElement(backup_tree, backup_tree, "cwmp", NULL, NULL, MXML_DESCEND);
 	if (!data) return NULL;

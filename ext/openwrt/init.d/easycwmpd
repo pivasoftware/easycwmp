@@ -35,16 +35,19 @@ init_device_info() {
 }
 
 start_service() {
-	init_device_info
-	procd_open_instance
-	procd_set_param command "$PROG" -f
-	if [ "$1" = "--boot" ];then
-		procd_append_param command --boot
-	else
-		procd_append_param command --getrpcmethod
+	local enable=`uci -q get easycwmp.@local[0].enable`
+	if [ "$enable" == "1" ]; then
+		init_device_info
+		procd_open_instance
+		procd_set_param command "$PROG" -f
+		if [ "$1" = "--boot" ];then
+			procd_append_param command --boot
+		else
+			procd_append_param command --getrpcmethod
+		fi
+		procd_set_param respawn "3" "7" "0"
+		procd_close_instance
 	fi
-	procd_set_param respawn "3" "7" "0"
-	procd_close_instance
 }
 
 boot() {

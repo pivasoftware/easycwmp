@@ -328,7 +328,7 @@ static void xml_get_hold_request(mxml_node_t *tree)
 
 int xml_handle_message(char *msg_in, char **msg_out)
 {
-	mxml_node_t *tree_in, *tree_out = NULL, *b, *body_out;
+	mxml_node_t *tree_in = NULL, *tree_out = NULL, *b, *body_out;
 	const struct rpc_method *method;
 	int i, code = FAULT_9002;
 	char *c;
@@ -357,7 +357,10 @@ int xml_handle_message(char *msg_in, char **msg_out)
 	c = strdup(b->value.opaque);
 
 	b = mxmlFindElement(tree_out, tree_out, "cwmp:ID", NULL, NULL, MXML_DESCEND);
-	if (!b) goto error;
+	if (!b) {
+		FREE(c);
+		goto error;
+	}
 
 	b = mxmlNewOpaque(b, c);
 	FREE(c);
@@ -1218,7 +1221,7 @@ static int xml_handle_set_parameter_attributes(mxml_node_t *body_in,
 						mxml_node_t *tree_out) {
 
 	mxml_node_t *b = body_in, *body_out;
-	char *c, *parameter_name, *parameter_notification, *success = NULL;
+	char *c, *parameter_name = NULL, *parameter_notification = NULL, *success = NULL;
 	uint8_t attr_notification_update = 0;
 	struct external_parameter *external_parameter;
 	struct list_head *ilist;
@@ -1651,7 +1654,10 @@ static int xml_handle_reboot(mxml_node_t *node,
 	}
 
 	b = mxmlNewElement(body_out, "cwmp:RebootResponse");
-	if (!b) return -1;
+	if (!b) {
+		FREE(command_key);
+		return -1;
+	}
 
 	backup_add_event(EVENT_M_REBOOT, command_key, 0);
 	cwmp_add_handler_end_session(ENDS_REBOOT);
@@ -2025,7 +2031,7 @@ int xml_add_cwmpid(mxml_node_t *tree)
 	char buf[16];
 	b = mxmlFindElement(tree, tree, "cwmp:ID", NULL, NULL, MXML_DESCEND);
 	if (!b) return -1;
-	sprintf(buf, "%u", ++id);
+	snprintf(buf, sizeof(buf), "%u", ++id);
 	b = mxmlNewOpaque(b, buf);
 	if (!b) return -1;
 	return 0;

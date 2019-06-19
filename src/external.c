@@ -277,7 +277,7 @@ int external_action_simple_execute(char *command, char *class, char *arg)
 
 int external_action_download_execute(char *url, char *file_type, char *file_size, char *user_name, char *password)
 {
-	log_message(NAME, L_NOTICE, "external: execute download\n", url);
+	log_message(NAME, L_NOTICE, "external: execute download %s\n", url);
 
 	json_object *json_obj_out = json_object_new_object();
 	external_add_json_obj(json_obj_out, "command", "download");
@@ -294,7 +294,7 @@ int external_action_download_execute(char *url, char *file_type, char *file_size
 
 int external_action_upload_execute(char *url, char *file_type, char *user_name, char *password)
 {
-	log_message(NAME, L_NOTICE, "external: execute upload\n", url);
+	log_message(NAME, L_NOTICE, "external: execute upload %s\n", url);
 
 	json_object *json_obj_out = json_object_new_object();
 	external_add_json_obj(json_obj_out, "command", "upload");

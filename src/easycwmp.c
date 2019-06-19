@@ -366,12 +366,12 @@ int main (int argc, char **argv)
 	xml_exit();
 	config_exit();
 	cwmp_free_deviceid();
-	free(cwmp);
 
 	closelog();
 	close(fd);
 	if (cwmp->netlink_sock[0] != -1) close(cwmp->netlink_sock[0]);
 	if (cwmp->netlink_sock[1] != -1) close(cwmp->netlink_sock[1]);
+	free(cwmp);
 
 	log_message(NAME, L_NOTICE, "exiting\n");
 	return 0;
