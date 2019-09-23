@@ -1,6 +1,9 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.8.2 (date of 23th of September 2019)
+  -#0000385: Add ipping ServerSelection backend
+
 * EasyCwmp-1.8.1 (date of 24th of June 2019)
   -#0000377: Easycwmp: Fix issues and enhancement
 
