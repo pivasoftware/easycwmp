@@ -4,7 +4,7 @@
 # 	Author: AHMED Sahnoun <ahmed.sahnoun@pivasoftware.com>
 
 
-[ "$1" != "run" -a "$1" != "stop" -a "$1" != "stopselection" ] && return
+[ "$1" != "run" -a "$1" != "stop" ] && return
 
 UCI_GET_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state get"
 UCI_SET_VARSTATE="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state set"
@@ -181,24 +181,14 @@ event_dignostic() {
 }
 
 ipping_stop() {
-	local pids=`ps aux | grep ipping_initiation | grep -v grep | grep -v stop | awk '{print $2}'`
-	[ -z "$pids" ] && pids=`ps | grep ipping_initiation | grep -v grep | grep -v stop | awk '{print $2}'`
+	local pids=`ps aux | grep ipping_launch | grep -v grep | grep -v stop | awk '{print $2}'`
+	[ -z "$pids" ] && pids=`ps | grep ipping_launch | grep -v grep | grep -v stop | awk '{print $2}'`
 	if [ -n "$pids" ]; then
 		kill -9 $pids 2>/dev/null
 		$UCI_SET_VARSTATE easycwmp.@local[0].DiagnosticsState=None
 	fi
 }
 
-selection_stop() {
-	local pids=`ps aux | grep ipping_Selection_initiation | grep -v grep | grep -v stop | awk '{print $2}'`
-	[ -z "$pids" ] && pids=`ps | grep ipping_Selection_initiation | grep -v grep | grep -v stop | awk '{print $2}'`
-	if [ -n "$pids" ]; then
-		kill -9 $pids 2>/dev/null
-		$UCI_SET_VARSTATE easycwmp.@local[0].ServerSelectionDiagnosticsState=None
-	fi
-}
-
 [ "$1" == "run" ] && { ipping_run 2>/dev/null; exit 0; }
 [ "$1" == "stop" ] && ipping_stop 2>/dev/null
-[ "$1" == "stopselection" ] && selection_stop 2>/dev/null
 
