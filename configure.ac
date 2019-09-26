@@ -1,4 +1,4 @@
-AC_INIT([easycwmpd], [1.8.2], [mohamed.kallel@pivasoftware.com])
+AC_INIT([easycwmpd], [1.8.3], [mohamed.kallel@pivasoftware.com])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/easycwmp.c])
 
