@@ -50,11 +50,13 @@ void http_digest_init_nonce_priv_key(void) {
 	int i = 0;
 	char *possible = STRING_POSSIBLE;
 	int dev_random = open("/dev/urandom", O_RDONLY);
-	int result = read(dev_random, NONCE_PRIV_KEY, sizeof(NONCE_PRIV_KEY) - 1);
-	for(i = 0; i < (sizeof(NONCE_PRIV_KEY) - 1); i++) {
-		NONCE_PRIV_KEY[i] = possible[NONCE_PRIV_KEY[i] % (sizeof(STRING_POSSIBLE) - 1)];
+	if(dev_random >= 0) {
+		int result = read(dev_random, NONCE_PRIV_KEY, sizeof(NONCE_PRIV_KEY) - 1);
+		for(i = 0; i < (sizeof(NONCE_PRIV_KEY) - 1); i++) {
+			NONCE_PRIV_KEY[i] = possible[NONCE_PRIV_KEY[i] % (sizeof(STRING_POSSIBLE) - 1)];
+		}
+		close(dev_random);
 	}
-	close(dev_random);
 }
 
 static time_t MHD_monotonic_time(void)
@@ -317,22 +319,21 @@ int http_digest_auth_fail_response(FILE *fp, const char *http_method,
 {
 	size_t hlen;
 	char nonce[HASH_MD5_HEX_LEN + 9];
-	int signal_stale = 0;
-
+	
 	/* Generating the server nonce */
 	calculate_nonce((uint32_t) MHD_monotonic_time(), http_method,
 			NONCE_PRIV_KEY, strlen(NONCE_PRIV_KEY), url, realm, nonce);
 
 	/* Building the authentication header */
 	hlen = snprintf(NULL, 0,
-			"Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s",
-			realm, nonce, opaque, signal_stale ? ",stale=\"true\"" : "");
+			"Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"",
+			realm, nonce, opaque);
 	{
 		char header[hlen + 1];
 
 		snprintf(header, sizeof(header),
-				"Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"%s",
-				realm, nonce, opaque, signal_stale ? ",stale=\"true\"" : "");
+				"Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"",
+				realm, nonce, opaque);
 
 		DD("%s: header: %s", __FUNCTION__, header);
 

@@ -206,7 +206,8 @@ static int netlink_init(void)
 		D("couldn't open NETLINK_ROUTE socket");
 		return -1;
 	}
-	fcntl(cwmp->netlink_sock[0], F_SETFD, fcntl(cwmp->netlink_sock[0], F_GETFD) | FD_CLOEXEC);
+	if (fcntl(cwmp->netlink_sock[0], F_SETFD, fcntl(cwmp->netlink_sock[0], F_GETFD) | FD_CLOEXEC) < 0)
+		log_message(NAME, L_NOTICE, "error in fcntl\n");
 
 	addr.nl_family = AF_NETLINK;
 	addr.nl_groups = RTMGRP_IPV4_IFADDR;
@@ -222,7 +223,8 @@ static int netlink_init(void)
 		D("couldn't open NETLINK_ROUTE socket");
 		return -1;
 	}
-	fcntl(cwmp->netlink_sock[1], F_SETFD, fcntl(cwmp->netlink_sock[1], F_GETFD) | FD_CLOEXEC);
+	if (fcntl(cwmp->netlink_sock[1], F_SETFD, fcntl(cwmp->netlink_sock[1], F_GETFD) | FD_CLOEXEC) < 0)
+		log_message(NAME, L_NOTICE, "error in fcntl\n");
 
 	req.hdr.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifaddrmsg));
 	req.hdr.nlmsg_flags = NLM_F_REQUEST | NLM_F_ROOT;
@@ -276,7 +278,8 @@ int main (int argc, char **argv)
 		exit(EXIT_FAILURE);
 	if (flock(fd, LOCK_EX | LOCK_NB) == -1)
 		exit(EXIT_SUCCESS);
-	fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC);
+	if(fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC) < 0 )
+		log_message(NAME, L_NOTICE, "error in fcntl\n");
 
 	setlocale(LC_CTYPE, "");
 	umask(0037);
@@ -348,13 +351,14 @@ int main (int argc, char **argv)
 		}
 	}
 	char *buf = NULL;
-	asprintf(&buf, "%d", getpid());
-	int error = write(fd, buf, strlen(buf));
-	if ( error < 0) {
-		D("Unable to write the easycwmpd pid to /var/run/easycwmpd.pid\n");
-	}
+	if (asprintf(&buf, "%d", getpid()) != -1) {
+		int error = write(fd, buf, strlen(buf));
+		if ( error < 0) {
+			D("Unable to write the easycwmpd pid to /var/run/easycwmpd.pid\n");
+		}
 
-	free(buf);
+		free(buf);
+	}
 
 	log_message(NAME, L_NOTICE, "entering main loop\n");
 	uloop_run();

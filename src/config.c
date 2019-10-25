@@ -91,10 +91,12 @@ static int config_init_local(void)
 				if (!strcmp((uci_to_option(e1))->e.name, "logging_level")) {
 					char *c;
 					int log_level = atoi((uci_to_option(e1))->v.string);					 
-					asprintf(&c, "%d", log_level);
-					if (strcmp(c, uci_to_option(e1)->v.string) == 0) 
-						config->local->logging_level = log_level;						
-					free(c);
+					if(asprintf(&c, "%d", log_level) != -1)
+					{	
+						if (strcmp(c, uci_to_option(e1)->v.string) == 0) 
+							config->local->logging_level = log_level;						
+						free(c);
+					}
 					DD("easycwmp.@local[0].logging_level=%d\n", config->local->logging_level);
 					continue;
 				}

@@ -115,8 +115,17 @@ const char *xml_format_cb(mxml_node_t *node, int pos)
 
 	switch (pos) {
 		case  MXML_WS_BEFORE_CLOSE:
-			if (node->child && node->child->type!=MXML_ELEMENT)
+			if (node->child && node->child->type != MXML_ELEMENT)
 				return ("");
+			
+			while (b->parent != NULL) {
+				space_format[i] = ' ';
+				b=b->parent;
+				i++;
+			}
+			space_format[i] = '\0';
+			return (space_format);
+				
 		case  MXML_WS_BEFORE_OPEN:
 			while (b->parent != NULL) {
 				space_format[i] = ' ';

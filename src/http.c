@@ -91,8 +91,10 @@ http_client_exit(void)
 		curl = NULL;
 	}
 	curl_global_cleanup();
-	if (access(fc_cookies, W_OK) == 0)
-		remove(fc_cookies);
+	if (access(fc_cookies, W_OK) == 0) {
+		if(remove(fc_cookies) < 0)
+			log_message(NAME, L_NOTICE, "can't remove file %s\n", fc_cookies);
+	}
 }
 
 static size_t
@@ -235,9 +237,9 @@ http_new_client(struct uloop_fd *ufd, unsigned events)
 	t.tv_usec = 0;
 
 	for (;;) {
-		int client = -1, last_client = -1;
-		while ((last_client = accept(ufd->fd, NULL, NULL)) > 0) {
-			if (client > 0)
+		int  client = -1, last_client = -1;
+		while ((last_client = accept(ufd->fd, NULL, NULL)) >= 0) {
+			if (client >= 0)
 				close(client);
 			client = last_client;
 		}
@@ -245,7 +247,7 @@ http_new_client(struct uloop_fd *ufd, unsigned events)
 		if (setsockopt(ufd->fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&t, sizeof t)) {
 			DD("setsockopt() failed\n");
 		}
-		if (client <= 0) {
+		if (client < 0) {
 			break;
 		}
 		fp = fdopen(client, "r+");
