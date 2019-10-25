@@ -1,6 +1,9 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.8.4 (date of 25th of October 2019)
+  -#0000390: Fix coverity issue
+
 * EasyCwmp-1.8.3 (date of 26th of September 2019)
   -#0000387: Fix issue in ipping_stop function
 
