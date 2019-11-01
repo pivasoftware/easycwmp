@@ -91,10 +91,9 @@ http_client_exit(void)
 		curl = NULL;
 	}
 	curl_global_cleanup();
-	if (access(fc_cookies, W_OK) == 0) {
-		if(remove(fc_cookies) < 0)
-			log_message(NAME, L_NOTICE, "can't remove file %s\n", fc_cookies);
-	}
+
+	if(remove(fc_cookies) < 0)
+		log_message(NAME, L_NOTICE, "can't remove file %s\n", fc_cookies);
 }
 
 static size_t
