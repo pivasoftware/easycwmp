@@ -487,12 +487,7 @@ void cwmp_download_launch(struct uloop_timeout *timeout)
 		code = xml_get_index_fault(fault);
 		goto end_fault;
 	}
-	if (!status || status[0] == '\0') {
-		code = FAULT_9002;
-		goto end_fault;
-	}
-	if (status[0] == '1') exit(EXIT_SUCCESS);
-	goto out;
+	exit(EXIT_SUCCESS);
 
 end_fault :
 	log_message(NAME, L_NOTICE, "download error: '%s'\n", fault_array[code].string);

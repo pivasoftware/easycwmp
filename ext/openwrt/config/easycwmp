@@ -1,7 +1,7 @@
 # easycwmp uci configuration
 
 config local
-	option enable '0'
+	option enable '1'
 	option interface eth0
 	option port 7547
 	option ubus_socket /var/run/ubus.sock
