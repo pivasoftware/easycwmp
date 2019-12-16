@@ -248,6 +248,34 @@ static int config_init_acs(void)
 	return -1;
 }
 
+static void config_free_device(void) {
+	if (config->device) {
+		FREE(config->device->software_version);
+	}
+}
+
+static int config_init_device(void)
+{
+	struct uci_section *s;
+	struct uci_element *e2;
+
+	uci_foreach_element(&uci_easycwmp->sections, e2) {
+		s = uci_to_section(e2);
+		if (strcmp(s->type, "device") == 0) {
+			config_free_device();
+			uci_foreach_element(&s->options, e2) {
+				if (!strcmp((uci_to_option(e2))->e.name, "software_version")) {
+					config->device->software_version = strdup(uci_to_option(e2)->v.string);
+					log_message(NAME, L_NOTICE, "easycwmp.@device[0].software_version=%s\n", config->device->software_version);
+					continue;
+				}
+			}
+			return 0;
+		}
+	}
+	D("uci section device not found...\n");
+	return -1;
+}
 static struct uci_package *
 config_init_package(const char *c)
 {
@@ -260,6 +288,8 @@ config_init_package(const char *c)
 
 		config->local = calloc(1, sizeof(struct local));
 		if (!config->local) goto error;
+		config->device = calloc(1, sizeof(struct device));
+		if (!config->device) goto error;
 	}
 	if (!uci_ctx) {
 		uci_ctx = uci_alloc_context();
@@ -301,6 +331,8 @@ void config_exit(void)
 		FREE(config->acs);
 		config_free_local();
 		FREE(config->local);
+		config_free_device();
+		FREE(config->device);
 		FREE(config);
 	}
 	config_free_ctx();
@@ -312,10 +344,12 @@ void config_load(void)
 	uci_easycwmp = config_init_package("easycwmp");
 
 	if (!uci_easycwmp) goto error;
+	if (config_init_device()) goto error;
 	if (config_init_local()) goto error;
 	if (config_init_acs()) goto error;
 
 	backup_check_acs_url();
+	backup_check_software_version();
 	cwmp_periodic_inform_init();
 
 	first_run = false;

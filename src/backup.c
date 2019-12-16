@@ -142,6 +142,28 @@ void backup_check_acs_url(void)
 	}
 }
 
+void backup_check_software_version(void)
+{
+	mxml_node_t *data, *b;
+
+	b = mxmlFindElement(backup_tree, backup_tree, "cwmp", NULL, NULL, MXML_DESCEND);
+	if (!b)
+		b = backup_tree_init();
+
+	data = mxmlFindElement(b, backup_tree, "software_version", NULL, NULL, MXML_DESCEND);
+	if (data) {
+		if (data->child && data->child->type == MXML_OPAQUE && data->child->value.opaque &&
+			strcmp(config->device->software_version, data->child->value.opaque) != 0) {
+			cwmp_add_event(EVENT_VALUE_CHANGE, NULL, 0, EVENT_NO_BACKUP);
+		}
+		mxmlDelete(data);
+	}
+	data = mxmlNewElement(b, "software_version");
+	data = mxmlNewOpaque(data, config->device->software_version);
+	backup_save_file();
+	cwmp_add_inform_timer();	
+}
+
 mxml_node_t *backup_add_transfer_complete(char *command_key, int fault_code, char *start_time, int method_id)
 {
 	mxml_node_t  *data, *m, *b;

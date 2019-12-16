@@ -31,6 +31,7 @@ void backup_load(void);
 void backup_init(void);
 void backup_add_acsurl(char *acs_url);
 void backup_check_acs_url(void);
+void backup_check_software_version(void);
 mxml_node_t *backup_check_transfer_complete(void);
 mxml_node_t *backup_tree_init(void);
 mxml_node_t *backup_add_transfer_complete(char *command_key, int fault_code, char *start_time, int method_id);

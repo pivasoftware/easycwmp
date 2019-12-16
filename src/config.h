@@ -31,6 +31,10 @@ char *easycwmp_uci_set_value(char *package, char *section, char *option, char *v
 int easycwmp_uci_commit(void);
 #endif
 
+struct device {
+	char *software_version;
+};
+
 struct acs {
 	char *url;
 	char *username;
@@ -56,6 +60,7 @@ struct local {
 };
 
 struct core_config {
+	struct device *device;
 	struct acs *acs;
 	struct local *local;
 };
