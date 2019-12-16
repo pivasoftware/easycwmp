@@ -47,15 +47,15 @@ http_client_init(void)
 			return -1;
 	}
 
-	DDF("+++ HTTP CLIENT CONFIGURATION +++\n");
-	DD("url: %s\n", http_c.url);
+	log_message(NAME, L_NOTICE, "+++ HTTP CLIENT CONFIGURATION +++\n");
+	log_message(NAME, L_NOTICE, "url: %s\n", http_c.url);
 	if (config->acs->ssl_cert)
-		DD("ssl_cert: %s\n", config->acs->ssl_cert);
+		log_message(NAME, L_NOTICE, "ssl_cert: %s\n", config->acs->ssl_cert);
 	if (config->acs->ssl_cacert)
-		DD("ssl_cacert: %s\n", config->acs->ssl_cacert);
+		log_message(NAME, L_NOTICE, "ssl_cacert: %s\n", config->acs->ssl_cacert);
 	if (!config->acs->ssl_verify)
-		DD("ssl_verify: SSL certificate validation disabled.\n");
-	DDF("--- HTTP CLIENT CONFIGURATION ---\n");
+		log_message(NAME, L_NOTICE, "ssl_verify: SSL certificate validation disabled.\n");
+	log_message(NAME, L_NOTICE, "--- HTTP CLIENT CONFIGURATION ---\n");
 
 	curl = curl_easy_init();
 	if (!curl) return -1;
@@ -131,15 +131,15 @@ http_send_message(char *msg_out, char **msg_in)
 		if (!http_c.header_list) return -1;
 	}
 	if (msg_out) {
-		DDF("+++ SEND HTTP REQUEST +++\n");
-		DDF("%s", msg_out);
-		DDF("--- SEND HTTP REQUEST ---\n");
+		log_message(NAME, L_NOTICE, "+++ SEND HTTP REQUEST +++\n");
+		log_message(NAME, L_NOTICE, "%s\n", msg_out);
+		log_message(NAME, L_NOTICE, "--- SEND HTTP REQUEST ---\n");
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long) strlen(msg_out));
 		http_c.header_list = curl_slist_append(http_c.header_list, "SOAPAction;");
 		if (!http_c.header_list) return -1;
 	}
 	else {
-		DDF("+++ SEND EMPTY HTTP REQUEST +++\n");
+		log_message(NAME, L_NOTICE, "+++ SEND EMPTY HTTP REQUEST +++\n");
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, 0);
 	}
 	curl_easy_setopt(curl, CURLOPT_FAILONERROR, true);
@@ -190,11 +190,11 @@ http_send_message(char *msg_out, char **msg_in)
 	}
 
 	if (*msg_in) {
-		DDF("+++ RECEIVED HTTP RESPONSE +++\n");
-		DDF("%s", *msg_in);
-		DDF("--- RECEIVED HTTP RESPONSE ---\n");
+		log_message(NAME, L_NOTICE, "+++ RECEIVED HTTP RESPONSE +++\n");
+		log_message(NAME, L_NOTICE, "%s\n", *msg_in);
+		log_message(NAME, L_NOTICE, "--- RECEIVED HTTP RESPONSE ---\n");
 	} else {
-		DDF("+++ RECEIVED EMPTY HTTP RESPONSE +++\n");
+		log_message(NAME, L_NOTICE, "+++ RECEIVED EMPTY HTTP RESPONSE +++\n");
 	}
 
 	return 0;
@@ -210,13 +210,13 @@ http_server_init(void)
 	http_s.http_event.fd = usock(USOCK_TCP | USOCK_SERVER | USOCK_NOCLOEXEC | USOCK_NONBLOCK, "0.0.0.0", config->local->port);
 	uloop_fd_add(&http_s.http_event, ULOOP_READ | ULOOP_EDGE_TRIGGER);
 
-	DDF("+++ HTTP SERVER CONFIGURATION +++\n");
+	log_message(NAME, L_NOTICE, "+++ HTTP SERVER CONFIGURATION +++\n");
 	if (config->local->ip)
-		DDF("ip: '%s'\n", config->local->ip);
+		log_message(NAME, L_NOTICE, "ip: '%s'\n", config->local->ip);
 	else
-		DDF("NOT BOUND TO IP\n");
-	DDF("port: '%s'\n", config->local->port);
-	DDF("--- HTTP SERVER CONFIGURATION ---\n");
+		log_message(NAME, L_NOTICE, "NOT BOUND TO IP\n");
+	log_message(NAME, L_NOTICE, "port: '%s'\n", config->local->port);
+	log_message(NAME, L_NOTICE, "--- HTTP SERVER CONFIGURATION ---\n");
 
 	log_message(NAME, L_NOTICE, "http server initialized\n");
 }
@@ -244,7 +244,7 @@ http_new_client(struct uloop_fd *ufd, unsigned events)
 		}
 		/* set one minute timeout */
 		if (setsockopt(ufd->fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&t, sizeof t)) {
-			DD("setsockopt() failed\n");
+			log_message(NAME, L_NOTICE, "setsockopt() failed\n");
 		}
 		if (client < 0) {
 			break;
@@ -255,7 +255,7 @@ http_new_client(struct uloop_fd *ufd, unsigned events)
 			continue;
 		}
 
-		DDF("+++ RECEIVED HTTP REQUEST +++\n");
+		log_message(NAME, L_NOTICE, "+++ RECEIVED HTTP REQUEST +++\n");
 		*buffer = '\0';
 		while (fgets(buffer, sizeof(buffer), fp)) {
 			char *username = config->local->username;
@@ -293,7 +293,7 @@ http_end:
 				fputs("HTTP/1.1 200 OK\r\n", fp);
 				fputs("Content-Length: 0\r\n", fp);
 				fputs("Connection: close\r\n", fp);
-				DDF("+++ HTTP SERVER CONNECTION SUCCESS +++\n");
+				log_message(NAME, L_NOTICE, "+++ HTTP SERVER CONNECTION SUCCESS +++\n");
 				log_message(NAME, L_NOTICE, "ACS initiated connection\n");
 				cwmp_connection_request(EVENT_CONNECTION_REQUEST);
 			}
@@ -317,7 +317,7 @@ http_end:
 		fflush(fp);
 		fclose(fp);
 		close(client);
-		DDF("--- RECEIVED HTTP REQUEST ---\n");
+		log_message(NAME, L_NOTICE, "--- RECEIVED HTTP REQUEST ---\n");
 		break;
 	}
 }

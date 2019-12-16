@@ -165,7 +165,7 @@ netlink_new_msg(struct uloop_fd *ufd, unsigned events)
 
 	nlh = (struct nlmsghdr *)buffer;
 	if ((msg_size = recv(ufd->fd, nlh, BUFSIZ, 0)) == -1) {
-		DD("error receiving netlink message");
+		log_message(NAME, L_NOTICE, "error receiving netlink message\n");
 		return;
 	}
 
@@ -174,12 +174,12 @@ netlink_new_msg(struct uloop_fd *ufd, unsigned events)
 		int req_len = len - sizeof(*nlh);
 
 		if (req_len < 0 || len > msg_size) {
-			DD("error reading netlink message");
+			log_message(NAME, L_NOTICE, "error reading netlink message\n");
 			return;
 		}
 
 		if (!NLMSG_OK(nlh, msg_size)) {
-			DD("netlink message is not NLMSG_OK");
+			log_message(NAME, L_NOTICE, "netlink message is not NLMSG_OK\n");
 			return;
 		}
 
