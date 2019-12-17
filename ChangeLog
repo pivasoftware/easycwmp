@@ -1,6 +1,11 @@
 EasyCwmp change log:
 ====================
 
+* EasyCwmp-1.8.6 (date of 17 of December 2019)
+  -#0000401: Add 4 VALUE CHANGE event
+  -#0000400: Add log message
+  -#0000399: Fix issue in Download method
+
 * EasyCwmp-1.8.5 (date of 01st of November 2019)
   -#0000390: Round 2 fix coverity issue
 
