@@ -131,7 +131,7 @@ static inline int rpc_transfer_complete(mxml_node_t *node, int *method_id)
 	int error = 0, count = 0;
 
 	if ( backup_extract_transfer_complete(node, &msg_out, method_id)) {
-		D(" Transfer Complete xml message creating failed\n");
+		log_message(NAME, L_DEBUG, " Transfer Complete xml message creating failed\n");
 		return -1;
 	}
 
@@ -141,7 +141,7 @@ static inline int rpc_transfer_complete(mxml_node_t *node, int *method_id)
 		FREE(msg_in);
 
 		if (http_send_message(msg_out, &msg_in)) {
-			D("sending Transfer Complete http message failed\n");
+			log_message(NAME, L_DEBUG, "sending Transfer Complete http message failed\n");
 			error = -1; break;
 		}
 		if (!msg_in)
@@ -149,7 +149,7 @@ static inline int rpc_transfer_complete(mxml_node_t *node, int *method_id)
 
 		error = xml_parse_transfer_complete_response_message(msg_in);
 		if (error == -1) {
-			D("parse Transfer Complete xml message from ACS failed\n");
+			log_message(NAME, L_DEBUG, "parse Transfer Complete xml message from ACS failed\n");
 			break;
 		}
 		else if (error && (error != FAULT_ACS_8005)) {
@@ -168,7 +168,7 @@ static inline int rpc_get_rpc_methods()
 	int error = 0, count = 0;
 
 	if (xml_prepare_get_rpc_methods_message(&msg_out)) {
-		D("GetRPCMethods xml message creating failed\n");
+		log_message(NAME, L_DEBUG, "GetRPCMethods xml message creating failed\n");
 		return -1;
 	}
 
@@ -178,7 +178,7 @@ static inline int rpc_get_rpc_methods()
 		FREE(msg_in);
 
 		if (http_send_message(msg_out, &msg_in)) {
-			D("sending GetRPCMethods http message failed\n");
+			log_message(NAME, L_DEBUG, "sending GetRPCMethods http message failed\n");
 			error = -1; break;
 		}
 
@@ -187,7 +187,7 @@ static inline int rpc_get_rpc_methods()
 
 		error = xml_parse_get_rpc_methods_response_message(msg_in);
 		if (error == -1) {
-			D("parse GetRPCMethods xml message from ACS failed\n");
+			log_message(NAME, L_DEBUG, "parse GetRPCMethods xml message from ACS failed\n");
 			break;
 		}
 		else if (error && (error != FAULT_ACS_8005)) {
@@ -206,7 +206,7 @@ static inline int rpc_inform()
 	int error = 0, count = 0;
 
 	if (xml_prepare_inform_message(&msg_out)) {
-		D("Inform xml message creating failed\n");
+		log_message(NAME, L_DEBUG, "Inform xml message creating failed\n");
 		return -1;
 	}
 
@@ -216,18 +216,18 @@ static inline int rpc_inform()
 		FREE(msg_in);
 
 		if (http_send_message(msg_out, &msg_in)) {
-			D("sending Inform http message failed\n");
+			log_message(NAME, L_DEBUG, "sending Inform http message failed\n");
 			error = -1; break;
 		}
 
 		if (!msg_in) {
-			D("parse Inform xml message from ACS: Empty message\n");
+			log_message(NAME, L_DEBUG, "parse Inform xml message from ACS: Empty message\n");
 			error = -1; break;
 		}
 
 		error = xml_parse_inform_response_message(msg_in);
 		if (error && (error != FAULT_ACS_8005)) {
-			D("parse Inform xml message from ACS failed\n");
+			log_message(NAME, L_DEBUG, "parse Inform xml message from ACS failed\n");
 			error = -1; break;
 		}
 	} while(error && (count++)<10);
@@ -272,11 +272,11 @@ int cwmp_inform(void)
 
 	log_message(NAME, L_NOTICE, "start session\n");
 	if (http_client_init()) {
-		D("initializing http client failed\n");
+		log_message(NAME, L_DEBUG, "initializing http client failed\n");
 		goto error;
 	}
 	if (external_init()) {
-		D("external scripts initialization failed\n");
+		log_message(NAME, L_DEBUG, "external scripts initialization failed\n");
 		goto error;
 	}
 
@@ -313,7 +313,7 @@ int cwmp_inform(void)
 		}
 
 		if (cwmp_handle_messages()) {
-			D("handling xml message failed\n");
+			log_message(NAME, L_DEBUG, "handling xml message failed\n");
 			goto error;
 		}
 		cwmp->hold_requests = false;
@@ -349,7 +349,7 @@ int cwmp_handle_messages(void)
 		FREE(msg_in);
 
 		if (http_send_message(msg_out, &msg_in)) {
-			D("sending http message failed\n");
+			log_message(NAME, L_DEBUG, "sending http message failed\n");
 			goto error;
 		}
 
@@ -362,13 +362,13 @@ int cwmp_handle_messages(void)
 
 		if (xml_handle_message(msg_in, &msg_out)) {
 			log_message(NAME, L_NOTICE, "handling message failed\n");
-			D("xml handling message failed\n");
+			log_message(NAME, L_DEBUG, "xml handling message failed\n");
 			goto error;
 		}
 
 		if (!msg_out) {
 			log_message(NAME, L_NOTICE, "handling message failed\n");
-			D("acs response message is empty\n");
+			log_message(NAME, L_DEBUG, "acs response message is empty\n");
 			goto error;
 		}
 	}
@@ -449,7 +449,7 @@ void cwmp_download_launch(struct uloop_timeout *timeout)
 			d->download_url, d->file_type, d->key);
 
 	if (external_init()) {
-		D("external scripts initialization failed\n");
+		log_message(NAME, L_DEBUG, "external scripts initialization failed\n");
 		return;
 	}
 
@@ -515,7 +515,7 @@ void cwmp_upload_launch(struct uloop_timeout *timeout)
 			d->upload_url, d->file_type, d->key);
 
 	if (external_init()) {
-		D("external scripts initialization failed\n");
+		log_message(NAME, L_DEBUG, "external scripts initialization failed\n");
 		return;
 	}
 
@@ -728,22 +728,22 @@ int cwmp_init_deviceid(void)
 		return -1;
 
 	if (!cwmp->deviceid.product_class || cwmp->deviceid.product_class[0] == '\0') {
-		D("in device you must define product_class\n");
+		log_message(NAME, L_DEBUG, "in device you must define product_class\n");
 		return -1;
 	}
 
 	if (!cwmp->deviceid.serial_number || cwmp->deviceid.serial_number[0] == '\0') {
-		D("in device you must define serial_number\n");
+		log_message(NAME, L_DEBUG, "in device you must define serial_number\n");
 		return -1;
 	}
 
 	if (!cwmp->deviceid.manufacturer || cwmp->deviceid.manufacturer[0] == '\0') {
-		D("in device you must define manufacturer\n");
+		log_message(NAME, L_DEBUG, "in device you must define manufacturer\n");
 		return -1;
 	}
 
 	if (!cwmp->deviceid.oui || cwmp->deviceid.oui[0] == '\0') {
-		D("in device you must define manufacturer oui\n");
+		log_message(NAME, L_DEBUG, "in device you must define manufacturer oui\n");
 		return -1;
 	}
 

@@ -22,6 +22,7 @@
 #include "md5.h"
 #include "digestauth.h"
 #include "easycwmp.h"
+#include "log.h"
 
 #define HASH_MD5_HEX_LEN (2 * MD5_DIGEST_SIZE)
 
@@ -335,7 +336,7 @@ int http_digest_auth_fail_response(FILE *fp, const char *http_method,
 				"Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\"",
 				realm, nonce, opaque);
 
-		DD("%s: header: %s", __FUNCTION__, header);
+		log_message(NAME, L_DEBUG, "%s: header: %s", __FUNCTION__, header);
 
 		fputs("WWW-Authenticate: ", fp);
 		fputs(header, fp);
@@ -378,7 +379,7 @@ int http_digest_auth_check(const char *http_method, const char *url,
 	size_t left; /* number of characters left in 'header' for 'uri' */
 	unsigned long int nci;
 
-	DD("%s: header: %s", __FUNCTION__, header);
+	log_message(NAME, L_DEBUG, "%s: header: %s", __FUNCTION__, header);
 
 	left = strlen(header);
 
@@ -424,7 +425,7 @@ int http_digest_auth_check(const char *http_method, const char *url,
 
 		if (0 != strncmp(uri, url, strlen(url)))
 		{
-			DD("Authentication failed: URI does not match.");
+			log_message(NAME, L_DEBUG, "Authentication failed: URI does not match.");
 
 			return MHD_NO;
 		}
@@ -453,13 +454,13 @@ int http_digest_auth_check(const char *http_method, const char *url,
 						== lookup_sub_value(response, sizeof(response), header,
 								"response")))
 		{
-			DD("Authentication failed, invalid format.");
+			log_message(NAME, L_DEBUG, "Authentication failed, invalid format.");
 			return MHD_NO;
 		}
 		nci = strtoul(nc, &end, 16);
 		if (('\0' != *end) || ((LONG_MAX == nci) && (ERANGE == errno)))
 		{
-			DD("Authentication failed, invalid format.");
+			log_message(NAME, L_DEBUG, "Authentication failed, invalid format.");
 			return MHD_NO; /* invalid nonce format */
 		}
 

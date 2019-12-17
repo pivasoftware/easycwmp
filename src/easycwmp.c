@@ -73,7 +73,7 @@ static void easycwmp_do_reload(struct uloop_timeout *timeout)
 {
 	log_message(NAME, L_NOTICE, "configuration reload\n");
 	if (external_init()) {
-		D("external scripts initialization failed\n");
+		log_message(NAME, L_DEBUG, "external scripts initialization failed\n");
 		return;
 	}
 	config_load();
@@ -84,7 +84,7 @@ static void easycwmp_do_notify(struct uloop_timeout *timeout)
 {
 	log_message(NAME, L_NOTICE, "checking if there is notify value change\n");
 	if (external_init()) {
-		D("external scripts initialization failed\n");
+		log_message(NAME, L_DEBUG, "external scripts initialization failed\n");
 		return;
 	}
 	external_action_simple_execute("check_value_change", NULL, NULL);
@@ -165,7 +165,7 @@ netlink_new_msg(struct uloop_fd *ufd, unsigned events)
 
 	nlh = (struct nlmsghdr *)buffer;
 	if ((msg_size = recv(ufd->fd, nlh, BUFSIZ, 0)) == -1) {
-		log_message(NAME, L_NOTICE, "error receiving netlink message\n");
+		log_message(NAME, L_DEBUG, "error receiving netlink message\n");
 		return;
 	}
 
@@ -174,12 +174,12 @@ netlink_new_msg(struct uloop_fd *ufd, unsigned events)
 		int req_len = len - sizeof(*nlh);
 
 		if (req_len < 0 || len > msg_size) {
-			log_message(NAME, L_NOTICE, "error reading netlink message\n");
+			log_message(NAME, L_DEBUG, "error reading netlink message\n");
 			return;
 		}
 
 		if (!NLMSG_OK(nlh, msg_size)) {
-			log_message(NAME, L_NOTICE, "netlink message is not NLMSG_OK\n");
+			log_message(NAME, L_DEBUG, "netlink message is not NLMSG_OK\n");
 			return;
 		}
 
@@ -203,7 +203,7 @@ static int netlink_init(void)
 	memset(&req, 0, sizeof(req));
 
 	if ((cwmp->netlink_sock[0] = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE)) == -1) {
-		D("couldn't open NETLINK_ROUTE socket");
+		log_message(NAME, L_DEBUG, "couldn't open NETLINK_ROUTE socket");
 		return -1;
 	}
 	if (fcntl(cwmp->netlink_sock[0], F_SETFD, fcntl(cwmp->netlink_sock[0], F_GETFD) | FD_CLOEXEC) < 0)
@@ -212,7 +212,7 @@ static int netlink_init(void)
 	addr.nl_family = AF_NETLINK;
 	addr.nl_groups = RTMGRP_IPV4_IFADDR;
 	if ((bind(cwmp->netlink_sock[0], (struct sockaddr *)&addr, sizeof(addr))) == -1) {
-		D("couldn't bind netlink socket");
+		log_message(NAME, L_DEBUG, "couldn't bind netlink socket");
 		return -1;
 	}
 
@@ -220,7 +220,7 @@ static int netlink_init(void)
 	uloop_fd_add(&netlink_event, ULOOP_READ | ULOOP_EDGE_TRIGGER);
 
 	if ((cwmp->netlink_sock[1] = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE)) == -1) {
-		D("couldn't open NETLINK_ROUTE socket");
+		log_message(NAME, L_DEBUG, "couldn't open NETLINK_ROUTE socket");
 		return -1;
 	}
 	if (fcntl(cwmp->netlink_sock[1], F_SETFD, fcntl(cwmp->netlink_sock[1], F_GETFD) | FD_CLOEXEC) < 0)
@@ -232,7 +232,7 @@ static int netlink_init(void)
 	req.msg.ifa_family = AF_INET;
 
 	if ((send(cwmp->netlink_sock[1], &req, req.hdr.nlmsg_len, 0)) == -1) {
-		D("couldn't send netlink socket");
+		log_message(NAME, L_DEBUG, "couldn't send netlink socket");
 		return -1;
 	}
 
@@ -285,7 +285,7 @@ int main (int argc, char **argv)
 	umask(0037);
 
 	if (getuid() != 0) {
-		D("run %s as root\n", NAME);
+		log_message(NAME, L_DEBUG, "run %s as root\n", NAME);
 		exit(EXIT_FAILURE);
 	}
 
@@ -301,7 +301,7 @@ int main (int argc, char **argv)
 	uloop_init();
 	backup_init();
 	if (external_init()) {
-		D("external scripts initialization failed\n");
+		log_message(NAME, L_DEBUG, "external scripts initialization failed\n");
 		return -1;
 	}
 	config_load();
@@ -321,11 +321,11 @@ int main (int argc, char **argv)
 	}
 
 	if (netlink_init()) {
-		D("netlink initialization failed\n");
+		log_message(NAME, L_DEBUG, "netlink initialization failed\n");
 		exit(EXIT_FAILURE);
 	}
 
-	if (ubus_init()) D("ubus initialization failed\n");
+	if (ubus_init()) log_message(NAME, L_DEBUG, "ubus initialization failed\n");
 
 	http_server_init();
 
@@ -339,14 +339,14 @@ int main (int argc, char **argv)
 
 		sid = setsid();
 		if (sid < 0) {
-			D("setsid() returned error\n");
+			log_message(NAME, L_DEBUG, "setsid() returned error\n");
 			exit(EXIT_FAILURE);
 		}
 
 		char *directory = "/";
 
 		if ((chdir(directory)) < 0) {
-			D("chdir() returned error\n");
+			log_message(NAME, L_DEBUG, "chdir() returned error\n");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -354,7 +354,7 @@ int main (int argc, char **argv)
 	if (asprintf(&buf, "%d", getpid()) != -1) {
 		int error = write(fd, buf, strlen(buf));
 		if ( error < 0) {
-			D("Unable to write the easycwmpd pid to /var/run/easycwmpd.pid\n");
+			log_message(NAME, L_DEBUG, "Unable to write the easycwmpd pid to /var/run/easycwmpd.pid\n");
 		}
 
 		free(buf);

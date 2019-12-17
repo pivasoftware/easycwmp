@@ -21,6 +21,7 @@
 #include "easycwmp.h"
 #include "basicauth.h"
 #include "base64.h"
+#include "log.h"
 
 /**
  * Get the username and password from the basic authorization header sent by the client
@@ -76,7 +77,7 @@ int http_basic_auth_check(char buffer[BUFSIZ], char *username, char *password) {
 	ret = http_basic_auth_get_username_password(buffer, &user, &pass);
 	if ((ret == MHD_NO || strcmp(user, username) != 0)
 			|| (strcmp(pass, password) != 0)) {
-		DD("Authentication failed: username or password invalid \n");
+		log_message(NAME, L_DEBUG, "Authentication failed: username or password invalid \n");
 		free(user);
 		free(pass);
 		return MHD_NO;
@@ -101,7 +102,7 @@ int http_basic_auth_fail_response(FILE *fp, const char *realm) {
 
 	res = snprintf(header, hlen, "Basic realm=\"%s\"", realm);
 	if (res > 0 && res < hlen) {
-		DD("%s: header: %s", __FUNCTION__, header);
+		log_message(NAME, L_DEBUG, "%s: header: %s", __FUNCTION__, header);
 		fputs("WWW-Authenticate: ", fp);
 		fputs(header, fp);
 		return MHD_YES;

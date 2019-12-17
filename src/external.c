@@ -238,7 +238,7 @@ void external_exit()
 	external_read_pipe(NULL);
 	int status;
 	while (wait(&status) != pid) {
-		log_message(NAME, L_NOTICE, "waiting for child to exit\n");
+		log_message(NAME, L_DEBUG, "waiting for child to exit\n");
 	}
 	close(pfds_out[0]);
 	close(pfds_in[1]);
