@@ -156,9 +156,11 @@ common_set_bool() {
 common_set_list() {
 	local cfg="$1"
 	local val="$2"
-	local element list=${val//,/ }
 	$UCI_DELETE $cfg
-	for element in $list; do
+	local oldIFS="$IFS"
+	IFS=','
+	for element in $val; do
+		IFS="$oldIFS"
 		$UCI_ADD_LIST $cfg="$element"
 	done
 	return 0
