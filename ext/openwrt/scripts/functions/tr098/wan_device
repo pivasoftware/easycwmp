@@ -82,9 +82,10 @@ wan_device_get_ipcx_status() {
 }
 
 wan_device_get_ipcx_ipaddr() {
-	local val iface="$1"
-	network_get_ipaddr val "$iface"
-	echo "$val"
+      
+	   wan_iface="your_wan_interface"
+	wan_ip_ex=`ifstatus $wan_iface |  jsonfilter -e '@["ipv4-address"][0].address'`                                                         
+        echo $wan_ip_ex
 }
 
 wan_device_get_ipcx_macaddr() {
