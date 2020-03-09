@@ -17,6 +17,7 @@
 #include <time.h>
 
 #include "easycwmp.h"
+#define NOTIF_PARAM_VALUES "/etc/easycwmp/.easycwmp_notif_param_value"
 
 void config_exit(void);
 void config_load(void);

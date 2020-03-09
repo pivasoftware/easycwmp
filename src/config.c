@@ -355,7 +355,9 @@ void config_load(void)
 	first_run = false;
 	config_free_ctx();
 
-	cwmp_update_value_change();
+	if (access(NOTIF_PARAM_VALUES, F_OK) == -1 ) {
+		cwmp_update_value_change();
+	}
 	return;
 
 error:
