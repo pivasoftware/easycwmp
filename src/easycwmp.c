@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+#include <curl/curl.h>
 
 #include "json.h"
 #include "easycwmp.h"
@@ -360,6 +361,8 @@ int main (int argc, char **argv)
 		free(buf);
 	}
 
+	curl_global_init( CURL_GLOBAL_ALL );
+
 	log_message(NAME, L_NOTICE, "entering main loop\n");
 	uloop_run();
 
@@ -367,6 +370,7 @@ int main (int argc, char **argv)
 	uloop_done();
 
 	http_client_exit();
+	curl_global_cleanup();
 	xml_exit();
 	config_exit();
 	cwmp_free_deviceid();
