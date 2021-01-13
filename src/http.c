@@ -90,7 +90,6 @@ http_client_exit(void)
 	curl_easy_cleanup(curl);
 		curl = NULL;
 	}
-	curl_global_cleanup();
 
 	if(remove(fc_cookies) < 0)
 		log_message(NAME, L_NOTICE, "can't remove file %s\n", fc_cookies);
