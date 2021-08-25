@@ -142,7 +142,7 @@ struct cwmp_internal {
 };
 
 extern struct cwmp_internal *cwmp;
-struct event_code event_code_array[__EVENT_MAX];
+extern struct event_code event_code_array[__EVENT_MAX];
 
 static void cwmp_periodic_inform(struct uloop_timeout *timeout);
 static void cwmp_do_inform(struct uloop_timeout *timeout);
